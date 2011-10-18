@@ -1,60 +1,74 @@
 "use strict";
-if(!Array.isArray) {
-  Array.isArray = function (arg) {
-    return Object.prototype.toString.call(arg) == '[object Array]';
-  };
-}
 
 var BRAVAIS = {};
 (function(){
-  function overload() {
-    var methods = Array.prototype.slice.call(arguments),
-      distrFirstArray = typeof methods[methods.length - 1] == "boolean"?methods.pop():false;
 
+  function Vector(varNames, values){
+    var that = this;
+    varNames.slice(0, values.length).forEach(function(varName, i){
+      that[varName] = values[i];
+    });
+    
+    Object.defineProperty(this, 'object', {
+      get: function(){
+        var map = {};
+        for(var key in this){
+          var val = this[key];
+          map[key] = val.object || val;
+        }
+        return map;
+      }
+    });
+    Object.defineProperty(this, 'keys', { value: varNames });
+    Object.defineProperty(this, 'values', { value: values });
+  }
+
+  function vectorConstructor(){
+    var varNames = Array.prototype.slice.call(arguments);
     return function(){
-      var args = arguments;
-      if(distrFirstArray && args.length == 1){
-        if(Array.isArray(args[0])){
-          args = args[0];
-        } else {
-          throw "In one-argument case it should be an Array";
-        }
+      var values = Array.prototype.slice.call(arguments);
+      if(Array.isArray(values[0])){
+        values = values[0];
       }
-
-      for(var i in methods){
-        if(methods[i].length == args.length){
-          return methods[i].apply(null, args);
-        }
-      }
-      throw "Unsupported number of arguments";
+      return new Vector(varNames, values);
     }
   }
 
-  var point = overload(
-      function(x, y) {
-        return {x:x, y:y};
-      },
-      function (x, y, z) {
-        return {x:x, y:y, z:z};
-      },
-      true
-  );
-
-  BRAVAIS = {
+  var that;
+  BRAVAIS = that = {
     options:{
-      nMax:1,
-      vectors: null, //point
-      angels:null
+      n_max:1,
+      displaceVector: null,
+      angelsVector: null
     },
-    doPoint: point,
-    createParticle: function(point, value){
-      return {point:point, value:value};
+    doDisplaceVector: vectorConstructor('ax', 'ay', 'az'), //('a¹','a²','a³')
+    doPointVector: vectorConstructor('x', 'y', 'z'),
+    doAnglesVector: vectorConstructor('a', 'b', 'c'), //('ɑ','β','ɣ')
+    doParticle: vectorConstructor('point', 'value'),
+    generateParticles: function(rawData){
+      var n_max = that.options.n_max,
+          result = [];
+      that.parseData(rawData).forEach(function(particle){
+        var origPoint = particle.point, point,
+            displaceVector = that.options.displaceVector;
+        for(var xn = 0; xn < n_max+1; xn++){
+          for(var yn = 0; yn < n_max+1; yn++){
+            for(var zn = 0; zn < n_max+1; zn++){
+              point = that.doPointVector( origPoint.x + xn * displaceVector.ax,
+                                          origPoint.y + yn * displaceVector.ay,
+                                          origPoint.z + zn * displaceVector.az);
+              result.push(that.doParticle(point, particle.value));
+            }
+          }
+        }
+      });
+      return result;
     },
     parseData: function(rawData){
       return rawData.split(/[\r|\n]+/).map(function(rawLine){
         var lineData = rawLine.split(/\s+/).map(parseFloat);
         var value = lineData.shift();
-        return BRAVAIS.createParticle(point(lineData), value);
+        return that.doParticle(that.doPointVector(lineData), value);
       });
     }
   };

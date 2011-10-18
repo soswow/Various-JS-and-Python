@@ -3,8 +3,9 @@
 <head>
   <title>Cristal Grid Translation</title>
   <script src="http://code.jquery.com/jquery-latest.js"></script>
-  <script src="js/bravais.js"></script>
-  <script src="js/ajax.js"></script>
+  <script type="text/javascript" src="js/compatibility.js"></script>
+  <script type="text/javascript" src="js/bravais.js"></script>
+  <script type="text/javascript" src="js/ajax.js"></script>
 </head>
 <body>
 <label>
@@ -19,6 +20,7 @@
   &#611;:
   <input name="gamma" type="text" size="3" value="90"/>&deg;
 </label><br/>
+
 <label>
   a<sub>x</sub>:
   <input name="ax" type="text" size="6" value="4.110"/>
@@ -43,12 +45,12 @@
   <tr>
     <td>
       <label for="from">Initial:</label><br/>
-      <textarea id="from" rows="25">1 0.000 0.000 0.000
+      <textarea id="from" rows="25" cols="40">1 0.000 0.000 0.000
 -1 2.055 2.055 2.055</textarea>
     </td>
     <td><button id="translate">Translate</button></td>
     <td><label for="to">Translated:</label><br/>
-      <textarea id="to" rows="25"></textarea></td>
+      <textarea id="to" rows="25" cols="40"></textarea></td>
   </tr>
 </table>
 </body>
