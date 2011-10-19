@@ -12,13 +12,15 @@ $(function(){
         parseFloat($("[name=gamma]").val(), 10)
     );
   }
-  
+  function round(x){
+    return Math.round(x*1000) / 1000;
+  }
   var button = $("#translate");
   button.click(function(){
     setOptions();
     var result = BRAVAIS.generateParticles($("#from").val());
     $("#to").val(result.map(function(p){
-      return [p.value, p.point.x, p.point.y, p.point.z].join(" ")+"\n";
-    }));
+      return [p.value, p.point.x, p.point.y, p.point.z].map(round).join(" ");
+    }).join("\n"));
   });
 });
