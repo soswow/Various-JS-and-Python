@@ -15,12 +15,16 @@ $(function(){
   function round(x){
     return Math.round(x*1000) / 1000;
   }
+  function decimalizer(num){
+    //TODO
+    return num;
+  }
   var button = $("#translate");
   button.click(function(){
     setOptions();
     var result = BRAVAIS.generateParticles($("#from").val());
     $("#to").val(result.map(function(p){
-      return [p.value, p.point.x, p.point.y, p.point.z].map(round).join(" ");
+      return [p.value, p.point.x, p.point.y, p.point.z].map(round).map(decimalizer).join(" ");
     }).join("\n"));
   });
 });
