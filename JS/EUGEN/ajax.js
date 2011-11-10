@@ -35,9 +35,13 @@ function init(){
 
   button.addEventListener("click", function(){
     var rawInput = inputObj.value,
-        input = parseInput(rawInput);
+        input = parseInput(rawInput),
+        growSize = parseInt(growSizeObj.value, 10),
+        results = EUGEN.countEes(input.ions, input.refIndex, input.cellParams, growSize);
 
-    outputObj.innerHTML = EUGEN.countEes(input.ions, input.refIndex, input.cellParams, growSizeObj.value);
+    outputObj.innerHTML = results.map(function(row){
+      return row.join("\t")
+    }).join("<br/>");
   });
 }
 
