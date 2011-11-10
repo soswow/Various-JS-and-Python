@@ -40,14 +40,26 @@ function init(){
         results = EUGEN.countEes(input.ions, input.refIndex, input.cellParams, growSize);
 
     outputObj.innerHTML = results.map(function(row){
-      row[3] = ["<div class='debug'><span>Show Debug</span><br/><table><tr>",
+      var header = ["<div class='debug'><span>Show Debug</span><br/><table border='1'>",
+          "<thead><tr><th colspan='3'>Absolute</th><th colspan='3'>Shift Vector</th>",
+              "<th rowspan='2'>Ind</th><th rowspan='2'>V</th><th rowspan='2'>r</th><th rowspan='2'>V/r</th></tr><tr>",
+              "<th>X</th><th>Y</th><th>Z</th>",
+              "<th>X</th><th>Y</th><th>Z</th>",
+              "</tr></thead>",
+          "<tbody><tr>"],
+          sum = 0;
 
-        row[3].map(function(row){
-          row[0] = "x: " + row[0].x + "  y: " + row[0].y + "  z: " + row[0].z;
+        var body = row[3].map(function(row){
+          sum += row.slice(-1)[0];
           return ["<td>", row.join("</td><td>"), "</td>"].join("");
-        }).join("</tr><tr>"),
+        }).join("</tr><tr>");
 
-        "</tr></table></div>"].join("");
+        var tail= ["</tr><tr><td colspan='9' align='right'>Sum:<br/>Cumulative:</td>",
+            "<td>", sum, "<br/>",row.pop(),"</td>",
+            "</tr></tbody></table>",
+            "</div>"].join("");
+
+        row[3] = header.concat(body).concat(tail).join("");
 
       return row.join("\t");
     }).join("<br/>");

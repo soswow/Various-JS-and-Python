@@ -14,7 +14,11 @@ var EUGEN = {};
       point = vectorConstructor("x","y","z");
 
   function roundToZero(num){
-    return Math.round(num * 10e10) / 10e10;
+    return roundTo(num, 10e10);
+  }
+
+  function roundTo(num, to){
+    return Math.round(num * to) / to;
   }
 
   function getXYZComponents(a, b, c, alpha, beta, gama){
@@ -67,19 +71,21 @@ var EUGEN = {};
                 k * refIonComps.b.y - l * refIonComps.c.y,
                 l * refIonComps.c.z);
           var transIon = point(
-                ion.x - shiftVector.x,
-                ion.y - shiftVector.y,
-                ion.z - shiftVector.z);
+                ion.x + shiftVector.x,
+                ion.y + shiftVector.y,
+                ion.z + shiftVector.z);
           var r = distance(refIon, transIon);
           
-          debugPoints.push([transIon, index, ion.value, r]);
+          debugPoints.push([roundTo(transIon.x, 10e4), roundTo(transIon.y, 10e4), roundTo(transIon.z, 10e4),
+              shiftVector.x + " (" + j + ")", shiftVector.y+ " (" + k + ")", shiftVector.z+ " (" + l + ")",
+              index, ion.value, roundTo(r, 10e4),  roundTo(ion.value / r, 10e4)]);
           return ion.value / r;
         }).sum();
       }).sum();
 
       var result = prefix * refIon.value * comulSum;
       
-      results.push([count, growIndex, result, debugPoints]);
+      results.push([count, growIndex, result, debugPoints, roundTo(comulSum, 10e4)]);
     }
     
     return results;
