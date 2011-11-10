@@ -3,7 +3,7 @@ var EUGEN = {};
   var e0 = 8.854187817e-12 * 10e10,
       e = 1.602176565e-19,
       Na = 6.0221415e23,
-      sqrt = Math.sqrt
+      sqrt = Math.sqrt,
       convertFactor = 10e17,
       square = function(a) {
         return Math.pow(a, 2);
@@ -27,22 +27,6 @@ var EUGEN = {};
       };
   }
 
-//  function fractToOrtCoordinates(a, b, c, alpha, beta, gama){
-//    var comps = getXYZComponents(a,b,c,alpha,beta,gama),
-//      x = a + comps.b.x + comps.c.x,
-//      y = comps.b.y + comps.c.y,
-//      z = comps.b.z + comps.c.z;
-//
-//    return point(x,y,z);
-//  }
-
-//  function unitCellContribute(ions, refIndex){
-//    var e2 = square(e), refIon = ions[refIndex];
-//    return ions.map(function(ion){
-//      return ion.value * refIon.value * e2/ distance(ion, refIon);
-//    });
-//  }
-
   function combinatorMap(rangeMin, rangeMax, func){
     var arr = [];
     for(var x = rangeMin; x<rangeMax+1; x++){
@@ -63,10 +47,12 @@ var EUGEN = {};
         refIonComps = getXYZComponents(a,b,c,alpha,beta,gama),
         prefix = convertFactor *  (Na * square(e)) / (4 * Math.PI * e0);
 
-    //TODO Return whole sequence and use previous results.
+    console.log("convertFactor *  (Na * square(e)) / (4 * Math.PI * e0) = ", prefix, " ,where");
+    console.log({convertFactor:convertFactor, Na:Na, square_e:square(e), e0:e0});
+
     var results = [], comulSum = 0;
     for(var growIndex = 0; growIndex < expRange; growIndex++){
-      var count = 0;
+      var count = 0, debugPoints = [];
 
       comulSum += combinatorMap(-growIndex, growIndex, function(j, k, l){
         count += ions.length;
@@ -85,14 +71,15 @@ var EUGEN = {};
                 ion.y - shiftVector.y,
                 ion.z - shiftVector.z);
           var r = distance(refIon, transIon);
-
+          
+          debugPoints.push([transIon, index, ion.value, r]);
           return ion.value / r;
         }).sum();
       }).sum();
 
       var result = prefix * refIon.value * comulSum;
       
-      results.push([count, growIndex, result]);
+      results.push([count, growIndex, result, debugPoints]);
     }
     
     return results;

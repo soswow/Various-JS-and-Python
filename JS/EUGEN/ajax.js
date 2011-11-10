@@ -40,8 +40,21 @@ function init(){
         results = EUGEN.countEes(input.ions, input.refIndex, input.cellParams, growSize);
 
     outputObj.innerHTML = results.map(function(row){
-      return row.join("\t")
+      row[3] = ["<div class='debug'><span>Show Debug</span><br/><table><tr>",
+
+        row[3].map(function(row){
+          row[0] = "x: " + row[0].x + "  y: " + row[0].y + "  z: " + row[0].z;
+          return ["<td>", row.join("</td><td>"), "</td>"].join("");
+        }).join("</tr><tr>"),
+
+        "</tr></table></div>"].join("");
+
+      return row.join("\t");
     }).join("<br/>");
+  });
+
+  $(".debug span").live('click', function(){
+    $(this).parents(".debug").find("table").toggle();
   });
 }
 
