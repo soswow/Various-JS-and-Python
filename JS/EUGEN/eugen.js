@@ -43,7 +43,7 @@ var EUGEN = {};
     return arr;
   }
 
-  EUGEN.countEes = function(ions, refIndex, cellParams, expRange){
+  EUGEN.countEes = function(ions, refIndex, cellParams, expRange, isDebug){
     var refIon = ions[refIndex],
         abs = Math.abs,
         a = cellParams.a, b = cellParams.b, c = cellParams.c,
@@ -51,19 +51,22 @@ var EUGEN = {};
         refIonComps = getXYZComponents(a,b,c,alpha,beta,gama),
         prefix = convertFactor *  (Na * square(e)) / (4 * Math.PI * e0);
 
-    console.log("convertFactor *  (Na * square(e)) / (4 * Math.PI * e0) = ", prefix, " ,where");
-    console.log({convertFactor:convertFactor, Na:Na, square_e:square(e), e0:e0});
+    if(isDebug){
+      console.log("convertFactor *  (Na * square(e)) / (4 * Math.PI * e0) = ", prefix, " ,where");
+      console.log({convertFactor:convertFactor, Na:Na, square_e:square(e), e0:e0});
+    }
 
     var results = [], comulSum = 0;
     for(var growIndex = 0; growIndex < expRange; growIndex++){
       var count = 0, debugPoints = [];
 
       comulSum += combinatorMap(-growIndex, growIndex, function(j, k, l){
-        count += ions.length;
+        if(isDebug){
+          count += ions.length;
+        }
         return ions.map(function(ion, index){
-          var isRefIonInBaseCell = index == refIndex && j == 0 && k == 0 && l == 0,
-            notSurfaceCell = growIndex > 0 && abs(j) < growIndex && abs(k) < growIndex && abs(l) < growIndex;
-          if(isRefIonInBaseCell || notSurfaceCell){
+          var isRefIonInBaseCell = index == refIndex && j == 0 && k == 0 && l == 0;
+          if(isRefIonInBaseCell){
             return 0;
           }
           var shiftVector = point(
@@ -75,17 +78,25 @@ var EUGEN = {};
                 ion.y + shiftVector.y,
                 ion.z + shiftVector.z);
           var r = distance(refIon, transIon);
-          
-          debugPoints.push([roundTo(transIon.x, 10e4), roundTo(transIon.y, 10e4), roundTo(transIon.z, 10e4),
-              shiftVector.x + " (" + j + ")", shiftVector.y+ " (" + k + ")", shiftVector.z+ " (" + l + ")",
-              index, ion.value, roundTo(r, 10e4),  roundTo(ion.value / r, 10e4)]);
+
+          if(isDebug){
+            debugPoints.push([roundTo(transIon.x, 10e4), roundTo(transIon.y, 10e4), roundTo(transIon.z, 10e4),
+                shiftVector.x + " (" + j + ")", shiftVector.y+ " (" + k + ")", shiftVector.z+ " (" + l + ")",
+                index, ion.value, roundTo(r, 10e4),  roundTo(ion.value / r, 10e4)]);
+          }
+
           return ion.value / r;
         }).sum();
       }).sum();
 
       var result = prefix * refIon.value * comulSum;
-      
-      results.push([count, growIndex, result, debugPoints, roundTo(comulSum, 10e4)]);
+
+      if(isDebug){
+        results.push([count, growIndex, result, debugPoints, roundTo(comulSum, 10e4)]);
+      }else{
+        results.push(result);
+      }
+
     }
     
     return results;

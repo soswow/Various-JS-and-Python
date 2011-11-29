@@ -6,7 +6,8 @@ function init(){
   var inputObj = byId("input"),
       outputObj = byId("output"),
       growSizeObj = byId("growSize"),
-      button = byId("calculate");
+      button = byId("calculate"),
+      isDebugObj = byId("isDebugOn");
 
   function parseInput(rawText){
     var rows = rawText.split(/\n/).map(function(line){
@@ -37,32 +38,37 @@ function init(){
     var rawInput = inputObj.value,
         input = parseInput(rawInput),
         growSize = parseInt(growSizeObj.value, 10),
-        results = EUGEN.countEes(input.ions, input.refIndex, input.cellParams, growSize);
+        isDebug = isDebugObj.checked,
+        results = EUGEN.countEes(input.ions, input.refIndex, input.cellParams, growSize, isDebug);
 
-    outputObj.innerHTML = results.map(function(row){
-      var header = ["<div class='debug'><span>Show Debug</span><br/><table border='1'>",
-          "<thead><tr><th colspan='3'>Absolute</th><th colspan='3'>Shift Vector</th>",
-              "<th rowspan='2'>Ind</th><th rowspan='2'>V</th><th rowspan='2'>r</th><th rowspan='2'>V/r</th></tr><tr>",
-              "<th>X</th><th>Y</th><th>Z</th>",
-              "<th>X</th><th>Y</th><th>Z</th>",
-              "</tr></thead>",
-          "<tbody><tr>"],
-          sum = 0;
+    if(isDebug){
+      outputObj.innerHTML = results.map(function(row){
+        var header = ["<div class='debug'><span>Show Debug</span><br/><table border='1'>",
+            "<thead><tr><th colspan='3'>Absolute</th><th colspan='3'>Shift Vector</th>",
+                "<th rowspan='2'>Ind</th><th rowspan='2'>V</th><th rowspan='2'>r</th><th rowspan='2'>V/r</th></tr><tr>",
+                "<th>X</th><th>Y</th><th>Z</th>",
+                "<th>X</th><th>Y</th><th>Z</th>",
+                "</tr></thead>",
+            "<tbody><tr>"],
+            sum = 0;
 
-        var body = row[3].map(function(row){
-          sum += row.slice(-1)[0];
-          return ["<td>", row.join("</td><td>"), "</td>"].join("");
-        }).join("</tr><tr>");
 
-        var tail= ["</tr><tr><td colspan='9' align='right'>Sum:<br/>Cumulative:</td>",
-            "<td>", sum, "<br/>",row.pop(),"</td>",
-            "</tr></tbody></table>",
-            "</div>"].join("");
+          var body = row[3].map(function(row){
+            sum += row.slice(-1)[0];
+            return ["<td>", row.join("</td><td>"), "</td>"].join("");
+          }).join("</tr><tr>");
 
-        row[3] = header.concat(body).concat(tail).join("");
+          var tail= ["</tr><tr><td colspan='9' align='right'>Sum:<br/>Cumulative:</td>",
+              "<td>", sum, "<br/>",row.pop(),"</td>",
+              "</tr></tbody></table>",
+              "</div>"].join("");
 
-      return row.join("\t");
-    }).join("<br/>");
+          row[3] = header.concat(body).concat(tail).join("");
+          return row.join("\t");
+      }).join("<br/>");
+    }else{
+      outputObj.innerHTML = results.join("<br/>");
+    }
   });
 
   $(".debug span").live('click', function(){
