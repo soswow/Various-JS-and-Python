@@ -65,8 +65,11 @@ var EUGEN = {};
           count += ions.length;
         }
         return ions.map(function(ion, index){
-          var isRefIonInBaseCell = index == refIndex && j == 0 && k == 0 && l == 0;
-          if(isRefIonInBaseCell){
+          var isRefIonInBaseCell = index == refIndex && j == 0 && k == 0 && l == 0,
+            notSurfaceCell = growIndex > 0 && abs(j) < growIndex && abs(k) < growIndex && abs(l) < growIndex;
+          if(isRefIonInBaseCell || notSurfaceCell){
+            //Don't count distance for cell not on surface of expanding box. For inner boxes distance already in
+            //comulSum variable.
             return 0;
           }
           var shiftVector = point(
