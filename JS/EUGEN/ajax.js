@@ -67,7 +67,16 @@ function init(){
           return row.join("\t");
       }).join("<br/>");
     }else{
-      outputObj.innerHTML = results.join("<br/>");
+      var resultTable = ["<table border='1'><thead><tr><th>Iter.</th><th>Weighted Energy</th><th>Madelung</th></thead>",
+            "<tbody><tr>"];
+
+      resultTable = resultTable.concat(results.map(function(row, i){
+        return "<td>" + (i+1) + "</td><td>"+ row.join("</td><td>") + "</td>";
+      }).join("</tr><tr>"));
+
+      resultTable = resultTable.concat(["</tr></tbody></table>"]);
+      
+      outputObj.innerHTML = resultTable.join("");
     }
   });
 

@@ -43,8 +43,8 @@ var EUGEN = {};
     return arr;
   }
 
-  EUGEN.countEes = function(ions, refIndex, cellParams, expRange, isDebug){
-    var refIon = ions[refIndex],
+  EUGEN.countEes = function(ions, refIonIndex, cellParams, expRange, isDebug){
+    var refIon = ions[refIonIndex],
         abs = Math.abs,
         a = cellParams.a, b = cellParams.b, c = cellParams.c,
         alpha = cellParams.alpha, beta = cellParams.beta, gama = cellParams.gama,
@@ -56,7 +56,7 @@ var EUGEN = {};
       console.log({convertFactor:convertFactor, Na:Na, square_e:square(e), e0:e0});
     }
 
-    var results = [], comulSum = 0;
+    var results = [], comulSum = 0, minR = Number.MAX_VALUE;
     for(var growIndex = 0; growIndex < expRange; growIndex++){
       var count = 0, debugPoints = [];
 
@@ -65,13 +65,15 @@ var EUGEN = {};
           count += ions.length;
         }
         return ions.map(function(ion, index){
-          var isRefIonInBaseCell = index == refIndex && j == 0 && k == 0 && l == 0,
+          var isInitialCell = j == 0 && k == 0 && l == 0,
+            isRefIonInBaseCell = index == refIonIndex && isInitialCell,
             notSurfaceCell = growIndex > 0 && abs(j) < growIndex && abs(k) < growIndex && abs(l) < growIndex;
           if(isRefIonInBaseCell || notSurfaceCell){
             //Don't count distance for cell not on surface of expanding box. For inner boxes distance already in
             //comulSum variable.
             return 0;
           }
+
           var shiftVector = point(
                 j * refIonComps.a.x - k * refIonComps.b.x - l * refIonComps.c.x,
                 k * refIonComps.b.y - l * refIonComps.c.y,
@@ -81,6 +83,10 @@ var EUGEN = {};
                 ion.y + shiftVector.y,
                 ion.z + shiftVector.z);
           var r = distance(refIon, transIon);
+
+          if(isInitialCell && r < minR){
+            minR = r;
+          }
 
           if(isDebug){
             debugPoints.push([roundTo(transIon.x, 10e4), roundTo(transIon.y, 10e4), roundTo(transIon.z, 10e4),
@@ -92,12 +98,14 @@ var EUGEN = {};
         }).sum();
       }).sum();
 
-      var result = prefix * refIon.value * comulSum;
+      var totalWeightedDistance = refIon.value * comulSum,
+        energy = prefix * totalWeightedDistance,
+        madelung = minR * totalWeightedDistance;
 
       if(isDebug){
-        results.push([count, growIndex, result, debugPoints, roundTo(comulSum, 10e4)]);
+        results.push([count, growIndex, energy, debugPoints, roundTo(comulSum, 10e4)]);
       }else{
-        results.push(result);
+        results.push([energy, madelung]);
       }
 
     }
