@@ -1,10 +1,13 @@
 var EUGEN = {};
 (function(){
-  var e0 = 8.854187817e-12 * 10e10,
-      e = 1.602176565e-19,
-      Na = 6.0221415e23,
+  var CONST = {
+        e0: 8.854187817e-12 * 10e10,
+        e: 1.602176565e-19,
+        Na: 6.0221415e23,
+        convertFactor: 10e17,
+        PI: Math.PI
+      },
       sqrt = Math.sqrt,
-      convertFactor = 10e17,
       square = function(a) {
         return Math.pow(a, 2);
       },
@@ -21,8 +24,11 @@ var EUGEN = {};
     return Math.round(num * to) / to;
   }
 
-  function getXYZComponents(a, b, c, alpha, beta, gama){
-    var cos = Math.cos, sin = Math.sin,
+  function getXYZComponents(){
+    var cfg = EUGEN.config,
+        a = cfg.cellParams.a, b = cfg.cellParams.b, c = cfg.cellParams.c,
+        alpha = cfg.cellParams.alpha, beta = cfg.cellParams.beta, gama = cfg.cellParams.gama,
+        cos = Math.cos, sin = Math.sin,
         cy = roundToZero(c * (cos(alpha) - cos(beta) * cos(gama)) / sin (gama));
     return {
         a: point(a,a,a),
@@ -43,52 +49,64 @@ var EUGEN = {};
     return arr;
   }
 
-  EUGEN.countEes = function(ions, refIonIndex, cellParams, expRange, isDebug){
-    var refIon = ions[refIonIndex],
-        abs = Math.abs,
-        a = cellParams.a, b = cellParams.b, c = cellParams.c,
-        alpha = cellParams.alpha, beta = cellParams.beta, gama = cellParams.gama,
-        refIonComps = getXYZComponents(a,b,c,alpha,beta,gama),
-        prefix = convertFactor *  (Na * square(e)) / (4 * Math.PI * e0);
+  EUGEN.config = {
+    ions:[],
+    refIonIndex:0,
+    cellParams:{}, //a,b,c,alpha,beta,gama
+    expRange:1,
+    isDebug:false,
+    positionType:'relative' //relative/absolue
+  };
 
-    if(isDebug){
+  EUGEN.makeCalculation = function(){
+    var cfg = EUGEN.config,
+        refIon = cfg.ions[cfg.refIonIndex],
+        abs = Math.abs,
+        refIonComps = getXYZComponents(),
+        prefix = CONST.convertFactor *  (CONST.Na * square(CONST.e)) / (4 * CONST.PI * CONST.e0),
+        results = [], comulSum = 0, minR = Number.MAX_VALUE,
+        count, debugPoints,
+        totalWeightedDistance, energy, madelung;
+
+    if(cfg.isDebug){
       console.log("convertFactor *  (Na * square(e)) / (4 * Math.PI * e0) = ", prefix, " ,where");
-      console.log({convertFactor:convertFactor, Na:Na, square_e:square(e), e0:e0});
+      console.log({convertFactor:CONST.convertFactor, Na:CONST.Na, square_e:square(CONST.e), e0:CONST.e0});
     }
 
-    var results = [], comulSum = 0, minR = Number.MAX_VALUE;
-    for(var growIndex = 0; growIndex < expRange; growIndex++){
-      var count = 0, debugPoints = [];
+    for(var growIndex = 0; growIndex < cfg.expRange; growIndex++){
+      count = 0, debugPoints = [];
 
       comulSum += combinatorMap(-growIndex, growIndex, function(j, k, l){
-        if(isDebug){
-          count += ions.length;
+        if(cfg.isDebug){
+          count += cfg.ions.length;
         }
-        return ions.map(function(ion, index){
+        return cfg.ions.map(function(ion, index){
           var isInitialCell = j == 0 && k == 0 && l == 0,
-            isRefIonInBaseCell = index == refIonIndex && isInitialCell,
-            notSurfaceCell = growIndex > 0 && abs(j) < growIndex && abs(k) < growIndex && abs(l) < growIndex;
+            isRefIonInBaseCell = index == cfg.refIonIndex && isInitialCell,
+            notSurfaceCell = growIndex > 0 && abs(j) < growIndex && abs(k) < growIndex && abs(l) < growIndex,
+            shiftVector, transIon, r;
+
           if(isRefIonInBaseCell || notSurfaceCell){
             //Don't count distance for cell not on surface of expanding box. For inner boxes distance already in
             //comulSum variable.
             return 0;
           }
 
-          var shiftVector = point(
+          shiftVector = point(
                 j * refIonComps.a.x - k * refIonComps.b.x - l * refIonComps.c.x,
                 k * refIonComps.b.y - l * refIonComps.c.y,
                 l * refIonComps.c.z);
-          var transIon = point(
+          transIon = point(
                 ion.x + shiftVector.x,
                 ion.y + shiftVector.y,
                 ion.z + shiftVector.z);
-          var r = distance(refIon, transIon);
+          r = distance(refIon, transIon);
 
           if(isInitialCell && r < minR){
             minR = r;
           }
 
-          if(isDebug){
+          if(cfg.isDebug){
             debugPoints.push([roundTo(transIon.x, 10e4), roundTo(transIon.y, 10e4), roundTo(transIon.z, 10e4),
                 shiftVector.x + " (" + j + ")", shiftVector.y+ " (" + k + ")", shiftVector.z+ " (" + l + ")",
                 index, ion.value, roundTo(r, 10e4),  roundTo(ion.value / r, 10e4)]);
@@ -98,18 +116,18 @@ var EUGEN = {};
         }).sum();
       }).sum();
 
-      var totalWeightedDistance = refIon.value * comulSum,
-        energy = prefix * totalWeightedDistance,
-        madelung = minR * totalWeightedDistance;
+      totalWeightedDistance = refIon.value * comulSum;
+      energy = prefix * totalWeightedDistance;
+      madelung = minR * totalWeightedDistance;
 
-      if(isDebug){
+      if(cfg.isDebug){
         results.push([count, growIndex, energy, debugPoints, roundTo(comulSum, 10e4)]);
       }else{
         results.push([energy, madelung]);
       }
 
     }
-    
+
     return results;
   }
 }());
