@@ -17,8 +17,7 @@ function init(){
     outputObj = byId("output"),
     growSizeObj = byId("growSize"),
     button = byId("calculate"),
-    isDebugObj = byId("isDebugOn"),
-    positionType = valueByName("positionType");
+    isDebugObj = byId("isDebugOn");
 
   function parseInput(rawText){
     var rows = rawText.split(/\n/).map(function(line){
@@ -28,7 +27,8 @@ function init(){
         firstTwoRows = rows.shift().concat(rows.shift().map(toRad)),
         cellParams = vectorConstructor("a","b","c", "alpha","beta","gama")(firstTwoRows),
         tolerance = rows.shift(),
-        ions = rows.map(vectorConstructor("x","y","z","value"));
+        ions = rows.map(vectorConstructor("x","y","z","value")),
+        positionType = valueByName("positionType");
 
     if(positionType == 'relative'){
       ions = ions.map(function(ion){
@@ -51,7 +51,8 @@ function init(){
     var rawInput = inputObj.value,
         input = parseInput(rawInput),
         growSize = parseInt(growSizeObj.value, 10),
-        isDebug = isDebugObj.checked, results;
+        isDebug = isDebugObj.checked, results,
+        positionType = valueByName("positionType");
     
     EUGEN.config =  {
       ions: input.ions,
