@@ -29,9 +29,9 @@ var EUGEN = {};
         a = cfg.cellParams.a, b = cfg.cellParams.b, c = cfg.cellParams.c,
         alpha = cfg.cellParams.alpha, beta = cfg.cellParams.beta, gama = cfg.cellParams.gama,
         cos = Math.cos, sin = Math.sin,
-        cy = roundToZero(c * (cos(alpha) - cos(beta) * cos(gama)) / sin (gama));
+        cy = roundToZero(c * (cos(alpha) - cos(beta) * cos(gama)) / sin (gama) );
     return {
-        a: point(a,a,a),
+        a: point(a,0,0),
         b: point(roundToZero(b * cos(gama)), roundToZero(b * sin(gama)), 0),
         c: point(roundToZero(c * cos(beta)), cy, roundToZero(c * sqrt(square(sin(beta)) - square(cy/c))))
       };
@@ -62,7 +62,7 @@ var EUGEN = {};
     var cfg = EUGEN.config,
         refIon = cfg.ions[cfg.refIonIndex],
         abs = Math.abs,
-        refIonComps = getXYZComponents(),
+        refIonComps = getXYZComponents(), //put to ajax.
         prefix = CONST.convertFactor *  (CONST.Na * square(CONST.e)) / (4 * CONST.PI * CONST.e0),
         results = [], comulSum = 0, minR = Number.MAX_VALUE,
         count, debugPoints,
@@ -93,8 +93,8 @@ var EUGEN = {};
           }
 
           shiftVector = point(
-                j * refIonComps.a.x - k * refIonComps.b.x - l * refIonComps.c.x,
-                k * refIonComps.b.y - l * refIonComps.c.y,
+                j * refIonComps.a.x + k * refIonComps.b.x + l * refIonComps.c.x,
+                k * refIonComps.b.y + l * refIonComps.c.y,
                 l * refIonComps.c.z);
           transIon = point(
                 ion.x + shiftVector.x,
