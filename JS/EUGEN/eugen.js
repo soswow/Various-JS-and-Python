@@ -58,11 +58,25 @@ var EUGEN = {};
     positionType:'relative' //relative/absolue
   };
 
+  //TODO 1 Extract all trigonometry stuff, which is:
+  //  - Input: a,b,c,angles,unit cell, expand range
+  //  - Returns: List of points with values
+
+  //TODO Make EUGEN calculation function:
+  //  - Input: list of points, reference ion (by Index)
+  //  - Returns: EUGEN constant
+
+  //TODO Make Function:
+  //  - Input: list of points, two points for define plane on one point,
+  //      perpendicular to the line between points, and second point shows
+  //      plane side, from which points ... blah blah blah
+  //  - Returns: list of points from one side of the plane, defined by second point
+
   EUGEN.makeCalculation = function(){
     var cfg = EUGEN.config,
         refIon = cfg.ions[cfg.refIonIndex],
         abs = Math.abs,
-        refIonComps = getXYZComponents(), //put to ajax.
+        shiftComps = getXYZComponents(), //put to ajax.
         prefix = CONST.convertFactor *  (CONST.Na * square(CONST.e)) / (4 * CONST.PI * CONST.e0),
         results = [], comulSum = 0, minR = Number.MAX_VALUE,
         count, debugPoints,
@@ -93,9 +107,9 @@ var EUGEN = {};
           }
 
           shiftVector = point(
-                j * refIonComps.a.x + k * refIonComps.b.x + l * refIonComps.c.x,
-                k * refIonComps.b.y + l * refIonComps.c.y,
-                l * refIonComps.c.z);
+                j * shiftComps.a.x + k * shiftComps.b.x + l * shiftComps.c.x,
+                k * shiftComps.b.y + l * shiftComps.c.y,
+                l * shiftComps.c.z);
           transIon = point(
                 ion.x + shiftVector.x,
                 ion.y + shiftVector.y,
