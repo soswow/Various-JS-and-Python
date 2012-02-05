@@ -1,0 +1,59 @@
+<!DOCTYPE>
+<html>
+<head>
+  <title>Build Lattice</title>
+  <script src="../common.js" type="text/javascript"></script>
+  <script src="chemical-funcs.js" type="text/javascript"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    $(function(){
+      var crystal = chemicalFuncs.buildCrystal({
+        sides: {a:4.11, b:4.11, c:4.11},
+        angles: {alpha:90, beta:90, gamma:90},
+        ions: [
+          {x:0, y:0, z:0, value:1},
+          {x:2.055, y:2.055, z:2.055, value:-1}
+        ]
+      }, 1);
+
+      var tableBuilder = function(attrs){
+        var result = "<table " + (attrs && Object.keys(attrs).map(function(attrName){
+          return attrName + "=\""+attrs[attrName]+"\"";
+        }).join(" ")) + ">", that;
+        
+        return that = {
+          header: function(header){
+            that.addRow(header, "th");
+            return that;
+          },
+          addRow: function(cols, colTag){
+            colTag = colTag || "td";
+            var openTag = "<"+colTag+">",
+              closingTag = "</"+colTag+">";
+            result += "<tr>" + openTag +
+              cols.join(closingTag + openTag) +
+              closingTag + "</tr>";
+            return that;
+          },
+          finish: function(){
+            return result + "</table>";
+          }
+        };
+      };
+
+
+      var table = tableBuilder({border:"1px"}).header(["X","Y" ,"Z" ,"V" ,"Lx" ,"Ly" ,"Lz"]);
+      crystal.forEach(function(shiftLat){
+        table.addRow(["","","","",shiftLat.x, shiftLat.y, shiftLat.z]);
+        shiftLat.lattice.forEach(function(p){
+          table.addRow([p.x, p.y, p.z, p.value]);
+        });
+      });
+      $("body").html(table.finish());
+    });
+  </script>
+</head>
+<body>
+
+</body>
+</html>

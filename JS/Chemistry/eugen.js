@@ -59,7 +59,7 @@ var EUGEN = {};
   };
 
   //TODO 1 Extract all trigonometry stuff, which is:
-  //  - Input: a,b,c,angles,unit cell, expand range
+  //  - Input: a,b,c, angles,unit cell, expand range
   //  - Returns: List of points with values
 
   //TODO Make EUGEN calculation function:
