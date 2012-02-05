@@ -41,19 +41,18 @@ var chemicalFuncs = (function(){
         toRad = function(deg){ return deg * Math.PI / 180;},
         alpha = toRad(angles.alpha), beta = toRad(angles.beta), gamma = toRad(angles.gamma),
         cos = Math.cos, sin = Math.sin, sqrt = Math.sqrt,
-        rtz = utils.roundToZero,
-        cy = rtz(c * (cos(alpha) - cos(beta) * cos(gamma)) / sin (gamma) );
+        cy = c * (cos(alpha) - cos(beta) * cos(gamma)) / sin (gamma);
     return {
       a: utils.point(a,0,0),
       b: utils.point(
-        rtz(b * cos(gamma)),
-        rtz(b * sin(gamma)),
+        b * cos(gamma),
+        b * sin(gamma),
         0
       ),
       c: utils.point(
-        rtz(c * cos(beta)),
+        c * cos(beta),
         cy,
-        rtz(c * sqrt(rtz(sin(beta)) - utils.square(cy/c)))
+        c * sqrt(sin(beta) - utils.square(cy/c))
       )
     };
   };
