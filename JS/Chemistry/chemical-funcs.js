@@ -38,7 +38,8 @@ var chemicalFuncs = (function(){
    */
   var getXYZComponents = function(sides, angles){
     var a = sides.a, b = sides.b, c = sides.c,
-        alpha = angles.alpha, beta = angles.beta, gamma = angles.gamma,
+        toRad = function(deg){ return deg * Math.PI / 180;},
+        alpha = toRad(angles.alpha), beta = toRad(angles.beta), gamma = toRad(angles.gamma),
         cos = Math.cos, sin = Math.sin, sqrt = Math.sqrt,
         rtz = utils.roundToZero,
         cy = rtz(c * (cos(alpha) - cos(beta) * cos(gamma)) / sin (gamma) );
