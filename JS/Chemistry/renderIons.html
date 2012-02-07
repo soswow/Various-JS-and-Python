@@ -1,0 +1,195 @@
+<!DOCTYPE>
+<html>
+<head>
+  <title>Render Ions</title>
+  <style>
+    body {
+      background-color: #000000;
+      margin: 0;
+      overflow: hidden;
+    }
+    #container{
+      float:left;
+      width: 700px;
+      height: 500px;
+    }
+  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.js" type="text/javascript"></script>
+  <script src="http://mrdoob.github.com/three.js/build/Three.js" type="text/javascript"></script>
+  <script type="text/javascript">
+
+$(function(){
+  // set the scene size
+  var WIDTH = 700,
+      HEIGHT = 500;
+
+  // set some camera attributes
+  var VIEW_ANGLE = 75,
+      ASPECT = WIDTH / HEIGHT,
+      NEAR = 1,
+      FAR = 1000;
+
+  var container = $('#container');
+  var camera = new THREE.PerspectiveCamera(
+    VIEW_ANGLE,
+    ASPECT,
+    NEAR,
+    FAR
+  );
+  camera.position.z = 200;
+  camera.position.y = 40;
+  camera.position.x = 20;
+
+  var scene = new THREE.Scene();
+  scene.add(camera);
+
+  var material = new THREE.ParticleCanvasMaterial( {
+    color: 0xffffff,
+    program: function ( context ) {
+      context.beginPath();
+      context.arc( 0, 0, 1, 0, 2 * Math.PI, true);
+      context.closePath();
+      context.stroke();
+    }
+  });
+
+  var material2 = new THREE.ParticleCanvasMaterial( {
+    color: 0xff0000,
+    program: function ( context ) {
+      context.beginPath();
+      context.arc( 0, 0, 1, 0, 2 * Math.PI, true);
+      context.closePath();
+      context.fill();
+    }
+  });
+  
+  var particles = [], particle;
+//
+//  var i=0;
+//  for (var ix = 0; ix < 50; ix ++) {
+//    for (var iy = 0; iy < 50; iy ++) {
+//      particle = particles[i++] = new THREE.Particle(material);
+//      particle.position.x = ix * 100 - ( ( 50 * 100) / 2 );
+//      particle.position.z = iy * 100 - ( ( 50 * 100) / 2 );
+//      scene.add(particle);
+//    }
+//  }
+
+  var renderer = new THREE.CanvasRenderer();
+  renderer.setSize(WIDTH, HEIGHT);
+  container.append(renderer.domElement);
+
+  var mouseX=0, mouseY=0;
+  var halfX = WIDTH / 2;
+	var halfY = HEIGHT / 2;
+
+  $(document).mousemove(function(event){
+    mouseX = event.clientX - halfX;
+    mouseY = event.clientY - halfY;
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    render();
+  }
+  var deltaX, deltaY;
+  function render(){
+    deltaX = ( mouseX + 100 - camera.position.x ) * 0.1;
+    deltaY = ( - mouseY + 100 - camera.position.y ) * 0.1;
+    camera.position.x += deltaX;
+    camera.position.y += deltaY;
+
+    camera.lookAt(scene.position);
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  function updateParticles(){
+    var rawText = $(this).val();
+
+    var rows = rawText.split(/\n/).map(function(line){
+      return line.split(/\s{1,}/).map(parseFloat);
+    });
+
+    var particle;
+    particles.forEach(function(that){
+      scene.remove(that);
+    });
+    particles = [];
+    rows.map(function(row){
+      particle = new THREE.Particle(row[3]==1?material:material2);
+      particle.position.x = row[0]*10;
+      particle.position.y = row[1]*10;
+      particle.position.z = row[2]*10;
+      particles.push(particle);
+      scene.add(particle);
+    });
+  }
+  $("#input").change(updateParticles);
+  updateParticles.apply($("#input"));
+});
+
+  </script>
+</head>
+<body>
+<div style="float: left;">
+  <label for="input">Ions:<br/>
+  <textarea id="input" rows="15" cols="15">0	0	0	1
+2.055	2.055	2.055	-1
+0	0	4.11	1
+2.055	2.055	6.165	-1
+0	0	-4.11	1
+2.055	2.055	-2.055	-1
+0	4.11	0	1
+2.055	6.165	2.055	-1
+0	4.11	4.11	1
+2.055	6.165	6.165	-1
+0	4.11	-4.11	1
+2.055	6.165	-2.055	-1
+0	-4.11	0	1
+2.055	-2.055	2.055	-1
+0	-4.11	4.11	1
+2.055	-2.055	6.165	-1
+0	-4.11	-4.11	1
+2.055	-2.055	-2.055	-1
+4.11	0	0	1
+6.165	2.055	2.055	-1
+4.11	0	4.11	1
+6.165	2.055	6.165	-1
+4.11	0	-4.11	1
+6.165	2.055	-2.055	-1
+4.11	4.11	0	1
+6.165	6.165	2.055	-1
+4.11	4.11	4.11	1
+6.165	6.165	6.165	-1
+4.11	4.11	-4.11	1
+6.165	6.165	-2.055	-1
+4.11	-4.11	0	1
+6.165	-2.055	2.055	-1
+4.11	-4.11	4.11	1
+6.165	-2.055	6.165	-1
+4.11	-4.11	-4.11	1
+6.165	-2.055	-2.055	-1
+-4.11	0	0	1
+-2.055	2.055	2.055	-1
+-4.11	0	4.11	1
+-2.055	2.055	6.165	-1
+-4.11	0	-4.11	1
+-2.055	2.055	-2.055	-1
+-4.11	4.11	0	1
+-2.055	6.165	2.055	-1
+-4.11	4.11	4.11	1
+-2.055	6.165	6.165	-1
+-4.11	4.11	-4.11	1
+-2.055	6.165	-2.055	-1
+-4.11	-4.11	0	1
+-2.055	-2.055	2.055	-1
+-4.11	-4.11	4.11	1
+-2.055	-2.055	6.165	-1
+-4.11	-4.11	-4.11	1
+-2.055	-2.055	-2.055	-1</textarea>
+  </label>
+</div>
+<div id="container"></div>
+</body>
+</html>
