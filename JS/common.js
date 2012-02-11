@@ -14,7 +14,7 @@ function Vector(varNames, values){
       return map;
     }
   });
-  Object.defineProperty(this, 'keys', { value: varNames });
+  Object.defineProperty(this, 'keys', { value: varNames});
   Object.defineProperty(this, 'values', { value: values });
 }
 

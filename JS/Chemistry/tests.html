@@ -1,0 +1,98 @@
+<!DOCTYPE>
+<html>
+<head>
+  <title>Tests</title>
+  <script src="../common.js" type="text/javascript"></script>
+  <script src="chemical-funcs.js" type="text/javascript"></script>
+</head>
+<body>
+
+<script type="text/javascript">
+(function(){
+  var assertTrue = function(expected){
+    if(!expected){
+      throw "Assert failed: not " + expected;
+    }
+  };
+  var assert = function(expected, actual){
+    var isArrayExpected = Array.isArray(expected),
+      isArrayActual = Array.isArray(actual),
+      expectedKeys = [],
+      actualKeys = [], i;
+    try{
+      expectedKeys = Object.keys(expected);
+      actualKeys = Object.keys(actual);
+    }catch(e){}
+
+    if(isArrayExpected && isArrayActual){
+      if(expected.length === actual.length){
+        for(i=0;i < expected.length; i++){
+          assert(expected[i], actual[i]);
+        }
+        return true;
+      }
+    }else if(expectedKeys.length > 0 && expectedKeys.length === expectedKeys.length){
+      for(i=0; i<expectedKeys.length;i++){
+        if(actual.hasOwnProperty(expectedKeys[i])){
+          assert(expected[expectedKeys[i]], actual[actualKeys[i]]);
+        }else{
+          throw assertTrue(false);
+        }
+      }
+      return true;
+    }else if(!isArrayExpected && !Array.isArray(actual) &&
+      expectedKeys.length + expectedKeys.length == 0){
+      
+      if(expected === actual){
+        return true;
+      }
+    }
+    throw "Assert failed: " + expected +" !== "+actual;
+  };
+
+  var tests = {
+    testParseInput: function(){
+      var input1 = "10, 20, 30\n" +
+        "30, 40, 50\n" +
+        "1, 2, 3, 4\n" +
+        "6, 7, 8, 9";
+      var result = chemicalFuncs.parseInput(input1);
+
+      assertTrue(result.sides && result.angles &&  result.ions);
+      assert({a:10,b:20,c:30}, result.sides);
+      assert({alpha:30,beta:40,gamma:50}, result.angles);
+      assert([{x:1,y:2,z:3,value:4},{x:6,y:7,z:8,value:9}], result.ions);
+    },
+    testFlatCrystal: function(){
+      var input = [
+        {x:1,y:2,z:3,lattice:[
+          {x:4,y:5,z:6},
+          {x:4,y:5,z:6},
+          {x:4,y:5,z:6}
+        ]},
+        {x:1,y:2,z:3,lattice:[
+          {x:4,y:5,z:6},
+          {x:4,y:5,z:6},
+          {x:4,y:5,z:6}
+        ]}
+      ];
+      var output = chemicalFuncs.flatCrystal(input);
+      assert(6, output.length);
+      for(var i=0;i<6;i++){
+        assert({x:4,y:5,z:6}, output[i]);
+      }
+    }
+  };
+
+  Object.keys(tests).forEach(function(testFuncName){
+    try{
+      tests[testFuncName]();
+      document.write(testFuncName + " - OK<br/>");
+    }catch(e){
+      document.write(testFuncName + " - IS NOT OK - " + e + "<br/>");
+    }
+  })
+})();
+</script>
+</body>
+</html>

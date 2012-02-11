@@ -105,6 +105,32 @@ var chemicalFuncs = (function(){
         }));
       });
     },
+    flatCrystal: function(crystal){
+      var result = [];
+      crystal.forEach(function(lattice){
+        lattice.lattice.forEach(function(ion){
+          result.push(ion);
+        });
+      });
+      return result;
+    },
+
+    parseInput: function (rawText, configRows){
+      configRows = configRows || [
+        ['sides', ["a","b","c"]],
+        ['angles', ["alpha","beta","gamma"]]
+      ];
+      var rows = rawText.split(/\n/).map(function(line){
+        return line.split(/,\s*/).map(parseFloat);
+      }), result = {};
+
+      configRows.forEach(function(configRow, i){
+        result[configRow[0]] = vectorConstructor.apply(null, configRow[1])(rows[i])
+      });
+      var ionVector = vectorConstructor("x","y","z","value");
+      result.ions = rows.slice(Object.keys(configRows).length).map(ionVector);
+      return result;
+    },
 
     /**
      * Find closest ions to the plane from one side.
@@ -131,11 +157,63 @@ var chemicalFuncs = (function(){
 
     },
 
-    calcYAKUB: function(){
-
+    calcYAKUB: function(ions, refIonIndex, L, alpha, rm){
+      rm *= L;
+      var pow = Math.pow,
+        sum = function (arr){
+          var acum = 0;
+          arr.forEach(function(el){acum+=el;});
+          return acum;
+        },
+        leftSumFunc = function(ion){
+          return (3 * pow(ion.value,2)) / (4 * rm);
+        },
+        leftPart = -1 * sum(ions.map(leftSumFunc)),
+        refIon = ions[refIonIndex],
+        rightPermFunc = function(ion, index){
+          if(index == refIonIndex){
+            return 0;
+          }else{
+            var dist = utils.distance(ion, refIon);
+            if(dist < rm){
+              var distByRm = dist / rm,
+                left = (ion.value * refIon.value) / dist,
+                right = 1 + distByRm * (pow(distByRm,2) - 3) / 2;
+              
+              return left * right;
+            } else {
+              return 0;
+            }
+          }
+        },
+        rightPart = sum(ions.map(rightPermFunc));
+      console.log(leftPart, rightPart);
+      return 1390 * (leftPart + rightPart / 2);
     },
 
     calcFUKUDA: function(){
+      var rootOfPI = Math.sqrt(CONST.PI),
+        pow = Math.pow,
+        erfc = function(x){
+          if (-1.5 < x && x < 1.5){
+            return (rootOfPI - 2 * x + (2 / 3 * pow(x, 3)) - (pow(x,5) / 5) +
+              (pow(x, 7) / 21) - (pow(x, 9) / 108) + (pow(x,11) / 660)) / rootOfPI;
+          } else if (x <= -1.5){
+            return -2;
+          }else{
+            return 0;
+          }
+        },
+        V = function (r){
+          return erfc(alpha * r) / r;
+        },
+        F = function (r){
+          return (erfc(r * alpha) / pow(r,2)) +
+            (2 * alpha) / rootOfPI * Math.exp(-pow(alpha,2) * pow(r,2)) / r;
+        },
+        Vrm = V(rm),
+        Frm = F(rm);
+
     },
     
     forTests:{
