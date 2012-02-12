@@ -168,8 +168,6 @@ var chemicalFuncs = (function(){
         leftSumFunc = function(ion){
           return (3 * pow(ion.value,2)) / (4 * rm);
         },
-        leftPart = -1 * sum(ions.map(leftSumFunc)),
-        refIon = ions[refIonIndex],
         rightPermFunc = function(ion, index){
           if(index == refIonIndex){
             return 0;
@@ -185,10 +183,16 @@ var chemicalFuncs = (function(){
               return 0;
             }
           }
-        },
-        rightPart = sum(ions.map(rightPermFunc));
-      console.log(leftPart, rightPart);
-      return 1390 * (leftPart + rightPart / 2);
+        };
+
+      var refIon = ions[refIonIndex];
+//      var leftPart = -1 * sum(ions.map(leftSumFunc));
+      var leftPart = -1 * leftSumFunc(refIon);
+      var rightPart = sum(ions.map(rightPermFunc));
+
+      console.log(leftPart, rightPart); 
+      
+      return 1389.355 * 2 * (leftPart + rightPart / 2);
     },
 
     calcFUKUDA: function(){
