@@ -1,7 +1,7 @@
 <!DOCTYPE>
 <html>
 <head>
-  <title>Build Lattice</title>
+  <title>Build YAKUB/FUKUDA</title>
   <script src="../common.js" type="text/javascript"></script>
   <script src="chemical-funcs.js" type="text/javascript"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.js" type="text/javascript"></script>
@@ -16,14 +16,17 @@
           ['angles', ["alpha","beta","gamma"]]
         ]);
         var crystal = chemicalFuncs.flatCrystal(chemicalFuncs.buildCrystal(data, growSize));
-        var yakub = chemicalFuncs.calcYAKUB(crystal, 0, data.config.L, data.config.alpha, data.config.rm);
-        $("#result").html(yakub);
+        if($("#algorithm").val() === 'yakub'){
+          $("#result").html(chemicalFuncs.calcYAKUB(crystal, 0, data.config.L, data.config.rm));
+        }else if($("#algorithm").val() === 'fukuda'){
+          $("#result").html(chemicalFuncs.calcFUKUDA(crystal, 0, data.config.L, data.config.alpha, data.config.rm));
+        }
       });
     });
   </script>
 </head>
 <body>
-<h1>Calculate YAKUB</h1>
+<h1>Calculate YAKUB/FUKUDA</h1>
 <label for="input">
   Input:<br/>
 <em>L, alpha, rm<br/>
@@ -47,6 +50,12 @@ ions ...<br/></em>
   Grow size: <input id="growSize" value="0" />
 </label>
 <br/>
+<label for="algorithm">
+  <select id="algorithm">
+    <option value="yakub">YAKUB</option>
+    <option value="fukuda">FUKUDA</option>
+  </select>
+</label>
 <button id="submit">Generate</button>
 <br/>Result:
 <div id="result"></div>

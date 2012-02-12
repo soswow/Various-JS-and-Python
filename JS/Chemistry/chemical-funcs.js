@@ -26,8 +26,13 @@ var chemicalFuncs = (function(){
           this.square(a.y - b.y) +
           this.square(a.z - b.z)
         );
+      },
+      sum: function (arr){
+        var acum = 0;
+        arr.forEach(function(el){acum+=el;});
+        return acum;
       }
-    }
+    };
   })();
 
   /**
@@ -157,45 +162,36 @@ var chemicalFuncs = (function(){
 
     },
 
-    calcYAKUB: function(ions, refIonIndex, L, alpha, rm){
+    calcYAKUB: function(ions, refIonIndex, L, rm){
       rm *= L;
       var pow = Math.pow,
-        sum = function (arr){
-          var acum = 0;
-          arr.forEach(function(el){acum+=el;});
-          return acum;
-        },
         leftSumFunc = function(ion){
           return (3 * pow(ion.value,2)) / (4 * rm);
         },
         rightPermFunc = function(ion, index){
-          if(index == refIonIndex){
-            return 0;
-          }else{
+          if(index !== refIonIndex){
             var dist = utils.distance(ion, refIon);
             if(dist < rm){
               var distByRm = dist / rm,
                 left = (ion.value * refIon.value) / dist,
                 right = 1 + distByRm * (pow(distByRm,2) - 3) / 2;
-              
               return left * right;
-            } else {
-              return 0;
             }
           }
+          return 0;
         };
 
       var refIon = ions[refIonIndex];
-//      var leftPart = -1 * sum(ions.map(leftSumFunc));
       var leftPart = -1 * leftSumFunc(refIon);
-      var rightPart = sum(ions.map(rightPermFunc));
+      var rightPart = utils.sum(ions.map(rightPermFunc));
 
       console.log(leftPart, rightPart); 
       
       return 1389.355 * 2 * (leftPart + rightPart / 2);
     },
 
-    calcFUKUDA: function(){
+    calcFUKUDA: function(ions, refIonIndex, L, alpha, rm){
+      rm *= L;
       var rootOfPI = Math.sqrt(CONST.PI),
         pow = Math.pow,
         erfc = function(x){
@@ -213,11 +209,32 @@ var chemicalFuncs = (function(){
         },
         F = function (r){
           return (erfc(r * alpha) / pow(r,2)) +
-            (2 * alpha) / rootOfPI * Math.exp(-pow(alpha,2) * pow(r,2)) / r;
+            (2 * alpha) / rootOfPI * Math.exp(-1 * pow(alpha,2) * pow(r,2)) / r;
         },
         Vrm = V(rm),
-        Frm = F(rm);
+        Frm = F(rm),
+        leftSumFunc = function(ion){
+          return pow(ion.value, 2) * (Vrm / 2 +
+            Frm * rm / 4 +
+            alpha / rootOfPI);
+        },
+        rightSumFunc = function(ion, index){
+          if(index != refIonIndex){
+            var dist = utils.distance(ion, refIon);
+            if(dist < rm){
+              var left = ion.value * refIon.value;
+              var right = V(dist) - Vrm + Frm / (2 * rm) * (pow(dist, 2) - pow(rm, 2));
+              return left * right;
+            }
+          }
+          return 0;
+        };
 
+      var refIon = ions[refIonIndex];
+      var leftPart = -1 * leftSumFunc(refIon);
+      var rightPart = utils.sum(ions.map(rightSumFunc));
+
+      return 1389.355 * 2 * (leftPart + rightPart / 2);
     },
     
     forTests:{
