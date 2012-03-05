@@ -120,6 +120,10 @@ var EUGEN = {};
             minR = r;
           }
 
+          if (r < 0.05){
+            return 0;
+          }
+
           if(cfg.isDebug){
             debugPoints.push([roundTo(transIon.x, 10e4), roundTo(transIon.y, 10e4), roundTo(transIon.z, 10e4),
                 shiftVector.x + " (" + j + ")", shiftVector.y+ " (" + k + ")", shiftVector.z+ " (" + l + ")",
