@@ -1,5 +1,6 @@
 (function() {
-  var Robot, Simulation, TWOPI, animateStep, canvasHtml, canvasSize, context, cos, currentTurn, distance, exp, gauss, getFormData, log, max, mod, pi, pow, prepareCanvas, random, randomGauss, root, shouldStop, simulation, sin, sqrt, stearing, stepNum, sum, turnAfterSteps;
+  var Robot, Simulation, TWOPI, animateStep, canvasHtml, canvasSize, context, cos, currentTurn, distance, exp, gauss, getFormData, log, max, mod, pi, pow, prepareCanvas, random, randomGauss, root, shouldStop, simulation, sin, sqrt, stearing, stepNum, sum, turnAfterSteps,
+    __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   context = canvasHtml = simulation = null;
 
@@ -160,14 +161,38 @@
     };
 
     Simulation.prototype.draw = function(isRobotFirst) {
-      var i, particle, _len, _ref;
+      var color, i, k, key, maxDensity, obj, particle, particleDensity, tag, value, weight, _len, _ref;
       if (isRobotFirst == null) isRobotFirst = true;
       if (!isRobotFirst) this.myrobot.draw(10);
       this.drawLandmarks();
+      particleDensity = {};
       _ref = this.particles;
       for (i = 0, _len = _ref.length; i < _len; i++) {
         particle = _ref[i];
-        particle.draw(5);
+        tag = "" + (Math.round(particle.x)) + "-" + (Math.round(particle.y));
+        if (__indexOf.call(Object.keys(particleDensity), tag) >= 0) {
+          particleDensity[tag].density += 1;
+        } else {
+          particleDensity[tag] = {
+            density: 1,
+            particle: particle
+          };
+        }
+      }
+      maxDensity = max((function() {
+        var _results;
+        _results = [];
+        for (k in particleDensity) {
+          obj = particleDensity[k];
+          _results.push(obj.density);
+        }
+        return _results;
+      })());
+      for (key in particleDensity) {
+        value = particleDensity[key];
+        weight = value.density / maxDensity;
+        color = "rgba(0,0,0," + weight + ")";
+        value.particle.draw(5, color);
       }
       if (isRobotFirst) this.myrobot.draw(10);
       return this;

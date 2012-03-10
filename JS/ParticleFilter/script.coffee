@@ -99,8 +99,21 @@ class Simulation
     unless isRobotFirst
       @myrobot.draw(10)
     @drawLandmarks()
+    particleDensity = {}
     for particle,i in @particles
-      particle.draw(5)
+      tag = "#{Math.round(particle.x)}-#{Math.round(particle.y)}"
+      if tag in Object.keys particleDensity
+        particleDensity[tag].density += 1
+      else
+        particleDensity[tag] = density:1, particle: particle
+
+    maxDensity = max(obj.density for k, obj of particleDensity)
+
+    for key, value of particleDensity
+      weight = value.density / maxDensity
+      color = "rgba(0,0,0,#{weight})"
+      value.particle.draw(5, color)
+
     if isRobotFirst
       @myrobot.draw(10)
     @
