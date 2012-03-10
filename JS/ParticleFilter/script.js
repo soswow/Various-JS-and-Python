@@ -1,5 +1,5 @@
 (function() {
-  var Robot, Simulation, TWOPI, animateStep, canvasHtml, canvasSize, context, cos, distance, exp, gauss, log, max, mod, pi, pow, prepareCanvas, random, randomGauss, root, shouldStop, simulation, sin, sqrt, sum;
+  var Robot, Simulation, TWOPI, animateStep, canvasHtml, canvasSize, context, cos, currentTurn, distance, exp, gauss, getFormData, log, max, mod, pi, pow, prepareCanvas, random, randomGauss, root, shouldStop, simulation, sin, sqrt, stearing, stepNum, sum, turnAfterSteps;
 
   context = canvasHtml = simulation = null;
 
@@ -24,36 +24,48 @@
   sin = Math.sin;
 
   canvasSize = {
-    width: 500,
+    width: 700,
     height: 400
   };
 
   shouldStop = false;
 
+  getFormData = function() {
+    var getVal;
+    getVal = function(id) {
+      return eval(document.getElementById(id).value);
+    };
+    return {
+      particlesN: getVal('particlesN'),
+      landmarksN: getVal('landmarksN'),
+      goByOneStep: getVal('goByOneStep'),
+      particleForwardNoise: getVal('particleForwardNoise'),
+      particleTurnNoise: getVal('particleTurnNoise'),
+      particleSenseNoise: getVal('particleSenseNoise')
+    };
+  };
+
   root.reset = function() {
-    var N, landmarks;
+    var fd, i, landmarks;
     canvasHtml.width = canvasHtml.width;
     shouldStop = true;
-    landmarks = [
-      {
-        x: 100,
-        y: 100
-      }, {
-        x: 200,
-        y: 350
-      }, {
-        x: 400,
-        y: 370
-      }, {
-        x: 270,
-        y: 90
-      }, {
-        x: 350,
-        y: 200
+    fd = getFormData();
+    landmarks = (function() {
+      var _ref, _results;
+      _results = [];
+      for (i = 0, _ref = fd.landmarksN - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
+        _results.push({
+          x: Math.round(random() * canvasSize.width),
+          y: Math.round(random() * canvasSize.height)
+        });
       }
-    ];
-    N = 100;
-    return simulation = new Simulation(N, landmarks, null, 1, 0).initiateParticles().draw(false);
+      return _results;
+    })();
+    return simulation = new Simulation(fd.particlesN, landmarks, null, fd.goByOneStep, 0).initiateParticles({
+      forward_noise: fd.particleForwardNoise,
+      turn_noise: fd.particleTurnNoise,
+      sense_noise: fd.particleSenseNoise
+    }).draw(false);
   };
 
   root.init = function() {
@@ -74,15 +86,37 @@
     shouldStop = false;
     requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
     step = function(timestamp) {
-      animateStep();
-      if (!shouldStop) return requestAnimationFrame(step);
+      if (!shouldStop) {
+        animateStep();
+        return requestAnimationFrame(step);
+      }
     };
     return requestAnimationFrame(step);
   };
 
+  stepNum = 0;
+
+  currentTurn = 0;
+
+  turnAfterSteps = 20;
+
+  stearing = function() {
+    if (stepNum % turnAfterSteps === 0) {
+      if (currentTurn === 0) {
+        currentTurn = randomGauss(0, pi / 40);
+      } else {
+        currentTurn = 0;
+      }
+      turnAfterSteps = Math.round(randomGauss(40 - Math.abs(currentTurn * 400), 10));
+      turnAfterSteps || (turnAfterSteps = 1);
+    }
+    return stepNum += 1;
+  };
+
   animateStep = function() {
     canvasHtml.width = canvasHtml.width;
-    return simulation.step(randomGauss(0, pi / 20)).draw();
+    stearing();
+    return simulation.step(currentTurn).draw();
   };
 
   prepareCanvas = function() {
@@ -128,14 +162,14 @@
     Simulation.prototype.draw = function(isRobotFirst) {
       var i, particle, _len, _ref;
       if (isRobotFirst == null) isRobotFirst = true;
-      if (isRobotFirst) this.myrobot.draw(10);
+      if (!isRobotFirst) this.myrobot.draw(10);
       this.drawLandmarks();
       _ref = this.particles;
       for (i = 0, _len = _ref.length; i < _len; i++) {
         particle = _ref[i];
         particle.draw(5);
       }
-      if (!isRobotFirst) this.myrobot.draw(10);
+      if (isRobotFirst) this.myrobot.draw(10);
       return this;
     };
 
@@ -248,13 +282,18 @@
     };
 
     Robot.prototype.sense = function(landmarks) {
-      var lendmark, _i, _len, _results;
-      _results = [];
-      for (_i = 0, _len = landmarks.length; _i < _len; _i++) {
-        lendmark = landmarks[_i];
-        _results.push(distance(this, lendmark) + randomGauss(0, this.sense_noise));
-      }
-      return _results;
+      var lendmark;
+      return ((function() {
+        var _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = landmarks.length; _i < _len; _i++) {
+          lendmark = landmarks[_i];
+          _results.push(distance(this, lendmark) + randomGauss(0, this.sense_noise));
+        }
+        return _results;
+      }).call(this)).sort(function(a, b) {
+        return a - b;
+      });
     };
 
     Robot.prototype.move = function(turn, forward, makeNew) {
@@ -280,16 +319,25 @@
       return robot.set(x, y, orientation, this.color);
     };
 
-    Robot.prototype.measurement_prob = function(measurement, landmarks) {
-      var dist, i, landmark, pp, prob, probs, _len;
+    Robot.prototype.measurement_prob = function(measurements, landmarks) {
+      var dist, dists, i, landmark, prob, probs, _len;
+      dists = ((function() {
+        var _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = landmarks.length; _i < _len; _i++) {
+          landmark = landmarks[_i];
+          _results.push(distance(this, landmark));
+        }
+        return _results;
+      }).call(this)).sort(function(a, b) {
+        return a - b;
+      });
       probs = 1.0;
-      for (i = 0, _len = landmarks.length; i < _len; i++) {
-        landmark = landmarks[i];
-        dist = distance(this, landmark);
-        prob = gauss(dist, this.sense_noise, measurement[i]);
+      for (i = 0, _len = dists.length; i < _len; i++) {
+        dist = dists[i];
+        prob = gauss(dist, this.sense_noise, measurements[i]);
         probs *= prob;
       }
-      pp = Math.round(probs * 1000000) / 1000000;
       return probs;
     };
 

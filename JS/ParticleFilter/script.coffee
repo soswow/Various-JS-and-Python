@@ -13,17 +13,32 @@ exp = Math.exp
 cos = Math.cos
 sin = Math.sin
 
-canvasSize = width: 500, height: 400
+canvasSize = width: 700, height: 400
 shouldStop = false
+
+getFormData = ->
+  getVal = (id) -> eval document.getElementById(id).value
+  particlesN: getVal('particlesN'),
+  landmarksN: getVal('landmarksN'),
+  goByOneStep: getVal('goByOneStep'),
+  particleForwardNoise: getVal('particleForwardNoise'),
+  particleTurnNoise: getVal('particleTurnNoise'),
+  particleSenseNoise: getVal('particleSenseNoise')
 
 root.reset = ->
   #landmarks = [{x:100, y:100}, {x:200, y:350}]
   #landmarks = [{x:100, y:100}]
   canvasHtml.width = canvasHtml.width #clear the canvas
   shouldStop = true
-  landmarks = [{x:100, y:100}, {x:200, y:350}, {x:400, y:370}, {x:270, y:90}, {x:350, y:200}]
-  N = 100
-  simulation = new Simulation(N, landmarks, null, 1, 0).initiateParticles().draw(false)
+
+  fd = getFormData()
+  landmarks =  (x:Math.round(random()*canvasSize.width), y:Math.round(random()*canvasSize.height) for i in [0..fd.landmarksN-1])
+  simulation = new Simulation(fd.particlesN, landmarks, null, fd.goByOneStep, 0)
+    .initiateParticles
+      forward_noise: fd.particleForwardNoise,
+      turn_noise: fd.particleTurnNoise,
+      sense_noise: fd.particleSenseNoise
+    .draw false
 
 root.init = ->
   prepareCanvas()
@@ -35,15 +50,29 @@ root.start = ->
   requestAnimationFrame = window.requestAnimationFrame or window.mozRequestAnimationFrame or
                           window.webkitRequestAnimationFrame or window.msRequestAnimationFrame
   step = (timestamp) ->
-    animateStep()
     unless shouldStop
+      animateStep()
       requestAnimationFrame step
 
   requestAnimationFrame step
 
+stepNum = 0
+currentTurn = 0
+turnAfterSteps = 20
+stearing = ->
+  if stepNum % turnAfterSteps is 0
+    if currentTurn is 0
+      currentTurn = randomGauss(0, pi/40)
+    else
+      currentTurn = 0
+    turnAfterSteps = Math.round(randomGauss(40-Math.abs(currentTurn*400), 10))
+    turnAfterSteps or= 1
+  stepNum += 1
+
 animateStep = ->
   canvasHtml.width = canvasHtml.width #clear the canvas
-  simulation.step(randomGauss(0, pi/20)).draw()
+  stearing()
+  simulation.step(currentTurn).draw()
 
 prepareCanvas = ->
   canvasHtml = document.getElementById 'canvas'
@@ -67,12 +96,12 @@ class Simulation
     @
 
   draw: (isRobotFirst=true) ->
-    if isRobotFirst
+    unless isRobotFirst
       @myrobot.draw(10)
     @drawLandmarks()
     for particle,i in @particles
       particle.draw(5)
-    unless isRobotFirst
+    if isRobotFirst
       @myrobot.draw(10)
     @
 
@@ -161,7 +190,8 @@ class Robot
     @
 
   sense: (landmarks) ->
-    distance(@, lendmark) + randomGauss(0, @sense_noise) for lendmark in landmarks
+    (distance(@, lendmark) + randomGauss(0, @sense_noise) for lendmark in landmarks)
+      .sort (a,b)->a-b
 
   move: (turn, forward, makeNew=false) ->
     if forward < 0
@@ -188,16 +218,14 @@ class Robot
       robot = @
     robot.set x, y, orientation, @color
 
-  measurement_prob: (measurement, landmarks) ->
+  measurement_prob: (measurements, landmarks) ->
     # calculates how likely a measurement should be
+    dists = (distance(@, landmark) for landmark in landmarks)
+      .sort (a, b) -> a-b
     probs = 1.0
-    for landmark, i in landmarks
-      dist = distance(@, landmark)
-      prob = gauss dist, @sense_noise, measurement[i]
-      #console.log "Prob for landmark #{i} (#{landmark.x}, #{landmark.y}): ", "#{dist} vs #{measurement[i]}", "->", Math.round(prob * 1000000) / 1000000
+    for dist, i in dists
+      prob = gauss dist, @sense_noise, measurements[i]
       probs *= prob
-    pp = Math.round(probs * 1000000) / 1000000
-    #console.log("Prob product: #{pp}")
     probs
 
   toString: ->

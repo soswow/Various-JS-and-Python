@@ -6,9 +6,22 @@
 </head>
 <body onload="init()">
 <canvas id="canvas" style="border: 1px solid black; float:left;"></canvas>
-<button onclick="reset()">Reset</button>
-<button onclick="start()">Start</button>
-<button onclick="pause()">Pause</button>
-<button onclick="step()">Step Forward</button>
+<div style="padding-left: 10px; float:left;">
+  <fieldset>
+    <legend>Configuration</legend>
+    <label for="particlesN"># of particles</label>: <input id="particlesN" value="1000" size="6 " /><br/>
+    <label for="landmarksN"># of landmarks</label>: <input id="landmarksN" value="4" size="5"/><br/>
+    <label for="goByOneStep">Go on each step</label>: <input id="goByOneStep" value="1" size="3"/><br/>
+    <label for="particleForwardNoise">Particle forward noise</label>: <input id="particleForwardNoise" value="0.05" size="4"/><br/>
+    <label for="particleTurnNoise">Particle turn noise</label>: <input id="particleTurnNoise" value="pi/20" size="4"/><br/>
+    <label for="particleSenseNoise">Particle sense noise</label>: <input id="particleSenseNoise" value="5" size="4"/><br/>
+    <button onclick="reset()">Reset</button>
+    <button onclick="start()">Start</button>
+    <button onclick="pause()">Pause</button>
+    <button onclick="step()">Step Forward</button>
+  </fieldset>
+</div>
+
+
 </body>
 </html>
