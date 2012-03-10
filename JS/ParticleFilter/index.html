@@ -2,14 +2,21 @@
 <html>
 <head>
 <title>Particle Filter</title>
-<script src="script.js" type="text/javascript"></script>
+  <script src="script.js" type="text/javascript"></script>
+  <style>
+    #canvas{
+      border: 1px solid black;
+      float:left;
+      cursor: crosshair;
+    }
+  </style>
 </head>
 <body onload="init()">
-<canvas id="canvas" style="border: 1px solid black; float:left;"></canvas>
+<canvas id="canvas" onclick="toggleLandmark(event)" onmousemove="trackLandmark(event)"></canvas>
 <div style="padding-left: 10px; float:left;">
   <fieldset>
     <legend>Configuration</legend>
-    <label for="particlesN"># of particles</label>: <input id="particlesN" value="1000" size="6 " /><br/>
+    <label for="particlesN"># of particles</label>: <input id="particlesN" value="500" size="6 " /><br/>
     <label for="landmarksN"># of landmarks</label>: <input id="landmarksN" value="4" size="5"/><br/>
     <label for="goByOneStep">Go on each step</label>: <input id="goByOneStep" value="1" size="3"/><br/>
     <label for="particleForwardNoise">Particle forward noise</label>: <input id="particleForwardNoise" value="0.05" size="4"/><br/>

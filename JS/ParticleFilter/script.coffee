@@ -26,10 +26,8 @@ getFormData = ->
   particleSenseNoise: getVal('particleSenseNoise')
   fogOfWar: getVal('fogOfWar')
 
+simulation = []
 root.reset = ->
-  #landmarks = [{x:100, y:100}, {x:200, y:350}]
-  #landmarks = [{x:100, y:100}]
-  canvasHtml.width = canvasHtml.width #clear the canvas
   shouldStop = true
 
   fd = getFormData()
@@ -62,6 +60,32 @@ root.start = ->
       requestAnimationFrame step
 
   requestAnimationFrame step
+
+
+findLandmarkIndexAtLocation = (x,y) ->
+  for landmark, i in simulation.landmarks
+    lx = landmark.x
+    ly = landmark.y
+    if x > lx-5 and x < lx+5 and y > ly-5 and y < ly+5
+      return i
+
+root.toggleLandmark = (e) ->
+  x = e.offsetX
+  y = e.offsetY
+  landmarkIndex = findLandmarkIndexAtLocation x, y
+  if landmarkIndex?
+    simulation.landmarks.splice landmarkIndex, 1
+  else
+    simulation.landmarks.push x:x, y:y
+  simulation.draw()
+
+root.trackLandmark = (e) ->
+  x = e.offsetX
+  y = e.offsetY
+  if findLandmarkIndexAtLocation(x, y)?
+    e.target.style.cursor = 'pointer'
+  else
+    e.target.style.cursor = 'crosshair'
 
 stepNum = 0
 currentTurn = 0
@@ -104,9 +128,9 @@ class Simulation
     @
 
   draw: (isRobotFirst=true) ->
+    canvasHtml.width = canvasHtml.width #clear the canvas
     unless isRobotFirst
       @myrobot.draw(10)
-    @drawLandmarks()
     particleDensity = {}
     for particle,i in @particles
       tag = "#{Math.round(particle.x)}-#{Math.round(particle.y)}"
@@ -124,11 +148,12 @@ class Simulation
 
     if isRobotFirst
       @myrobot.draw(10)
+    @drawLandmarks()
     @
 
   drawLandmarks: (withLabels=false) ->
     size = 10 / 2
-    context.strokeStyle = "black"
+    context.strokeStyle = "red"
     for landmark,i in @landmarks
       context.beginPath()
       x = landmark.x + 0.5

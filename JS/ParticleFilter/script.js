@@ -1,5 +1,5 @@
 (function() {
-  var Robot, Simulation, TWOPI, animateStep, canvasHtml, canvasSize, context, cos, currentTurn, distance, exp, gauss, getFormData, log, max, mod, pi, pow, prepareCanvas, random, randomGauss, root, shouldStop, simulation, sin, sqrt, stearing, stepNum, sum, turnAfterSteps,
+  var Robot, Simulation, TWOPI, animateStep, canvasHtml, canvasSize, context, cos, currentTurn, distance, exp, findLandmarkIndexAtLocation, gauss, getFormData, log, max, mod, pi, pow, prepareCanvas, random, randomGauss, root, shouldStop, simulation, sin, sqrt, stearing, stepNum, sum, turnAfterSteps,
     __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   context = canvasHtml = simulation = null;
@@ -47,9 +47,10 @@
     };
   };
 
+  simulation = [];
+
   root.reset = function() {
     var fd, i, landmarks;
-    canvasHtml.width = canvasHtml.width;
     shouldStop = true;
     fd = getFormData();
     landmarks = (function() {
@@ -101,6 +102,44 @@
       }
     };
     return requestAnimationFrame(step);
+  };
+
+  findLandmarkIndexAtLocation = function(x, y) {
+    var i, landmark, lx, ly, _len, _ref;
+    _ref = simulation.landmarks;
+    for (i = 0, _len = _ref.length; i < _len; i++) {
+      landmark = _ref[i];
+      lx = landmark.x;
+      ly = landmark.y;
+      if (x > lx - 5 && x < lx + 5 && y > ly - 5 && y < ly + 5) return i;
+    }
+  };
+
+  root.toggleLandmark = function(e) {
+    var landmarkIndex, x, y;
+    x = e.offsetX;
+    y = e.offsetY;
+    landmarkIndex = findLandmarkIndexAtLocation(x, y);
+    if (landmarkIndex != null) {
+      simulation.landmarks.splice(landmarkIndex, 1);
+    } else {
+      simulation.landmarks.push({
+        x: x,
+        y: y
+      });
+    }
+    return simulation.draw();
+  };
+
+  root.trackLandmark = function(e) {
+    var x, y;
+    x = e.offsetX;
+    y = e.offsetY;
+    if (findLandmarkIndexAtLocation(x, y) != null) {
+      return e.target.style.cursor = 'pointer';
+    } else {
+      return e.target.style.cursor = 'crosshair';
+    }
   };
 
   stepNum = 0;
@@ -170,8 +209,8 @@
     Simulation.prototype.draw = function(isRobotFirst) {
       var color, i, k, key, maxDensity, obj, particle, particleDensity, tag, value, weight, _len, _ref;
       if (isRobotFirst == null) isRobotFirst = true;
+      canvasHtml.width = canvasHtml.width;
       if (!isRobotFirst) this.myrobot.draw(10);
-      this.drawLandmarks();
       particleDensity = {};
       _ref = this.particles;
       for (i = 0, _len = _ref.length; i < _len; i++) {
@@ -202,6 +241,7 @@
         value.particle.draw(5, color, false);
       }
       if (isRobotFirst) this.myrobot.draw(10);
+      this.drawLandmarks();
       return this;
     };
 
@@ -209,7 +249,7 @@
       var i, landmark, size, x, y, _len, _ref;
       if (withLabels == null) withLabels = false;
       size = 10 / 2;
-      context.strokeStyle = "black";
+      context.strokeStyle = "red";
       _ref = this.landmarks;
       for (i = 0, _len = _ref.length; i < _len; i++) {
         landmark = _ref[i];
