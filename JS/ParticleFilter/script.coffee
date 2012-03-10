@@ -24,6 +24,7 @@ getFormData = ->
   particleForwardNoise: getVal('particleForwardNoise'),
   particleTurnNoise: getVal('particleTurnNoise'),
   particleSenseNoise: getVal('particleSenseNoise')
+  fogOfWar: getVal('fogOfWar')
 
 root.reset = ->
   #landmarks = [{x:100, y:100}, {x:200, y:350}]
@@ -33,7 +34,13 @@ root.reset = ->
 
   fd = getFormData()
   landmarks =  (x:Math.round(random()*canvasSize.width), y:Math.round(random()*canvasSize.height) for i in [0..fd.landmarksN-1])
-  simulation = new Simulation(fd.particlesN, landmarks, null, fd.goByOneStep, 0)
+  simulation = new Simulation(
+      particlesNum: fd.particlesN,
+      landmarks: landmarks,
+      noiseConfig: null,
+      initMoveBy: fd.goByOneStep,
+      initMakeTurn: 0,
+      fogOfWar: fd.fogOfWar)
     .initiateParticles
       forward_noise: fd.particleForwardNoise,
       turn_noise: fd.particleTurnNoise,
@@ -81,18 +88,19 @@ prepareCanvas = ->
   context = canvasHtml?.getContext? '2d'
 
 class Simulation
-  constructor: (particlesNum, landmarks, noiseConfig, initMoveBy=1, initMakeTurn=0)->
-    @N = particlesNum
-    @landmarks = landmarks
-    @myrobot = new Robot().setColor 'red'
-    @myrobot.set_noise(noiseConfig) if noiseConfig
+  constructor: (config)->
+    @N = config.particlesNum
+    @landmarks = config.landmarks
+    @fogOfWar = config.fogOfWar or 350
+    @myrobot = new Robot().setColor('red').setFogOfWar config.fogOfWar
+    @myrobot.set_noise(config.noiseConfig) if config.noiseConfig
     @particles = []
-    @moveBy = initMoveBy
-    @makeTurn = initMakeTurn
+    @moveBy = config.initMoveBy or 1
+    @makeTurn = config.initMakeTurn or 0
 
   initiateParticles: (noiseConfig, color='gray') ->
     noiseConfig or= forward_noise: 0.05, turn_noise: pi/20, sense_noise: 5
-    @particles = (new Robot().setColor(color).set_noise noiseConfig for i in [0..@N])
+    @particles = (new Robot().setColor(color).setFogOfWar(250).set_noise noiseConfig for i in [0..@N])
     @
 
   draw: (isRobotFirst=true) ->
@@ -112,7 +120,7 @@ class Simulation
     for key, value of particleDensity
       weight = value.density / maxDensity
       color = "rgba(0,0,0,#{weight})"
-      value.particle.draw(5, color)
+      value.particle.draw(5, color, false)
 
     if isRobotFirst
       @myrobot.draw(10)
@@ -196,6 +204,8 @@ class Robot
 
   setColor: (@color) -> @
 
+  setFogOfWar: (@fogRadius)-> @
+
   set_noise: (noiseConfig) ->
     @forward_noise = noiseConfig.forward_noise
     @turn_noise = noiseConfig.turn_noise
@@ -203,7 +213,7 @@ class Robot
     @
 
   sense: (landmarks) ->
-    (distance(@, lendmark) + randomGauss(0, @sense_noise) for lendmark in landmarks)
+    (distance(@, lendmark) + randomGauss(0, @sense_noise) for lendmark in landmarks when distance(@, lendmark) < @fogRadius)
       .sort (a,b)->a-b
 
   move: (turn, forward, makeNew=false) ->
@@ -229,7 +239,7 @@ class Robot
       })
     else
       robot = @
-    robot.set x, y, orientation, @color
+    robot.setFogOfWar(@fogRadius).set x, y, orientation, @color
 
   measurement_prob: (measurements, landmarks) ->
     # calculates how likely a measurement should be
@@ -237,20 +247,26 @@ class Robot
       .sort (a, b) -> a-b
     probs = 1.0
     for dist, i in dists
-      prob = gauss dist, @sense_noise, measurements[i]
-      probs *= prob
+      if i < measurements.length-1
+        prob = gauss dist, @sense_noise, measurements[i]
+        probs *= prob
     probs
 
   toString: ->
     "[x=#{@x} y=#{@y} orient=#{@orientation}]"
 
-  draw: (R = 10, color = @color) ->
+  draw: (R = 10, color = @color, drawFog=true) ->
 #    console.log(@x, @y, R, color)
     context.beginPath()
     context.strokeStyle = color
     context.arc @x, @y, R, 0, TWOPI, true
     context.moveTo @x, @y
     context.lineTo @x + R * cos(@orientation), @y + R * sin(@orientation)
+    if @fogRadius and drawFog
+      context.strokeStyle = "gray"
+      context.moveTo @x+@fogRadius, @y
+      context.arc @x, @y, @fogRadius, 0, TWOPI, true
+      context.strokeStyle = color
     context.closePath()
     context.stroke()
 

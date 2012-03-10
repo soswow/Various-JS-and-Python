@@ -42,7 +42,8 @@
       goByOneStep: getVal('goByOneStep'),
       particleForwardNoise: getVal('particleForwardNoise'),
       particleTurnNoise: getVal('particleTurnNoise'),
-      particleSenseNoise: getVal('particleSenseNoise')
+      particleSenseNoise: getVal('particleSenseNoise'),
+      fogOfWar: getVal('fogOfWar')
     };
   };
 
@@ -62,7 +63,14 @@
       }
       return _results;
     })();
-    return simulation = new Simulation(fd.particlesN, landmarks, null, fd.goByOneStep, 0).initiateParticles({
+    return simulation = new Simulation({
+      particlesNum: fd.particlesN,
+      landmarks: landmarks,
+      noiseConfig: null,
+      initMoveBy: fd.goByOneStep,
+      initMakeTurn: 0,
+      fogOfWar: fd.fogOfWar
+    }).initiateParticles({
       forward_noise: fd.particleForwardNoise,
       turn_noise: fd.particleTurnNoise,
       sense_noise: fd.particleSenseNoise
@@ -129,16 +137,15 @@
 
   Simulation = (function() {
 
-    function Simulation(particlesNum, landmarks, noiseConfig, initMoveBy, initMakeTurn) {
-      if (initMoveBy == null) initMoveBy = 1;
-      if (initMakeTurn == null) initMakeTurn = 0;
-      this.N = particlesNum;
-      this.landmarks = landmarks;
-      this.myrobot = new Robot().setColor('red');
-      if (noiseConfig) this.myrobot.set_noise(noiseConfig);
+    function Simulation(config) {
+      this.N = config.particlesNum;
+      this.landmarks = config.landmarks;
+      this.fogOfWar = config.fogOfWar || 350;
+      this.myrobot = new Robot().setColor('red').setFogOfWar(config.fogOfWar);
+      if (config.noiseConfig) this.myrobot.set_noise(config.noiseConfig);
       this.particles = [];
-      this.moveBy = initMoveBy;
-      this.makeTurn = initMakeTurn;
+      this.moveBy = config.initMoveBy || 1;
+      this.makeTurn = config.initMakeTurn || 0;
     }
 
     Simulation.prototype.initiateParticles = function(noiseConfig, color) {
@@ -153,7 +160,7 @@
         var _ref, _results;
         _results = [];
         for (i = 0, _ref = this.N; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
-          _results.push(new Robot().setColor(color).set_noise(noiseConfig));
+          _results.push(new Robot().setColor(color).setFogOfWar(250).set_noise(noiseConfig));
         }
         return _results;
       }).call(this);
@@ -192,7 +199,7 @@
         value = particleDensity[key];
         weight = value.density / maxDensity;
         color = "rgba(0,0,0," + weight + ")";
-        value.particle.draw(5, color);
+        value.particle.draw(5, color, false);
       }
       if (isRobotFirst) this.myrobot.draw(10);
       return this;
@@ -299,6 +306,11 @@
       return this;
     };
 
+    Robot.prototype.setFogOfWar = function(fogRadius) {
+      this.fogRadius = fogRadius;
+      return this;
+    };
+
     Robot.prototype.set_noise = function(noiseConfig) {
       this.forward_noise = noiseConfig.forward_noise;
       this.turn_noise = noiseConfig.turn_noise;
@@ -313,7 +325,9 @@
         _results = [];
         for (_i = 0, _len = landmarks.length; _i < _len; _i++) {
           lendmark = landmarks[_i];
-          _results.push(distance(this, lendmark) + randomGauss(0, this.sense_noise));
+          if (distance(this, lendmark) < this.fogRadius) {
+            _results.push(distance(this, lendmark) + randomGauss(0, this.sense_noise));
+          }
         }
         return _results;
       }).call(this)).sort(function(a, b) {
@@ -341,7 +355,7 @@
       } else {
         robot = this;
       }
-      return robot.set(x, y, orientation, this.color);
+      return robot.setFogOfWar(this.fogRadius).set(x, y, orientation, this.color);
     };
 
     Robot.prototype.measurement_prob = function(measurements, landmarks) {
@@ -360,8 +374,10 @@
       probs = 1.0;
       for (i = 0, _len = dists.length; i < _len; i++) {
         dist = dists[i];
-        prob = gauss(dist, this.sense_noise, measurements[i]);
-        probs *= prob;
+        if (i < measurements.length - 1) {
+          prob = gauss(dist, this.sense_noise, measurements[i]);
+          probs *= prob;
+        }
       }
       return probs;
     };
@@ -370,14 +386,21 @@
       return "[x=" + this.x + " y=" + this.y + " orient=" + this.orientation + "]";
     };
 
-    Robot.prototype.draw = function(R, color) {
+    Robot.prototype.draw = function(R, color, drawFog) {
       if (R == null) R = 10;
       if (color == null) color = this.color;
+      if (drawFog == null) drawFog = true;
       context.beginPath();
       context.strokeStyle = color;
       context.arc(this.x, this.y, R, 0, TWOPI, true);
       context.moveTo(this.x, this.y);
       context.lineTo(this.x + R * cos(this.orientation), this.y + R * sin(this.orientation));
+      if (this.fogRadius && drawFog) {
+        context.strokeStyle = "gray";
+        context.moveTo(this.x + this.fogRadius, this.y);
+        context.arc(this.x, this.y, this.fogRadius, 0, TWOPI, true);
+        context.strokeStyle = color;
+      }
       context.closePath();
       return context.stroke();
     };
