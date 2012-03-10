@@ -122,9 +122,10 @@ class Simulation
     @moveBy = config.initMoveBy or 1
     @makeTurn = config.initMakeTurn or 0
 
-  initiateParticles: (noiseConfig, color='gray') ->
+  initiateParticles: (noiseConfig=@noiseConfig, color='gray') ->
     noiseConfig or= forward_noise: 0.05, turn_noise: pi/20, sense_noise: 5
-    @particles = (new Robot().setColor(color).setFogOfWar(250).set_noise noiseConfig for i in [0..@N])
+    @noiseConfig = noiseConfig
+    @particles = (new Robot().setColor(color).setFogOfWar(@fogOfWar).set_noise noiseConfig for i in [0..@N])
     @
 
   draw: (isRobotFirst=true) ->
@@ -193,14 +194,17 @@ class Simulation
     index = Math.round(random() * @N)
     beta = 0
     mw = max(weights)
-    for i in [0..@N]
-      beta += random() * 2.0 * mw
-      while beta > weights[index]
-        beta -= weights[index]
-        index = (index + 1) % @N
-      resampledParticles.push particles[index]
+    if mw > 0
+      for i in [0..@N]
+        beta += random() * 2.0 * mw
+        while beta > weights[index]
+          beta -= weights[index]
+          index = (index + 1) % @N
+        resampledParticles.push particles[index]
+      @particles = resampledParticles
+    else
+      @.initiateParticles()
 
-    @particles = resampledParticles
     @.draw false
 
 
@@ -238,7 +242,7 @@ class Robot
     @
 
   sense: (landmarks) ->
-    (distance(@, lendmark) + randomGauss(0, @sense_noise) for lendmark in landmarks when distance(@, lendmark) < @fogRadius)
+    (distance(@, landmark) + randomGauss(0, @sense_noise) for landmark in landmarks when distance(@, landmark) < @fogRadius)
       .sort (a,b)->a-b
 
   move: (turn, forward, makeNew=false) ->
@@ -268,13 +272,14 @@ class Robot
 
   measurement_prob: (measurements, landmarks) ->
     # calculates how likely a measurement should be
-    dists = (distance(@, landmark) for landmark in landmarks)
+    dists = (distance(@, landmark) for landmark in landmarks when distance(@, landmark) < @fogRadius)
       .sort (a, b) -> a-b
     probs = 1.0
+    unless dists.length is measurements.length
+      return 0
     for dist, i in dists
-      if i < measurements.length-1
-        prob = gauss dist, @sense_noise, measurements[i]
-        probs *= prob
+      prob = gauss dist, @sense_noise, measurements[i]
+      probs *= prob
     probs
 
   toString: ->

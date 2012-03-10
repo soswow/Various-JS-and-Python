@@ -189,17 +189,19 @@
 
     Simulation.prototype.initiateParticles = function(noiseConfig, color) {
       var i;
+      if (noiseConfig == null) noiseConfig = this.noiseConfig;
       if (color == null) color = 'gray';
       noiseConfig || (noiseConfig = {
         forward_noise: 0.05,
         turn_noise: pi / 20,
         sense_noise: 5
       });
+      this.noiseConfig = noiseConfig;
       this.particles = (function() {
         var _ref, _results;
         _results = [];
         for (i = 0, _ref = this.N; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
-          _results.push(new Robot().setColor(color).setFogOfWar(250).set_noise(noiseConfig));
+          _results.push(new Robot().setColor(color).setFogOfWar(this.fogOfWar).set_noise(noiseConfig));
         }
         return _results;
       }).call(this);
@@ -296,15 +298,19 @@
       index = Math.round(random() * this.N);
       beta = 0;
       mw = max(weights);
-      for (i = 0, _ref = this.N; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
-        beta += random() * 2.0 * mw;
-        while (beta > weights[index]) {
-          beta -= weights[index];
-          index = (index + 1) % this.N;
+      if (mw > 0) {
+        for (i = 0, _ref = this.N; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
+          beta += random() * 2.0 * mw;
+          while (beta > weights[index]) {
+            beta -= weights[index];
+            index = (index + 1) % this.N;
+          }
+          resampledParticles.push(particles[index]);
         }
-        resampledParticles.push(particles[index]);
+        this.particles = resampledParticles;
+      } else {
+        this.initiateParticles();
       }
-      this.particles = resampledParticles;
       return this.draw(false);
     };
 
@@ -359,14 +365,14 @@
     };
 
     Robot.prototype.sense = function(landmarks) {
-      var lendmark;
+      var landmark;
       return ((function() {
         var _i, _len, _results;
         _results = [];
         for (_i = 0, _len = landmarks.length; _i < _len; _i++) {
-          lendmark = landmarks[_i];
-          if (distance(this, lendmark) < this.fogRadius) {
-            _results.push(distance(this, lendmark) + randomGauss(0, this.sense_noise));
+          landmark = landmarks[_i];
+          if (distance(this, landmark) < this.fogRadius) {
+            _results.push(distance(this, landmark) + randomGauss(0, this.sense_noise));
           }
         }
         return _results;
@@ -405,19 +411,20 @@
         _results = [];
         for (_i = 0, _len = landmarks.length; _i < _len; _i++) {
           landmark = landmarks[_i];
-          _results.push(distance(this, landmark));
+          if (distance(this, landmark) < this.fogRadius) {
+            _results.push(distance(this, landmark));
+          }
         }
         return _results;
       }).call(this)).sort(function(a, b) {
         return a - b;
       });
       probs = 1.0;
+      if (dists.length !== measurements.length) return 0;
       for (i = 0, _len = dists.length; i < _len; i++) {
         dist = dists[i];
-        if (i < measurements.length - 1) {
-          prob = gauss(dist, this.sense_noise, measurements[i]);
-          probs *= prob;
-        }
+        prob = gauss(dist, this.sense_noise, measurements[i]);
+        probs *= prob;
       }
       return probs;
     };
