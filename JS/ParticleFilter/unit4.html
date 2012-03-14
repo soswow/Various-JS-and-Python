@@ -1,0 +1,47 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Expansion grid</title>
+  <link rel="stylesheet" href="jquery-ui-1.8.18.custom.css" type="text/css" media="all" />
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
+  <script src="gridworld.js"></script>
+  <style>
+    #grid{
+      border: 1px solid black;
+      float:left;
+      cursor: crosshair;
+      position: relative;
+    }
+    #grid canvas{
+      position: absolute;
+      top:0;
+      left: 0;
+    }
+    #cellSizeSlider{
+      float:left;
+      margin-right: 20px;
+    }
+
+  </style>
+</head>
+<body>
+<div id="cellSizeSlider" style="height:200px;"></div>
+<div id="grid">
+  <canvas id="canvas_hover"></canvas>
+  <canvas id="canvas_policy"></canvas>
+  <canvas id="canvas_walls"></canvas>
+  <canvas id="canvas_grid"></canvas>
+</div>
+<div style="padding-left: 10px; float:left;">
+  <fieldset>
+    <legend>Configuration</legend>
+    Current click action:
+    <div id="actionsSet">
+      <input type="radio" id="makeWallsId" name="actionType" value="makeWalls" checked="checked" /><label for="makeWallsId">Making walls</label>
+      <input type="radio" id="startFinishDrag" name="actionType" /><label for="startFinishDrag">Start -&gt; Finish</label>
+    </div>
+  </fieldset>
+</div>
+</body>
+</html>
