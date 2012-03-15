@@ -7,6 +7,9 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
   <script src="gridworld.js"></script>
   <style>
+    .ui-button-text {
+       font-size:13px;
+    }
     #grid{
       border: 1px solid black;
       float:left;
@@ -29,6 +32,7 @@
 <div id="cellSizeSlider" style="height:200px;"></div>
 <div id="grid">
   <canvas id="canvas_hover"></canvas>
+  <canvas id="canvas_values"></canvas>
   <canvas id="canvas_policy"></canvas>
   <canvas id="canvas_walls"></canvas>
   <canvas id="canvas_grid"></canvas>
@@ -39,11 +43,16 @@
     Click action:
     <div id="actionsSet">
       <input type="radio" id="makeWallsId" name="actionType" value="walls" checked="checked" /><label for="makeWallsId">Making walls</label>
-      <input type="radio" id="initActionId" name="actionType" value="init" /><label for="initActionId">Init</label>
-      <input type="radio" id="goalActionId" name="actionType" value="goal" /><label for="goalActionId">Goal</label>
+      <input type="radio" id="initActionId" name="actionType" value="init" /><label for="initActionId">Put init</label>
+      <input type="radio" id="goalActionId" name="actionType" value="goal" /><label for="goalActionId">Put goal</label>
     </div>
     <button id="clearEverythingId">Clear everything</button>
     <button id="makeBorderWallId">Make a border wall</button>
+    <div id="visibilitySet">
+      <input type="checkbox" id="showValuesAsNumbersId" name="visibility" value="valueAsNumber" /><label for="showValuesAsNumbersId">Value as a number</label>
+      <input type="checkbox" id="showValuesAsColorId" name="visibility" value="valueAsColor" checked="checked"/><label for="showValuesAsColorId">Value as a color</label>
+      <input type="checkbox" id="showPolicyId" name="visibility" value="policy" checked="checked"/><label for="showPolicyId">Show policy</label>
+    </div>
 
   </fieldset>
 </div>
