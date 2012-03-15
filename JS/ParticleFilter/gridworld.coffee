@@ -24,16 +24,15 @@ $ ->
     orientation: "vertical",
     range: "min",
     min: 10,
-    max: 100,
+    max: 50,
     value: 50,
     start: ->
       world.clear()
       true
     slide: (event, ui ) ->
       world.changeCellSize ui.value
+      world.draw()
       true
-    stop: ->
-      world.drawAllWalls()
 
   gridMouseDown = false
   $("#grid").mousedown ->
@@ -48,30 +47,62 @@ $ ->
     world.click e.offsetX, e.offsetY
 
   $("#actionsSet").buttonset()
+  $("[name=actionType]").click ->
+    world.clickAction = @value
+  $("#clearEverythingId").button().click -> world.clear().clearData()
+  $("#makeBorderWallId").button().click ->
+    world.makeBorderWall()
 
   world = new GridWorld(50, width, height)
 
 gridColors =
   hover: 'rgba(0,0,0,0.2)',
-  wall: 'rgba(0,0,0,0.6)'
+  wall: 'rgba(0,0,0,0.6)',
+  init: 'rgba(0,255,0,0.8)',
+  goal: 'rgba(255,0,0,0.8)'
 
 class GridWorld
   constructor: (@cellSize, @w, @h) ->
     @setSizes()
     @data = make2DArray @width, @height, ''
-    @hovered = x: -1, y: -1
-    @oldHovered = x: -1, y: -1
+    @hovered = p -1, -1
+    @oldHovered = p -1, -1
     @clickAction = "walls"
-    @drawGrid()
+    @resetInitGoal()
+    @updatePolicy()
+    @makeBorderWall()
+    @draw()
+
+  resetInitGoal: ->
+    @init = p 1, 1
+    @goal = p @width-2, @height-2
+
+  updatePolicy: (init=@init, goal=@goal) ->
+    unless equalPoints init, @init
+      @data[@init.y][@init.x] = ''
+      @init = init
+    @data[@init.y][@init.x] = 'init'
+
+    unless equalPoints goal, @goal
+      @data[@goal.y][@goal.x] = ''
+      @goal = goal
+    @data[@goal.y][@goal.x] = 'goal'
+    @
 
   setSizes: ->
-    @width = Math.floor @w / @cellSize
-    @height = Math.floor @h / @cellSize
+    @width = Math.ceil @w / @cellSize
+    @height = Math.ceil @h / @cellSize
 
   iterateDataCells: (func) ->
-    for y in [1..@data.length]
-        for x in [1..@data[0].length]
+    for y in [0..@data.length-1]
+        for x in [0..@data[0].length-1]
           func x, y
+
+  clearData: ->
+    @resetInitGoal()
+    @iterateDataCells (x, y) =>
+      @data[y][x] = ''
+    @
 
   clear: (ctxId) ->
     if ctxId
@@ -83,13 +114,15 @@ class GridWorld
     @
 
   changeCellSize: (@cellSize) ->
+    oldHeight = @height
     @setSizes()
-    newdata = make2DArray @width, @height
-    @iterateDataCells (x, y) =>
-      if y < @height and x < @width
-        if y < @data.length and x < @data[0].length
-          newdata[y][x] = @data[y][x]
-    @data = newdata
+    unless oldHeight is @height
+      newdata = make2DArray @width, @height
+      @iterateDataCells (x, y) =>
+        if y < @height and x < @width
+          if y < @data.length and x < @data[0].length
+            newdata[y][x] = @data[y][x]
+      @data = newdata
     @drawGrid()
     @
 
@@ -121,14 +154,26 @@ class GridWorld
     xy = @xyByCell x:x, y:y
     if @data[y][x] == 'wall'
       @data[y][x] = ''
-      @drawCellAt xy, 'walls'
     else
       @data[y][x] = 'wall'
-      @drawCellAt xy,  'walls', gridColors.wall
+    @drawAllWalls()
+
+  makeBorderWall: ->
+    for x in [0..@width-1]
+      for y in [0..@height-1]
+        if x is 0 or y is 0 or x is @width-1 or y is @height-1
+          @data[y][x] = 'wall'
+    @drawAllWalls()
 
   click: (x, y) ->
     pos = @cellByXY x, y
-    @toggleWallAt pos.x, pos.y
+    switch @clickAction
+      when 'walls' then @toggleWallAt pos.x, pos.y
+      when 'init'
+        @updatePolicy(pos, @goal).drawPolicy()
+      when 'goal'
+        @updatePolicy(@init, pos).drawPolicy()
+#      when 'walls' then @toggleWallAt pos.x, pos.y
 
   drawAllWalls: ->
     @clear 'walls'
@@ -136,6 +181,14 @@ class GridWorld
       if @data[y]?[x] is 'wall'
         pos = @xyByCell x:x, y:y
         @drawCellAt pos, 'walls', gridColors.wall
+
+  drawPolicy: ->
+    @clear 'policy'
+    @iterateDataCells (x, y) =>
+      pos = @xyByCell x:x, y:y
+      switch @data[y]?[x]
+        when 'init' then @drawCellAt pos, 'policy', gridColors.init
+        when 'goal' then @drawCellAt pos, 'policy', gridColors.goal
 
   drawGrid: ->
     @clear 'grid'
@@ -162,5 +215,12 @@ class GridWorld
     fillCell = @xyByCell @hovered
     @drawCellAt fillCell, 'hover', gridColors.hover
 
+  draw: ->
+    @drawGrid()
+    @drawAllWalls()
+    @drawPolicy()
+
+equalPoints = (p1, p2) -> p1.x is p2.x and p1.y is p2.y
+p = (x, y) -> x:x, y:y
 make2DArray = (w, h, fill = 0) ->
-  ((fill for i in [1..Math.floor(w)]) for j in [1..Math.floor(h)])
+  ((fill for i in [1..Math.ceil(w)]) for j in [1..Math.ceil(h)])

@@ -36,11 +36,15 @@
 <div style="padding-left: 10px; float:left;">
   <fieldset>
     <legend>Configuration</legend>
-    Current click action:
+    Click action:
     <div id="actionsSet">
-      <input type="radio" id="makeWallsId" name="actionType" value="makeWalls" checked="checked" /><label for="makeWallsId">Making walls</label>
-      <input type="radio" id="startFinishDrag" name="actionType" /><label for="startFinishDrag">Start -&gt; Finish</label>
+      <input type="radio" id="makeWallsId" name="actionType" value="walls" checked="checked" /><label for="makeWallsId">Making walls</label>
+      <input type="radio" id="initActionId" name="actionType" value="init" /><label for="initActionId">Init</label>
+      <input type="radio" id="goalActionId" name="actionType" value="goal" /><label for="goalActionId">Goal</label>
     </div>
+    <button id="clearEverythingId">Clear everything</button>
+    <button id="makeBorderWallId">Make a border wall</button>
+
   </fieldset>
 </div>
 </body>
