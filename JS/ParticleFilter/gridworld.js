@@ -108,6 +108,7 @@
       this.valueAsNumber = false;
       this.valueAsColor = true;
       this.showPolicy = true;
+      this.policyFails = true;
       this.resetInitStructure();
       this.updatePolicy();
       this.makeBorderWall();
@@ -320,7 +321,7 @@
       });
       policy = this.getDataLayer('policy');
       algo = new SearchAlgos(policy, this.init, this.goal);
-      _ref = algo.search(), values = _ref[0], policy = _ref[1];
+      _ref = algo.search(), values = _ref[0], policy = _ref[1], this.policyFails = _ref[2];
       this.iterateDataCells(function(x, y) {
         var policyItem;
         _this.data[y][x].value = values[y][x];
@@ -394,11 +395,11 @@
     };
 
     GridWorld.prototype.drawPolicy = function() {
-      var c,
+      var c, fontSize, pos,
         _this = this;
       this.clear('policy');
       c = ctx.policy;
-      return this.iterateDataCells(function(x, y) {
+      this.iterateDataCells(function(x, y) {
         var policy, pos;
         pos = _this.xyByCell(p(x, y));
         policy = _this.policyAt(p(x, y));
@@ -409,10 +410,20 @@
             return _this.drawCellAt(pos, 'policy', gridColors.goal);
           default:
             if (policy !== 'wall') {
-              if (_this.showPolicy) return _this.drawArrowAt(pos, policy);
+              if (_this.showPolicy && !_this.policyFails) {
+                return _this.drawArrowAt(pos, policy);
+              }
             }
         }
       });
+      if (this.policyFails) {
+        fontSize = this.cellSize / 2.5;
+        c.font = "" + fontSize + "px sans-serif";
+        c.strokeStyle = 'red';
+        c.fillStyle = 'red';
+        pos = this.xyByCell(this.init);
+        return c.fillText('FAIL', pos.x + 5, pos.y + this.cellSize / 2);
+      }
     };
 
     GridWorld.prototype.drawGrid = function() {
@@ -463,8 +474,8 @@
           if ((_ref = _this.policyAt(p(x, y))) === 'wall' || _ref === 'init' || _ref === 'goal') {
             return;
           }
-          color = value === megaValue ? 'rgb(50,50,200)' : (oppacity = value * 0.7 / maxValue, "rgba(20,20,255," + oppacity + ")");
-          return _this.drawCellAt(pos, 'values', color);
+          color = value === megaValue ? oppacity = 0 : oppacity = value * 0.7 / maxValue;
+          return _this.drawCellAt(pos, 'values', "rgba(20,20,255," + oppacity + ")");
         });
       }
       return this.iterateDataCells(function(x, y) {
@@ -508,7 +519,7 @@
     }
 
     SearchAlgos.prototype.search = function() {
-      var act, action, closed, d, expand, found, g, g2, i, next, open, policy, resign, step, x2, xy, y2, _len, _ref;
+      var act, action, closed, d, expand, fail, found, g, g2, i, next, open, policy, resign, step, x2, xy, y2, _len, _ref;
       closed = make2DArray(this.width, this.height, 0);
       closed[this.init.y][this.init.x] = 1;
       open = [[0, this.init]];
@@ -552,16 +563,21 @@
         }
       }
       xy = this.goal;
-      while (!equalPoints(xy, this.init)) {
+      fail = false;
+      while (!equalPoints(xy, this.init) && !fail) {
         act = action[xy.y][xy.x];
         x2 = xy.x - this.delta[act][0];
         y2 = xy.y - this.delta[act][1];
         xy = p(x2, y2);
-        if (!(x2 >= 0 && x2 < this.width && y2 >= 0 && y2 < this.height)) break;
+        if (!(x2 >= 0 && x2 < this.width && y2 >= 0 && y2 < this.height)) {
+          fail = true;
+          break;
+        }
         if (equalPoints(xy, this.init)) break;
         policy[y2][x2] = this.deltaName[act];
       }
-      return [expand, policy];
+      if (fail) policy = make2DArray(this.width, this.height, '');
+      return [expand, policy, fail];
     };
 
     return SearchAlgos;

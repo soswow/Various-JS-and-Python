@@ -96,6 +96,7 @@ class GridWorld
     @valueAsNumber = false
     @valueAsColor = true
     @showPolicy = true
+    @policyFails = true
     @resetInitStructure()
     @updatePolicy()
     @makeBorderWall()
@@ -238,7 +239,7 @@ class GridWorld
         @data[y][x].policy = ''
     policy =@getDataLayer('policy')
     algo = new SearchAlgos(policy, @init, @goal)
-    [values, policy] = algo.search()
+    [values, policy, @policyFails] = algo.search()
     @iterateDataCells (x, y) =>
       @data[y][x].value = values[y][x]
       policyItem = policy[y][x]
@@ -306,8 +307,17 @@ class GridWorld
         when 'goal' then @drawCellAt pos, 'policy', gridColors.goal
         else
           unless policy is 'wall'
-            if @showPolicy
+            if @showPolicy and not @policyFails
               @drawArrowAt pos, policy
+
+    if @policyFails
+      fontSize = @cellSize / 2.5
+      c.font = "#{fontSize}px sans-serif"
+      c.strokeStyle = 'red'
+      c.fillStyle = 'red'
+      pos = @xyByCell @init
+      c.fillText 'FAIL', pos.x+5, pos.y + @cellSize/2
+
 
   drawGrid: ->
     @clear 'grid'
@@ -350,14 +360,12 @@ class GridWorld
         value = @valueAt p(x,y)
         if @policyAt(p(x,y)) in ['wall','init','goal']
           return
-
         color =
           if value is megaValue
-            'rgb(50,50,200)'
+            oppacity = 0
           else
             oppacity = value * 0.7 / maxValue
-            "rgba(20,20,255,#{oppacity})"
-        @drawCellAt pos, 'values', color
+        @drawCellAt pos, 'values', "rgba(20,20,255,#{oppacity})"
 
     @iterateDataCells (x, y) =>
       pos = @xyByCell p(x,y)
@@ -424,19 +432,21 @@ class SearchAlgos
                 action[y2][x2] = i
 
     xy = @goal
-    while not equalPoints xy, @init
+    fail = false
+    while not equalPoints(xy, @init) and not fail
       act = action[xy.y][xy.x]
       x2 = xy.x - @delta[act][0]
       y2 = xy.y - @delta[act][1]
       xy = p(x2, y2)
       unless x2 >= 0 and x2 < @width and y2 >= 0 and y2 < @height
+        fail = true
         break
       if equalPoints xy, @init
         break
       policy[y2][x2] = @deltaName[act]
-
-
-    return [expand, policy]
+    if fail
+      policy = make2DArray @width, @height, ''
+    return [expand, policy, fail]
 
 #Math function extraction
 random = Math.random
