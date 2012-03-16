@@ -230,10 +230,7 @@
         this.oldHovered = this.hovered;
         this.hovered = hovered;
         this.drawHover();
-        if (mouseDown) {
-          this.toggleWallAt(hovered.x, hovered.y);
-          return this.updateValues();
-        }
+        if (mouseDown) return this.click(x, y);
       }
     };
 
@@ -269,18 +266,37 @@
       return this.drawAllWalls();
     };
 
+    GridWorld.prototype.cellDataAt = function(xy) {
+      return this.data[xy.y][xy.x];
+    };
+
+    GridWorld.prototype.policyAt = function(xy) {
+      return this.cellDataAt(xy).policy;
+    };
+
+    GridWorld.prototype.valueAt = function(xy) {
+      return this.cellDataAt(xy).value;
+    };
+
     GridWorld.prototype.click = function(x, y) {
-      var pos;
+      var policy, pos;
       pos = this.cellByXY(x, y);
+      policy = this.policyAt(pos);
       switch (this.clickAction) {
         case 'walls':
-          this.toggleWallAt(pos.x, pos.y);
+          if (policy !== 'init' && policy !== 'goal') {
+            this.toggleWallAt(pos.x, pos.y);
+          }
           break;
         case 'init':
-          this.updatePolicy(pos, this.goal).drawPolicy();
+          if (policy !== 'wall' && policy !== 'goal') {
+            this.updatePolicy(pos, this.goal).drawPolicy();
+          }
           break;
         case 'goal':
-          this.updatePolicy(this.init, pos).drawPolicy();
+          if (policy !== 'wall' && policy !== 'init') {
+            this.updatePolicy(this.init, pos).drawPolicy();
+          }
       }
       return this.updateValues();
     };
@@ -385,7 +401,7 @@
       return this.iterateDataCells(function(x, y) {
         var policy, pos;
         pos = _this.xyByCell(p(x, y));
-        policy = _this.data[y][x].policy;
+        policy = _this.policyAt(p(x, y));
         switch (policy) {
           case 'init':
             return _this.drawCellAt(pos, 'policy', gridColors.init);
@@ -436,15 +452,15 @@
       this.iterateDataCells(function(x, y) {
         var pos, value;
         pos = _this.xyByCell(p(x, y));
-        value = _this.data[y][x].value;
+        value = _this.valueAt(p(x, y));
         if (value < megaValue && value > maxValue) return maxValue = value;
       });
       if (this.valueAsColor) {
         this.iterateDataCells(function(x, y) {
           var color, oppacity, pos, value, _ref;
           pos = _this.xyByCell(p(x, y));
-          value = _this.data[y][x].value;
-          if ((_ref = _this.data[y][x].policy) === 'wall' || _ref === 'init' || _ref === 'goal') {
+          value = _this.valueAt(p(x, y));
+          if ((_ref = _this.policyAt(p(x, y))) === 'wall' || _ref === 'init' || _ref === 'goal') {
             return;
           }
           color = value === megaValue ? 'rgb(50,50,200)' : (oppacity = value * 0.7 / maxValue, "rgba(20,20,255," + oppacity + ")");
@@ -454,8 +470,8 @@
       return this.iterateDataCells(function(x, y) {
         var pos, value, _ref;
         pos = _this.xyByCell(p(x, y));
-        value = _this.data[y][x].value;
-        if (((_ref = _this.data[y][x].policy) === 'wall' || _ref === 'init' || _ref === 'goal') || value === megaValue) {
+        value = _this.valueAt(p(x, y));
+        if (((_ref = _this.policyAt(p(x, y))) === 'wall' || _ref === 'init' || _ref === 'goal') || value === megaValue) {
           return;
         }
         if (_this.valueAsNumber) {

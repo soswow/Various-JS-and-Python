@@ -179,8 +179,7 @@ class GridWorld
       @hovered = hovered
       @drawHover()
       if mouseDown
-        @toggleWallAt hovered.x, hovered.y
-        @updateValues()
+        @click x, y
 
   drawCellAt: (xy, ctxId, color) ->
     ctx[ctxId].fillStyle = color
@@ -204,14 +203,28 @@ class GridWorld
           @data[y][x].policy = 'wall'
     @drawAllWalls()
 
+  cellDataAt: (xy) ->
+    @data[xy.y][xy.x]
+
+  policyAt: (xy) ->
+    @cellDataAt(xy).policy
+
+  valueAt: (xy) ->
+    @cellDataAt(xy).value
+
   click: (x, y) ->
     pos = @cellByXY x, y
+    policy = @policyAt pos
     switch @clickAction
-      when 'walls' then @toggleWallAt pos.x, pos.y
+      when 'walls'
+        unless policy in ['init', 'goal']
+          @toggleWallAt pos.x, pos.y
       when 'init'
-        @updatePolicy(pos, @goal).drawPolicy()
+        unless policy in ['wall', 'goal']
+          @updatePolicy(pos, @goal).drawPolicy()
       when 'goal'
-        @updatePolicy(@init, pos).drawPolicy()
+        unless policy in ['wall', 'init']
+          @updatePolicy(@init, pos).drawPolicy()
     @updateValues()
 
   getDataLayer: (layer) ->
@@ -287,7 +300,7 @@ class GridWorld
     c = ctx.policy
     @iterateDataCells (x, y) =>
       pos = @xyByCell p(x,y)
-      policy = @data[y][x].policy
+      policy = @policyAt p(x,y)
       switch policy
         when 'init' then @drawCellAt pos, 'policy', gridColors.init
         when 'goal' then @drawCellAt pos, 'policy', gridColors.goal
@@ -327,15 +340,15 @@ class GridWorld
     maxValue = 0
     @iterateDataCells (x, y) =>
       pos = @xyByCell p(x,y)
-      value = @data[y][x].value
+      value = @valueAt p(x,y)
       if value < megaValue and value > maxValue
         maxValue = value
 
     if @valueAsColor
       @iterateDataCells (x, y) =>
         pos = @xyByCell p(x,y)
-        value = @data[y][x].value
-        if @data[y][x].policy in ['wall','init','goal']
+        value = @valueAt p(x,y)
+        if @policyAt(p(x,y)) in ['wall','init','goal']
           return
 
         color =
@@ -348,8 +361,8 @@ class GridWorld
 
     @iterateDataCells (x, y) =>
       pos = @xyByCell p(x,y)
-      value = @data[y][x].value
-      if @data[y][x].policy in ['wall','init','goal'] or value is megaValue
+      value = @valueAt p(x,y)
+      if @policyAt(p(x,y)) in ['wall','init','goal'] or value is megaValue
         return
       if @valueAsNumber
         c.font = 'normal 8px'
