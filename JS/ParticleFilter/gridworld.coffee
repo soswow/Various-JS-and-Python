@@ -67,6 +67,14 @@ $ ->
     world.makeBorderWall()
     world.updateValues()
 
+  $("#aStar").click ->
+    world.aStarEnabled = @checked
+    world.updateValues()
+  $("[name=hFunc]").click ->
+    world.aStarHFunc = parseInt @value, 10
+    world.updateValues()
+
+
   world = new GridWorld(50, width, height)
 
 initWalls = [
@@ -97,6 +105,8 @@ class GridWorld
     @valueAsColor = true
     @showPolicy = true
     @policyFails = true
+    @aStarEnabled = false
+    @aStarHFunc = 1
     @resetInitStructure()
     @updatePolicy()
     @makeBorderWall()
@@ -208,10 +218,10 @@ class GridWorld
     @data[xy.y][xy.x]
 
   policyAt: (xy) ->
-    @cellDataAt(xy).policy
+    @cellDataAt(xy)?.policy
 
   valueAt: (xy) ->
-    @cellDataAt(xy).value
+    @cellDataAt(xy)?.value
 
   click: (x, y) ->
     pos = @cellByXY x, y
@@ -244,7 +254,7 @@ class GridWorld
         @data[y][x].policy = ''
     policy = @getDataLayer('policy')
     algo = new SearchAlgos(policy, @init, @goal)
-    [values, policy, @policyFails] = algo.search()
+    [values, policy, @policyFails] = algo.search if @aStarEnabled then @aStarHFunc else 0
     @iterateDataCells (x, y) =>
       @data[y][x].value = values[y][x]
       policyItem = policy[y][x]
@@ -402,10 +412,19 @@ class SearchAlgos
     @deltaName = ['up','left','down','right']
     @cost = 1
 
-  search: ->
+  heuristicsFuncs: (index, xy) ->
+    [x,y] = [xy.x, xy.y]
+    switch index
+      when 1 then distance xy, @goal
+      when 2 then Math.abs(x - @goal.x) + Math.abs(y - @goal.y)
+      when 3 then Math.abs(x - @goal.x) * Math.abs(y - @goal.y)
+      else 0
+
+
+  search: (hIndex=0)->
     closed = make2DArray @width, @height, 0
     closed[@init.y][@init.x] = 1
-    open = [[0, @init]]
+    open = [[0, @init, distance @init, @goal]]
     found = false  # flag that is set when search is complete
     resign = false # flag set if we can't find expand
     expand = make2DArray @width, @height, megaValue
@@ -420,7 +439,7 @@ class SearchAlgos
         open.reverse()
         next = open.pop()
         xy = next[1]
-        g = next[0]
+        g = next[2]
         expand[xy.y][xy.x] = step
         step += 1
         if equalPoints  xy, @goal
@@ -431,10 +450,14 @@ class SearchAlgos
             y2 = xy.y + d[1]
             if x2 >= 0 and x2 < @width and y2 >= 0 and y2 < @height and closed[y2][x2] is 0
               unless @data[y2][x2] is 'wall'
+                xy2 = p(x2, y2)
+                h = if hIndex > 0 then @heuristicsFuncs hIndex, xy2 else 0
                 g2 = g + @cost
-                open.push [g2, p(x2, y2)]
+                gh = g2 + h
+                open.push [gh, xy2, g2]
                 closed[y2][x2] = 1
                 action[y2][x2] = i
+
     xy = @goal
     fail = false
     while not equalPoints(xy, @init) and not fail
@@ -456,6 +479,8 @@ class SearchAlgos
 #Math function extraction
 random = Math.random
 
+distance = (from, to) ->
+  Math.sqrt (Math.pow((from.x - to.x), 2) + Math.pow((from.y - to.y), 2))
 dp = (policy='', value=megaValue) -> policy:policy, value:value #Stands fore Data point
 p = (x, y) -> x:x, y:y  #Stands for point
 equalPoints = (p1, p2) -> p1.x is p2.x and p1.y is p2.y

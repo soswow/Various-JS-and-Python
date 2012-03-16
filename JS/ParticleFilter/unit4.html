@@ -43,7 +43,7 @@
     <br/>
     <div id="cellSizeSlider" style="width:170px;"></div><br/>
     <br/>
-    <label>Action of click / drag:</label><br/>
+    <label>Action on click / drag:</label><br/>
     <!--<div id="actionsSet">-->
       <input type="radio" id="makeWallsId" name="actionType" value="wallsAdd" checked="checked" /><label for="makeWallsId">Making walls</label><br/>
       <input type="radio" id="deleteWallsId" name="actionType" value="wallsRemove" /><label for="deleteWallsId">Remove walls</label><br/>
@@ -57,6 +57,11 @@
       <input type="checkbox" id="showValuesAsColorId" name="visibility" value="valueAsColor" checked="checked"/><label for="showValuesAsColorId">Value as a color</label><br/>
       <input type="checkbox" id="showPolicyId" name="visibility" value="policy" checked="checked"/><label for="showPolicyId">Show policy</label><br/>
     <!--</div>-->
+    <br/>
+    <label for="aStar">A* enabled</label> <input type="checkbox" id="aStar" name="actionType" value="astar" /> with H function:<br/>
+    <input type="radio" id="hFunc1Id" name="hFunc" value="1" checked="checked" /><label for="hFunc1Id">Distance</label><br/>
+    <input type="radio" id="hFunc2Id" name="hFunc" value="2"  /><label for="hFunc2Id">abs (x - goal_x) + abs(y - goal_y)</label><br/>
+    <input type="radio" id="hFunc3Id" name="hFunc" value="3"  /><label for="hFunc3Id">abs (x - goal_x) * abs(y - goal_y)</label><br/>
     <br/>
     <button id="clearEverythingId">Clear everything</button>
     <button id="makeBorderWallId">Make a border wall</button>

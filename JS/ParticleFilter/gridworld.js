@@ -1,5 +1,5 @@
 (function() {
-  var GridWorld, SearchAlgos, canvases, ctx, dp, equalPoints, gridColors, height, initWalls, make2DArray, megaValue, p, random, width, world;
+  var GridWorld, SearchAlgos, canvases, ctx, distance, dp, equalPoints, gridColors, height, initWalls, make2DArray, megaValue, p, random, width, world;
 
   ctx = {};
 
@@ -80,6 +80,14 @@
       world.makeBorderWall();
       return world.updateValues();
     });
+    $("#aStar").click(function() {
+      world.aStarEnabled = this.checked;
+      return world.updateValues();
+    });
+    $("[name=hFunc]").click(function() {
+      world.aStarHFunc = parseInt(this.value, 10);
+      return world.updateValues();
+    });
     return world = new GridWorld(50, width, height);
   });
 
@@ -107,6 +115,8 @@
       this.valueAsColor = true;
       this.showPolicy = true;
       this.policyFails = true;
+      this.aStarEnabled = false;
+      this.aStarHFunc = 1;
       this.resetInitStructure();
       this.updatePolicy();
       this.makeBorderWall();
@@ -259,11 +269,13 @@
     };
 
     GridWorld.prototype.policyAt = function(xy) {
-      return this.cellDataAt(xy).policy;
+      var _ref;
+      return (_ref = this.cellDataAt(xy)) != null ? _ref.policy : void 0;
     };
 
     GridWorld.prototype.valueAt = function(xy) {
-      return this.cellDataAt(xy).value;
+      var _ref;
+      return (_ref = this.cellDataAt(xy)) != null ? _ref.value : void 0;
     };
 
     GridWorld.prototype.click = function(x, y) {
@@ -315,7 +327,7 @@
       });
       policy = this.getDataLayer('policy');
       algo = new SearchAlgos(policy, this.init, this.goal);
-      _ref = algo.search(), values = _ref[0], policy = _ref[1], this.policyFails = _ref[2];
+      _ref = algo.search(this.aStarEnabled ? this.aStarHFunc : 0), values = _ref[0], policy = _ref[1], this.policyFails = _ref[2];
       this.iterateDataCells(function(x, y) {
         var policyItem;
         _this.data[y][x].value = values[y][x];
@@ -512,11 +524,27 @@
       this.cost = 1;
     }
 
-    SearchAlgos.prototype.search = function() {
-      var act, action, closed, d, expand, fail, found, g, g2, i, next, open, policy, resign, step, x2, xy, y2, _len, _ref;
+    SearchAlgos.prototype.heuristicsFuncs = function(index, xy) {
+      var x, y, _ref;
+      _ref = [xy.x, xy.y], x = _ref[0], y = _ref[1];
+      switch (index) {
+        case 1:
+          return distance(xy, this.goal);
+        case 2:
+          return Math.abs(x - this.goal.x) + Math.abs(y - this.goal.y);
+        case 3:
+          return Math.abs(x - this.goal.x) * Math.abs(y - this.goal.y);
+        default:
+          return 0;
+      }
+    };
+
+    SearchAlgos.prototype.search = function(hIndex) {
+      var act, action, closed, d, expand, fail, found, g, g2, gh, h, i, next, open, policy, resign, step, x2, xy, xy2, y2, _len, _ref;
+      if (hIndex == null) hIndex = 0;
       closed = make2DArray(this.width, this.height, 0);
       closed[this.init.y][this.init.x] = 1;
-      open = [[0, this.init]];
+      open = [[0, this.init, distance(this.init, this.goal)]];
       found = false;
       resign = false;
       expand = make2DArray(this.width, this.height, megaValue);
@@ -533,7 +561,7 @@
           open.reverse();
           next = open.pop();
           xy = next[1];
-          g = next[0];
+          g = next[2];
           expand[xy.y][xy.x] = step;
           step += 1;
           if (equalPoints(xy, this.goal)) {
@@ -546,8 +574,11 @@
               y2 = xy.y + d[1];
               if (x2 >= 0 && x2 < this.width && y2 >= 0 && y2 < this.height && closed[y2][x2] === 0) {
                 if (this.data[y2][x2] !== 'wall') {
+                  xy2 = p(x2, y2);
+                  h = hIndex > 0 ? this.heuristicsFuncs(hIndex, xy2) : 0;
                   g2 = g + this.cost;
-                  open.push([g2, p(x2, y2)]);
+                  gh = g2 + h;
+                  open.push([gh, xy2, g2]);
                   closed[y2][x2] = 1;
                   action[y2][x2] = i;
                 }
@@ -579,6 +610,10 @@
   })();
 
   random = Math.random;
+
+  distance = function(from, to) {
+    return Math.sqrt(Math.pow(from.x - to.x, 2) + Math.pow(from.y - to.y, 2));
+  };
 
   dp = function(policy, value) {
     if (policy == null) policy = '';
