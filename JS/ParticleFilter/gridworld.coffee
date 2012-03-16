@@ -22,7 +22,7 @@ $ ->
     ctx[ctx_id].clearRect 0, 0, width, height
 
   $("#cellSizeSlider").slider
-    orientation: "vertical",
+#    orientation: "vertical",
     range: "min",
     min: 10,
     max: 50,
@@ -49,7 +49,7 @@ $ ->
   .click (e) ->
     world.click e.offsetX, e.offsetY
 
-  $("#actionsSet, #visibilitySet").buttonset()
+#  $("#actionsSet, #visibilitySet").buttonset()
   $("[name=actionType]").click ->
     world.clickAction = @value
   $("[name=visibility]").change ->
@@ -59,11 +59,11 @@ $ ->
       world.showPolicy = @checked
     world.updateValues()
 
-  $("#clearEverythingId").button().click ->
+  $("#clearEverythingId").click ->
     world.clear().clearData()
     $("[name=visibility]").each -> $(@).removeAttr('checked').trigger('change')
 
-  $("#makeBorderWallId").button().click ->
+  $("#makeBorderWallId").click ->
     world.makeBorderWall()
     world.updateValues()
 
@@ -92,7 +92,7 @@ class GridWorld
     @data = make2DArray @width, @height
     @hovered = p -1, -1
     @oldHovered = p -1, -1
-    @clickAction = "walls"
+    @clickAction = "wallsAdd"
     @valueAsNumber = false
     @valueAsColor = true
     @showPolicy = true
@@ -189,13 +189,13 @@ class GridWorld
   clearCellAt: (xy, ctxId) ->
     ctx[ctxId].clearRect xy.x, xy.y, @cellSize, @cellSize
 
-  toggleWallAt: (x, y) ->
-    xy = @xyByCell p(x,y)
-    if @data[y][x].policy is 'wall'
-      @data[y][x].policy = ''
-    else
-      @data[y][x].policy = 'wall'
-    @drawAllWalls()
+#  toggleWallAt: (x, y) ->
+#    xy = @xyByCell p(x,y)
+#    if @data[y][x].policy is 'wall'
+#      @data[y][x].policy = ''
+#    else
+#      @data[y][x].policy = 'wall'
+#    @drawAllWalls()
 
   makeBorderWall: ->
     for x in [0..@width-1]
@@ -217,9 +217,14 @@ class GridWorld
     pos = @cellByXY x, y
     policy = @policyAt pos
     switch @clickAction
-      when 'walls'
+      when 'wallsAdd'
         unless policy in ['init', 'goal']
-          @toggleWallAt pos.x, pos.y
+          @data[pos.y][pos.x].policy = 'wall'
+          @drawAllWalls()
+      when 'wallsRemove'
+        if policy is 'wall'
+          @data[pos.y][pos.x].policy = ''
+          @drawAllWalls()
       when 'init'
         unless policy in ['wall', 'goal']
           @updatePolicy(pos, @goal).drawPolicy()
@@ -237,7 +242,7 @@ class GridWorld
     @iterateDataCells (x, y) =>
       unless @data[y][x].policy in ['init', 'goal', 'wall']
         @data[y][x].policy = ''
-    policy =@getDataLayer('policy')
+    policy = @getDataLayer('policy')
     algo = new SearchAlgos(policy, @init, @goal)
     [values, policy, @policyFails] = algo.search()
     @iterateDataCells (x, y) =>
@@ -404,7 +409,7 @@ class SearchAlgos
     found = false  # flag that is set when search is complete
     resign = false # flag set if we can't find expand
     expand = make2DArray @width, @height, megaValue
-    action = make2DArray @width, @height, 0
+    action = make2DArray @width, @height, -1
     policy = make2DArray @width, @height, ''
     step = 0
     while not found and not resign
@@ -430,20 +435,20 @@ class SearchAlgos
                 open.push [g2, p(x2, y2)]
                 closed[y2][x2] = 1
                 action[y2][x2] = i
-
     xy = @goal
     fail = false
     while not equalPoints(xy, @init) and not fail
       act = action[xy.y][xy.x]
+      if act is -1
+        fail = true
+        break
       x2 = xy.x - @delta[act][0]
       y2 = xy.y - @delta[act][1]
       xy = p(x2, y2)
-      unless x2 >= 0 and x2 < @width and y2 >= 0 and y2 < @height
-        fail = true
-        break
       if equalPoints xy, @init
         break
       policy[y2][x2] = @deltaName[act]
+
     if fail
       policy = make2DArray @width, @height, ''
     return [expand, policy, fail]

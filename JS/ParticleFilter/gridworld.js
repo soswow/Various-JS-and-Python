@@ -31,7 +31,6 @@
       return ctx[ctx_id].clearRect(0, 0, width, height);
     });
     $("#cellSizeSlider").slider({
-      orientation: "vertical",
       range: "min",
       min: 10,
       max: 50,
@@ -60,7 +59,6 @@
     }).click(function(e) {
       return world.click(e.offsetX, e.offsetY);
     });
-    $("#actionsSet, #visibilitySet").buttonset();
     $("[name=actionType]").click(function() {
       return world.clickAction = this.value;
     });
@@ -72,13 +70,13 @@
       }
       return world.updateValues();
     });
-    $("#clearEverythingId").button().click(function() {
+    $("#clearEverythingId").click(function() {
       world.clear().clearData();
       return $("[name=visibility]").each(function() {
         return $(this).removeAttr('checked').trigger('change');
       });
     });
-    $("#makeBorderWallId").button().click(function() {
+    $("#makeBorderWallId").click(function() {
       world.makeBorderWall();
       return world.updateValues();
     });
@@ -104,7 +102,7 @@
       this.data = make2DArray(this.width, this.height);
       this.hovered = p(-1, -1);
       this.oldHovered = p(-1, -1);
-      this.clickAction = "walls";
+      this.clickAction = "wallsAdd";
       this.valueAsNumber = false;
       this.valueAsColor = true;
       this.showPolicy = true;
@@ -244,17 +242,6 @@
       return ctx[ctxId].clearRect(xy.x, xy.y, this.cellSize, this.cellSize);
     };
 
-    GridWorld.prototype.toggleWallAt = function(x, y) {
-      var xy;
-      xy = this.xyByCell(p(x, y));
-      if (this.data[y][x].policy === 'wall') {
-        this.data[y][x].policy = '';
-      } else {
-        this.data[y][x].policy = 'wall';
-      }
-      return this.drawAllWalls();
-    };
-
     GridWorld.prototype.makeBorderWall = function() {
       var x, y, _ref, _ref2;
       for (x = 0, _ref = this.width - 1; 0 <= _ref ? x <= _ref : x >= _ref; 0 <= _ref ? x++ : x--) {
@@ -284,9 +271,16 @@
       pos = this.cellByXY(x, y);
       policy = this.policyAt(pos);
       switch (this.clickAction) {
-        case 'walls':
+        case 'wallsAdd':
           if (policy !== 'init' && policy !== 'goal') {
-            this.toggleWallAt(pos.x, pos.y);
+            this.data[pos.y][pos.x].policy = 'wall';
+            this.drawAllWalls();
+          }
+          break;
+        case 'wallsRemove':
+          if (policy === 'wall') {
+            this.data[pos.y][pos.x].policy = '';
+            this.drawAllWalls();
           }
           break;
         case 'init':
@@ -526,7 +520,7 @@
       found = false;
       resign = false;
       expand = make2DArray(this.width, this.height, megaValue);
-      action = make2DArray(this.width, this.height, 0);
+      action = make2DArray(this.width, this.height, -1);
       policy = make2DArray(this.width, this.height, '');
       step = 0;
       while (!found && !resign) {
@@ -566,13 +560,13 @@
       fail = false;
       while (!equalPoints(xy, this.init) && !fail) {
         act = action[xy.y][xy.x];
-        x2 = xy.x - this.delta[act][0];
-        y2 = xy.y - this.delta[act][1];
-        xy = p(x2, y2);
-        if (!(x2 >= 0 && x2 < this.width && y2 >= 0 && y2 < this.height)) {
+        if (act === -1) {
           fail = true;
           break;
         }
+        x2 = xy.x - this.delta[act][0];
+        y2 = xy.y - this.delta[act][1];
+        xy = p(x2, y2);
         if (equalPoints(xy, this.init)) break;
         policy[y2][x2] = this.deltaName[act];
       }
