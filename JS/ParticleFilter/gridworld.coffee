@@ -79,10 +79,19 @@ $ ->
   $("#aStar").click ->
     world.aStarEnabled = @checked
     world.updateValues()
+
   $("[name=hFunc]").click ->
     world.aStarHFunc = parseInt @value, 10
     world.updateValues()
 
+  $("TABLE#probobilitiesId input").keyup ->
+    val = parseFloat @value
+    world.probobilities[$(@).attr("id")[0]] = unless isNaN val then val else 0
+    world.updateValues()
+
+  $("#collitionCost").keyup ->
+    world.collitionCost = parseInt @value, 10
+    world.updateValues()
 
   world = new GridWorld(50, width, height)
 
@@ -117,6 +126,8 @@ class GridWorld
     @policyFails = true
     @aStarEnabled = false
     @aStarHFunc = 1
+    @probobilities = f:1, l:0, r:0, b:0
+    @collitionCost = 100
     @resetInitStructure()
     @updatePolicy()
     @makeBorderWall()
@@ -267,7 +278,7 @@ class GridWorld
 
     [values, policy, @policyFails] =
       if @showDPPolicy
-        algo.optimum_policy()
+        algo.optimum_policy @probobilities, @collitionCost
       else
         algo.search if @aStarEnabled then @aStarHFunc else 0
 
@@ -349,7 +360,6 @@ class GridWorld
       pos = @xyByCell @init
       c.fillText 'FAIL', pos.x+5, pos.y + @cellSize/2
 
-
   drawGrid: ->
     @clear 'grid'
     c = ctx.grid
@@ -409,7 +419,6 @@ class GridWorld
         c.fillStyle = 'black'
         c.fillText value, pos.x+2, pos.y + 10
 
-
   draw: ->
     @drawGrid()
     @drawAllWalls()
@@ -421,7 +430,7 @@ class SearchAlgos
   constructor: (@data, @init, @goal) ->
     @height = @data.length
     @width = @data[0].length
-    @delta = [[0, -1 ], # go up
+    @delta = [[0, -1], # go up
              [ -1, 0], # go left
              [ 0, 1 ], # go down
              [ 1, 0 ]] # go right
@@ -435,7 +444,6 @@ class SearchAlgos
       when 2 then Math.abs(x - @goal.x) + Math.abs(y - @goal.y)
       when 3 then Math.abs(x - @goal.x) * Math.abs(y - @goal.y)
       else 0
-
 
   search: (hIndex=0)->
     closed = make2DArray @width, @height, 0
@@ -492,7 +500,16 @@ class SearchAlgos
       policy = make2DArray @width, @height, ''
     return [expand, policy, fail]
 
-  optimum_policy: ->
+  optimum_policy: (motionProbs={f:1, l:0, r:0, b:0}, collision_cost=100) ->
+    sum = 0
+    for k,v of motionProbs
+      sum += v
+    unless sum is 0
+      for k,v of motionProbs
+        motionProbs[k] = v / sum
+    else
+      motionProbs = f:1, l:0, r:0, b:0
+
     value = make2DArray @width, @height, megaValue
     policy = make2DArray @width, @height, ''
     change = true
@@ -513,7 +530,36 @@ class SearchAlgos
 #              if x2 is 12 and y2 is 6
 #                console.log d, value[y2][x2], @data[y2][x2]
               if x2 >= 0 and x2 < @width and y2 >= 0 and y2 < @height and not(@data[y2][x2] is 'wall')
-                v2 = value[y2][x2] + @cost
+                forward_cost = value[y2][x2] * motionProbs.f
+
+                lx2 = xi + @delta[mod(i+1, 4)][0]
+                ly2 = yi + @delta[mod(i+1, 4)][1]
+                left_cost = 0
+                if lx2 >= 0 and lx2 < @width and ly2 >= 0 and ly2 < @height and not(@data[ly2][lx2] is 'wall')
+                  if value[ly2][lx2] < megaValue
+                    left_cost = value[ly2][lx2] * motionProbs.l
+                else
+                  left_cost = collision_cost * motionProbs.l
+
+                rx2 = xi + @delta[mod(i-1, 4)][0]
+                ry2 = yi + @delta[mod(i-1, 4)][1]
+                right_cost = 0
+                if rx2 >= 0 and rx2 < @width and ry2 >= 0 and ry2 < @height and not(@data[ry2][rx2] is 'wall')
+                  if value[ry2][rx2] < megaValue
+                    right_cost = value[ry2][rx2] * motionProbs.r
+                else
+                  right_cost = collision_cost * motionProbs.r
+
+                bx2 = xi + @delta[mod(i+2, 4)][0]
+                by2 = yi + @delta[mod(i+2, 4)][1]
+                back_cost = 0
+                if bx2 >= 0 and bx2 < @width and by2 >= 0 and by2 < @height and not(@data[by2][bx2] is 'wall')
+                  if value[by2][bx2] < megaValue
+                    back_cost = value[by2][bx2] * motionProbs.b
+                else
+                  back_cost = collision_cost * motionProbs.b
+
+                v2 = forward_cost + right_cost + left_cost + back_cost + @cost
                 if v2 < value[yi][xi]
                   change = true
                   policy[yi][xi] = @deltaName[i]
@@ -531,3 +577,4 @@ p = (x, y) -> x:x, y:y  #Stands for point
 equalPoints = (p1, p2) -> p1.x is p2.x and p1.y is p2.y
 make2DArray = (w, h, fill) ->
   (((if fill? then fill else dp()) for i in [1..Math.floor(w)]) for j in [1..Math.floor(h)])
+mod = (a, b) -> a % b + (if a < 0 then b else 0)

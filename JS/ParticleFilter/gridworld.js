@@ -1,5 +1,5 @@
 (function() {
-  var GridWorld, SearchAlgos, canvases, ctx, distance, dp, equalPoints, gridColors, height, initWalls, make2DArray, megaValue, p, random, width, world;
+  var GridWorld, SearchAlgos, canvases, ctx, distance, dp, equalPoints, gridColors, height, initWalls, make2DArray, megaValue, mod, p, random, width, world;
 
   ctx = {};
 
@@ -100,6 +100,16 @@
       world.aStarHFunc = parseInt(this.value, 10);
       return world.updateValues();
     });
+    $("TABLE#probobilitiesId input").keyup(function() {
+      var val;
+      val = parseFloat(this.value);
+      world.probobilities[$(this).attr("id")[0]] = !isNaN(val) ? val : 0;
+      return world.updateValues();
+    });
+    $("#collitionCost").keyup(function() {
+      world.collitionCost = parseInt(this.value, 10);
+      return world.updateValues();
+    });
     return world = new GridWorld(50, width, height);
   });
 
@@ -130,6 +140,13 @@
       this.policyFails = true;
       this.aStarEnabled = false;
       this.aStarHFunc = 1;
+      this.probobilities = {
+        f: 1,
+        l: 0,
+        r: 0,
+        b: 0
+      };
+      this.collitionCost = 100;
       this.resetInitStructure();
       this.updatePolicy();
       this.makeBorderWall();
@@ -340,7 +357,7 @@
       });
       policy = this.getDataLayer('policy');
       algo = new SearchAlgos(policy, this.init, this.goal);
-      _ref = this.showDPPolicy ? algo.optimum_policy() : algo.search(this.aStarEnabled ? this.aStarHFunc : 0), values = _ref[0], policy = _ref[1], this.policyFails = _ref[2];
+      _ref = this.showDPPolicy ? algo.optimum_policy(this.probobilities, this.collitionCost) : algo.search(this.aStarEnabled ? this.aStarHFunc : 0), values = _ref[0], policy = _ref[1], this.policyFails = _ref[2];
       this.iterateDataCells(function(x, y) {
         var policyItem;
         _this.data[y][x].value = values[y][x];
@@ -618,8 +635,35 @@
       return [expand, policy, fail];
     };
 
-    SearchAlgos.prototype.optimum_policy = function() {
-      var cell, change, d, i, policy, row, v2, value, x2, xi, xy, y2, yi, _len, _len2, _len3, _ref, _ref2;
+    SearchAlgos.prototype.optimum_policy = function(motionProbs, collision_cost) {
+      var back_cost, bx2, by2, cell, change, d, forward_cost, i, k, left_cost, lx2, ly2, policy, right_cost, row, rx2, ry2, sum, v, v2, value, x2, xi, xy, y2, yi, _len, _len2, _len3, _ref, _ref2;
+      if (motionProbs == null) {
+        motionProbs = {
+          f: 1,
+          l: 0,
+          r: 0,
+          b: 0
+        };
+      }
+      if (collision_cost == null) collision_cost = 100;
+      sum = 0;
+      for (k in motionProbs) {
+        v = motionProbs[k];
+        sum += v;
+      }
+      if (sum !== 0) {
+        for (k in motionProbs) {
+          v = motionProbs[k];
+          motionProbs[k] = v / sum;
+        }
+      } else {
+        motionProbs = {
+          f: 1,
+          l: 0,
+          r: 0,
+          b: 0
+        };
+      }
       value = make2DArray(this.width, this.height, megaValue);
       policy = make2DArray(this.width, this.height, '');
       change = true;
@@ -643,7 +687,38 @@
                 x2 = xi + d[0];
                 y2 = yi + d[1];
                 if (x2 >= 0 && x2 < this.width && y2 >= 0 && y2 < this.height && !(this.data[y2][x2] === 'wall')) {
-                  v2 = value[y2][x2] + this.cost;
+                  forward_cost = value[y2][x2] * motionProbs.f;
+                  lx2 = xi + this.delta[mod(i + 1, 4)][0];
+                  ly2 = yi + this.delta[mod(i + 1, 4)][1];
+                  left_cost = 0;
+                  if (lx2 >= 0 && lx2 < this.width && ly2 >= 0 && ly2 < this.height && !(this.data[ly2][lx2] === 'wall')) {
+                    if (value[ly2][lx2] < megaValue) {
+                      left_cost = value[ly2][lx2] * motionProbs.l;
+                    }
+                  } else {
+                    left_cost = collision_cost * motionProbs.l;
+                  }
+                  rx2 = xi + this.delta[mod(i - 1, 4)][0];
+                  ry2 = yi + this.delta[mod(i - 1, 4)][1];
+                  right_cost = 0;
+                  if (rx2 >= 0 && rx2 < this.width && ry2 >= 0 && ry2 < this.height && !(this.data[ry2][rx2] === 'wall')) {
+                    if (value[ry2][rx2] < megaValue) {
+                      right_cost = value[ry2][rx2] * motionProbs.r;
+                    }
+                  } else {
+                    right_cost = collision_cost * motionProbs.r;
+                  }
+                  bx2 = xi + this.delta[mod(i + 2, 4)][0];
+                  by2 = yi + this.delta[mod(i + 2, 4)][1];
+                  back_cost = 0;
+                  if (bx2 >= 0 && bx2 < this.width && by2 >= 0 && by2 < this.height && !(this.data[by2][bx2] === 'wall')) {
+                    if (value[by2][bx2] < megaValue) {
+                      back_cost = value[by2][bx2] * motionProbs.b;
+                    }
+                  } else {
+                    back_cost = collision_cost * motionProbs.b;
+                  }
+                  v2 = forward_cost + right_cost + left_cost + back_cost + this.cost;
                   if (v2 < value[yi][xi]) {
                     change = true;
                     policy[yi][xi] = this.deltaName[i];
@@ -702,6 +777,10 @@
       })());
     }
     return _results;
+  };
+
+  mod = function(a, b) {
+    return a % b + (a < 0 ? b : 0);
   };
 
 }).call(this);

@@ -5,7 +5,7 @@
   <link rel="stylesheet" href="jquery-ui-1.8.18.custom.css" type="text/css" media="all" />
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
-  <script src="gridworld.js"></script>
+
   <style>
     .ui-button-text {
        font-size:13px;
@@ -57,7 +57,24 @@
       <input type="checkbox" id="showValuesAsColorId" name="visibility" value="valueAsColor" checked="checked"/><label for="showValuesAsColorId">Value as a color</label><br/>
       <input type="checkbox" id="showPathPolicyId" name="visibility" value="policyPath" checked="checked"/><label for="showPathPolicyId">Show path policy</label><br/>
       <input type="checkbox" id="showDPPolicyId" name="visibility" value="policyDP"/><label for="showDPPolicyId">Show Dyn. Progr. policy</label><br/>
-    <!--</div>-->
+      Stochastic Motion probobilities:<br/>
+      <table id="probobilitiesId">
+        <tr>
+          <td style="text-align: right"><label for="forwardProb">Forward:</label></td>
+          <td><input type="text" id="forwardProb" value='1.0' maxlength="5" size="5"/></td>
+          <td style="text-align: right"><label for="backProb">Back:</label></td>
+          <td><input type="text" id="backProb" value='0.0' maxlength="5" size="5"/></td>
+        </tr>
+        <tr>
+          <td style="text-align: right"><label for="rightProb">Right:</label></td>
+          <td><input type="text" id="rightProb" value='0.0' maxlength="5" size="5"/></td>
+          <td style="text-align: right"><label for="leftProb">Left:</label></td>
+          <td><input type="text" id="leftProb" value='0.0' maxlength="5" size="5"/></td>
+        </tr>
+      </table>
+      <label for="collitionCost">Collition cost:</label>
+      <input type="text" id="collitionCost" value='50' maxlength="5" size="5"/><br/>
+
     <br/>
     <label for="aStar">A* enabled</label> <input type="checkbox" id="aStar" name="actionType" value="astar" /> with H function:<br/>
     <input type="radio" id="hFunc1Id" name="hFunc" value="1" checked="checked" /><label for="hFunc1Id">Distance</label><br/>
@@ -83,5 +100,6 @@
   })();
 
 </script>
+<script src="gridworld.js"></script>
 </body>
 </html>
