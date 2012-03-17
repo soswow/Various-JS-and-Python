@@ -66,7 +66,19 @@
       if (this.value.indexOf('value') === 0) {
         world[this.value] = this.checked;
       } else if (this.value.indexOf('policy') === 0) {
-        world.showPolicy = this.checked;
+        if (this.value === 'policyPath') {
+          world.showPathPolicy = this.checked;
+          if (this.checked) {
+            world.showDPPolicy = false;
+            $('#showDPPolicyId').removeAttr('checked');
+          }
+        } else if (this.value === 'policyDP') {
+          world.showDPPolicy = this.checked;
+          if (this.checked) {
+            world.showPathPolicy = false;
+            $('#showPathPolicyId').removeAttr('checked');
+          }
+        }
       }
       return world.updateValues();
     });
@@ -113,7 +125,8 @@
       this.clickAction = "wallsAdd";
       this.valueAsNumber = false;
       this.valueAsColor = true;
-      this.showPolicy = true;
+      this.showPathPolicy = true;
+      this.showDPPolicy = false;
       this.policyFails = true;
       this.aStarEnabled = false;
       this.aStarHFunc = 1;
@@ -327,7 +340,7 @@
       });
       policy = this.getDataLayer('policy');
       algo = new SearchAlgos(policy, this.init, this.goal);
-      _ref = algo.search(this.aStarEnabled ? this.aStarHFunc : 0), values = _ref[0], policy = _ref[1], this.policyFails = _ref[2];
+      _ref = this.showDPPolicy ? algo.optimum_policy() : algo.search(this.aStarEnabled ? this.aStarHFunc : 0), values = _ref[0], policy = _ref[1], this.policyFails = _ref[2];
       this.iterateDataCells(function(x, y) {
         var policyItem;
         _this.data[y][x].value = values[y][x];
@@ -416,7 +429,7 @@
             return _this.drawCellAt(pos, 'policy', gridColors.goal);
           default:
             if (policy !== 'wall') {
-              if (_this.showPolicy && !_this.policyFails) {
+              if ((_this.showPathPolicy || _this.showDPPolicy) && !_this.policyFails) {
                 return _this.drawArrowAt(pos, policy);
               }
             }
@@ -603,6 +616,46 @@
       }
       if (fail) policy = make2DArray(this.width, this.height, '');
       return [expand, policy, fail];
+    };
+
+    SearchAlgos.prototype.optimum_policy = function() {
+      var cell, change, d, i, policy, row, v2, value, x2, xi, xy, y2, yi, _len, _len2, _len3, _ref, _ref2;
+      value = make2DArray(this.width, this.height, megaValue);
+      policy = make2DArray(this.width, this.height, '');
+      change = true;
+      while (change) {
+        change = false;
+        _ref = this.data;
+        for (yi = 0, _len = _ref.length; yi < _len; yi++) {
+          row = _ref[yi];
+          for (xi = 0, _len2 = row.length; xi < _len2; xi++) {
+            cell = row[xi];
+            xy = p(xi, yi);
+            if (equalPoints(xy, this.goal)) {
+              if (value[yi][xi] > 0) {
+                value[yi][xi] = 0;
+                change = true;
+              }
+            } else if (cell === '') {
+              _ref2 = this.delta;
+              for (i = 0, _len3 = _ref2.length; i < _len3; i++) {
+                d = _ref2[i];
+                x2 = xi + d[0];
+                y2 = yi + d[1];
+                if (x2 >= 0 && x2 < this.width && y2 >= 0 && y2 < this.height && !(this.data[y2][x2] === 'wall')) {
+                  v2 = value[y2][x2] + this.cost;
+                  if (v2 < value[yi][xi]) {
+                    change = true;
+                    policy[yi][xi] = this.deltaName[i];
+                    value[yi][xi] = v2;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      return [value, policy, false];
     };
 
     return SearchAlgos;

@@ -56,7 +56,16 @@ $ ->
     if @value.indexOf('value') is 0
       world[@value] = @checked
     else if @value.indexOf('policy') is 0
-      world.showPolicy = @checked
+      if @value is 'policyPath'
+        world.showPathPolicy = @checked
+        if @checked
+          world.showDPPolicy = false
+          $('#showDPPolicyId').removeAttr('checked')
+      else if @value is 'policyDP'
+        world.showDPPolicy = @checked
+        if @checked
+          world.showPathPolicy = false
+          $('#showPathPolicyId').removeAttr('checked')
     world.updateValues()
 
   $("#clearEverythingId").click ->
@@ -103,7 +112,8 @@ class GridWorld
     @clickAction = "wallsAdd"
     @valueAsNumber = false
     @valueAsColor = true
-    @showPolicy = true
+    @showPathPolicy = true
+    @showDPPolicy = false
     @policyFails = true
     @aStarEnabled = false
     @aStarHFunc = 1
@@ -254,7 +264,13 @@ class GridWorld
         @data[y][x].policy = ''
     policy = @getDataLayer('policy')
     algo = new SearchAlgos(policy, @init, @goal)
-    [values, policy, @policyFails] = algo.search if @aStarEnabled then @aStarHFunc else 0
+
+    [values, policy, @policyFails] =
+      if @showDPPolicy
+        algo.optimum_policy()
+      else
+        algo.search if @aStarEnabled then @aStarHFunc else 0
+
     @iterateDataCells (x, y) =>
       @data[y][x].value = values[y][x]
       policyItem = policy[y][x]
@@ -322,7 +338,7 @@ class GridWorld
         when 'goal' then @drawCellAt pos, 'policy', gridColors.goal
         else
           unless policy is 'wall'
-            if @showPolicy and not @policyFails
+            if (@showPathPolicy or @showDPPolicy) and not @policyFails
               @drawArrowAt pos, policy
 
     if @policyFails
@@ -475,6 +491,35 @@ class SearchAlgos
     if fail
       policy = make2DArray @width, @height, ''
     return [expand, policy, fail]
+
+  optimum_policy: ->
+    value = make2DArray @width, @height, megaValue
+    policy = make2DArray @width, @height, ''
+    change = true
+
+    while change
+      change = false
+      for row, yi in @data
+        for cell, xi in row
+          xy = p xi, yi
+          if equalPoints xy, @goal
+            if value[yi][xi] > 0
+              value[yi][xi] = 0
+              change = true
+          else if cell is ''
+            for d, i in @delta
+              x2 = xi + d[0]
+              y2 = yi + d[1]
+#              if x2 is 12 and y2 is 6
+#                console.log d, value[y2][x2], @data[y2][x2]
+              if x2 >= 0 and x2 < @width and y2 >= 0 and y2 < @height and not(@data[y2][x2] is 'wall')
+                v2 = value[y2][x2] + @cost
+                if v2 < value[yi][xi]
+                  change = true
+                  policy[yi][xi] = @deltaName[i]
+                  value[yi][xi] = v2
+
+    return [value, policy, false] # Make sure your function returns the expected grid.
 
 #Math function extraction
 random = Math.random
