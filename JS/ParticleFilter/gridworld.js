@@ -1,5 +1,5 @@
 (function() {
-  var GridWorld, SearchAlgos, canvases, ctx, distance, dp, equalPoints, gridColors, height, initWalls, make2DArray, megaValue, p, random, width, world;
+  var GridWorld, canvases, ctx, distance, dp, equalPoints, gridColors, height, initWalls, make2DArray, megaValue, p, random, width, world;
 
   ctx = {};
 
@@ -100,6 +100,16 @@
       world.aStarHFunc = parseInt(this.value, 10);
       return world.updateValues();
     });
+    $("TABLE#probobilitiesId input").keyup(function() {
+      var val;
+      val = parseFloat(this.value);
+      world.probobilities[$(this).attr("id")[0]] = !isNaN(val) ? val : 0;
+      return world.updateValues();
+    });
+    $("#collitionCost").keyup(function() {
+      world.collitionCost = parseInt(this.value, 10);
+      return world.updateValues();
+    });
     return world = new GridWorld(50, width, height);
   });
 
@@ -130,6 +140,13 @@
       this.policyFails = true;
       this.aStarEnabled = false;
       this.aStarHFunc = 1;
+      this.probobilities = {
+        f: 1,
+        l: 0,
+        r: 0,
+        b: 0
+      };
+      this.collitionCost = 100;
       this.resetInitStructure();
       this.updatePolicy();
       this.makeBorderWall();
@@ -340,7 +357,7 @@
       });
       policy = this.getDataLayer('policy');
       algo = new SearchAlgos(policy, this.init, this.goal);
-      _ref = this.showDPPolicy ? algo.optimum_policy() : algo.search(this.aStarEnabled ? this.aStarHFunc : 0), values = _ref[0], policy = _ref[1], this.policyFails = _ref[2];
+      _ref = this.showDPPolicy ? algo.optimum_policy(this.probobilities, this.collitionCost) : algo.search(this.aStarEnabled ? this.aStarHFunc : 0), values = _ref[0], policy = _ref[1], this.policyFails = _ref[2];
       this.iterateDataCells(function(x, y) {
         var policyItem;
         _this.data[y][x].value = values[y][x];
@@ -521,144 +538,6 @@
     };
 
     return GridWorld;
-
-  })();
-
-  SearchAlgos = (function() {
-
-    function SearchAlgos(data, init, goal) {
-      this.data = data;
-      this.init = init;
-      this.goal = goal;
-      this.height = this.data.length;
-      this.width = this.data[0].length;
-      this.delta = [[0, -1], [-1, 0], [0, 1], [1, 0]];
-      this.deltaName = ['up', 'left', 'down', 'right'];
-      this.cost = 1;
-    }
-
-    SearchAlgos.prototype.heuristicsFuncs = function(index, xy) {
-      var x, y, _ref;
-      _ref = [xy.x, xy.y], x = _ref[0], y = _ref[1];
-      switch (index) {
-        case 1:
-          return distance(xy, this.goal);
-        case 2:
-          return Math.abs(x - this.goal.x) + Math.abs(y - this.goal.y);
-        case 3:
-          return Math.abs(x - this.goal.x) * Math.abs(y - this.goal.y);
-        default:
-          return 0;
-      }
-    };
-
-    SearchAlgos.prototype.search = function(hIndex) {
-      var act, action, closed, d, expand, fail, found, g, g2, gh, h, i, next, open, policy, resign, step, x2, xy, xy2, y2, _len, _ref;
-      if (hIndex == null) hIndex = 0;
-      closed = make2DArray(this.width, this.height, 0);
-      closed[this.init.y][this.init.x] = 1;
-      open = [[0, this.init, distance(this.init, this.goal)]];
-      found = false;
-      resign = false;
-      expand = make2DArray(this.width, this.height, megaValue);
-      action = make2DArray(this.width, this.height, -1);
-      policy = make2DArray(this.width, this.height, '');
-      step = 0;
-      while (!found && !resign) {
-        if (open.length === 0) {
-          resign = true;
-        } else {
-          open.sort(function(a, b) {
-            return a[0] - b[0];
-          });
-          open.reverse();
-          next = open.pop();
-          xy = next[1];
-          g = next[2];
-          expand[xy.y][xy.x] = step;
-          step += 1;
-          if (equalPoints(xy, this.goal)) {
-            found = true;
-          } else {
-            _ref = this.delta;
-            for (i = 0, _len = _ref.length; i < _len; i++) {
-              d = _ref[i];
-              x2 = xy.x + d[0];
-              y2 = xy.y + d[1];
-              if (x2 >= 0 && x2 < this.width && y2 >= 0 && y2 < this.height && closed[y2][x2] === 0) {
-                if (this.data[y2][x2] !== 'wall') {
-                  xy2 = p(x2, y2);
-                  h = hIndex > 0 ? this.heuristicsFuncs(hIndex, xy2) : 0;
-                  g2 = g + this.cost;
-                  gh = g2 + h;
-                  open.push([gh, xy2, g2]);
-                  closed[y2][x2] = 1;
-                  action[y2][x2] = i;
-                }
-              }
-            }
-          }
-        }
-      }
-      xy = this.goal;
-      fail = false;
-      while (!equalPoints(xy, this.init) && !fail) {
-        act = action[xy.y][xy.x];
-        if (act === -1) {
-          fail = true;
-          break;
-        }
-        x2 = xy.x - this.delta[act][0];
-        y2 = xy.y - this.delta[act][1];
-        xy = p(x2, y2);
-        if (equalPoints(xy, this.init)) break;
-        policy[y2][x2] = this.deltaName[act];
-      }
-      if (fail) policy = make2DArray(this.width, this.height, '');
-      return [expand, policy, fail];
-    };
-
-    SearchAlgos.prototype.optimum_policy = function() {
-      var cell, change, d, i, policy, row, v2, value, x2, xi, xy, y2, yi, _len, _len2, _len3, _ref, _ref2;
-      value = make2DArray(this.width, this.height, megaValue);
-      policy = make2DArray(this.width, this.height, '');
-      change = true;
-      while (change) {
-        change = false;
-        _ref = this.data;
-        for (yi = 0, _len = _ref.length; yi < _len; yi++) {
-          row = _ref[yi];
-          for (xi = 0, _len2 = row.length; xi < _len2; xi++) {
-            cell = row[xi];
-            xy = p(xi, yi);
-            if (equalPoints(xy, this.goal)) {
-              if (value[yi][xi] > 0) {
-                value[yi][xi] = 0;
-                change = true;
-              }
-            } else if (cell === '') {
-              _ref2 = this.delta;
-              for (i = 0, _len3 = _ref2.length; i < _len3; i++) {
-                d = _ref2[i];
-                x2 = xi + d[0];
-                y2 = yi + d[1];
-                if (x2 >= 0 && x2 < this.width && y2 >= 0 && y2 < this.height && !(this.data[y2][x2] === 'wall')) {
-                  v2 = value[y2][x2] + this.cost;
-                  if (v2 < value[yi][xi]) {
-                    change = true;
-                    policy[yi][xi] = this.deltaName[i];
-                    value[yi][xi] = v2;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      return [value, policy, false];
-    };
-
-    return SearchAlgos;
 
   })();
 

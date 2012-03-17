@@ -79,10 +79,19 @@ $ ->
   $("#aStar").click ->
     world.aStarEnabled = @checked
     world.updateValues()
+
   $("[name=hFunc]").click ->
     world.aStarHFunc = parseInt @value, 10
     world.updateValues()
 
+  $("TABLE#probobilitiesId input").keyup ->
+    val = parseFloat @value
+    world.probobilities[$(@).attr("id")[0]] = unless isNaN val then val else 0
+    world.updateValues()
+
+  $("#collitionCost").keyup ->
+    world.collitionCost = parseInt @value, 10
+    world.updateValues()
 
   world = new GridWorld(50, width, height)
 
@@ -117,6 +126,8 @@ class GridWorld
     @policyFails = true
     @aStarEnabled = false
     @aStarHFunc = 1
+    @probobilities = f:1, l:0, r:0, b:0
+    @collitionCost = 100
     @resetInitStructure()
     @updatePolicy()
     @makeBorderWall()
@@ -267,7 +278,7 @@ class GridWorld
 
     [values, policy, @policyFails] =
       if @showDPPolicy
-        algo.optimum_policy()
+        algo.optimum_policy @probobilities, @collitionCost
       else
         algo.search if @aStarEnabled then @aStarHFunc else 0
 
@@ -349,7 +360,6 @@ class GridWorld
       pos = @xyByCell @init
       c.fillText 'FAIL', pos.x+5, pos.y + @cellSize/2
 
-
   drawGrid: ->
     @clear 'grid'
     c = ctx.grid
@@ -409,7 +419,6 @@ class GridWorld
         c.fillStyle = 'black'
         c.fillText value, pos.x+2, pos.y + 10
 
-
   draw: ->
     @drawGrid()
     @drawAllWalls()
@@ -417,109 +426,109 @@ class GridWorld
     @drawPolicy()
 
 
-class SearchAlgos
-  constructor: (@data, @init, @goal) ->
-    @height = @data.length
-    @width = @data[0].length
-    @delta = [[0, -1 ], # go up
-             [ -1, 0], # go left
-             [ 0, 1 ], # go down
-             [ 1, 0 ]] # go right
-    @deltaName = ['up','left','down','right']
-    @cost = 1
-
-  heuristicsFuncs: (index, xy) ->
-    [x,y] = [xy.x, xy.y]
-    switch index
-      when 1 then distance xy, @goal
-      when 2 then Math.abs(x - @goal.x) + Math.abs(y - @goal.y)
-      when 3 then Math.abs(x - @goal.x) * Math.abs(y - @goal.y)
-      else 0
-
-
-  search: (hIndex=0)->
-    closed = make2DArray @width, @height, 0
-    closed[@init.y][@init.x] = 1
-    open = [[0, @init, distance @init, @goal]]
-    found = false  # flag that is set when search is complete
-    resign = false # flag set if we can't find expand
-    expand = make2DArray @width, @height, megaValue
-    action = make2DArray @width, @height, -1
-    policy = make2DArray @width, @height, ''
-    step = 0
-    while not found and not resign
-      if open.length is 0
-        resign = true
-      else
-        open.sort (a,b) -> a[0]-b[0]
-        open.reverse()
-        next = open.pop()
-        xy = next[1]
-        g = next[2]
-        expand[xy.y][xy.x] = step
-        step += 1
-        if equalPoints  xy, @goal
-          found = true
-        else
-          for d, i in @delta
-            x2 = xy.x + d[0]
-            y2 = xy.y + d[1]
-            if x2 >= 0 and x2 < @width and y2 >= 0 and y2 < @height and closed[y2][x2] is 0
-              unless @data[y2][x2] is 'wall'
-                xy2 = p(x2, y2)
-                h = if hIndex > 0 then @heuristicsFuncs hIndex, xy2 else 0
-                g2 = g + @cost
-                gh = g2 + h
-                open.push [gh, xy2, g2]
-                closed[y2][x2] = 1
-                action[y2][x2] = i
-
-    xy = @goal
-    fail = false
-    while not equalPoints(xy, @init) and not fail
-      act = action[xy.y][xy.x]
-      if act is -1
-        fail = true
-        break
-      x2 = xy.x - @delta[act][0]
-      y2 = xy.y - @delta[act][1]
-      xy = p(x2, y2)
-      if equalPoints xy, @init
-        break
-      policy[y2][x2] = @deltaName[act]
-
-    if fail
-      policy = make2DArray @width, @height, ''
-    return [expand, policy, fail]
-
-  optimum_policy: ->
-    value = make2DArray @width, @height, megaValue
-    policy = make2DArray @width, @height, ''
-    change = true
-
-    while change
-      change = false
-      for row, yi in @data
-        for cell, xi in row
-          xy = p xi, yi
-          if equalPoints xy, @goal
-            if value[yi][xi] > 0
-              value[yi][xi] = 0
-              change = true
-          else if cell is ''
-            for d, i in @delta
-              x2 = xi + d[0]
-              y2 = yi + d[1]
-#              if x2 is 12 and y2 is 6
-#                console.log d, value[y2][x2], @data[y2][x2]
-              if x2 >= 0 and x2 < @width and y2 >= 0 and y2 < @height and not(@data[y2][x2] is 'wall')
-                v2 = value[y2][x2] + @cost
-                if v2 < value[yi][xi]
-                  change = true
-                  policy[yi][xi] = @deltaName[i]
-                  value[yi][xi] = v2
-
-    return [value, policy, false] # Make sure your function returns the expected grid.
+#class SearchAlgos
+#  constructor: (@data, @init, @goal) ->
+#    @height = @data.length
+#    @width = @data[0].length
+#    @delta = [[0, -1 ], # go up
+#             [ -1, 0], # go left
+#             [ 0, 1 ], # go down
+#             [ 1, 0 ]] # go right
+#    @deltaName = ['up','left','down','right']
+#    @cost = 1
+#
+#  heuristicsFuncs: (index, xy) ->
+#    [x,y] = [xy.x, xy.y]
+#    switch index
+#      when 1 then distance xy, @goal
+#      when 2 then Math.abs(x - @goal.x) + Math.abs(y - @goal.y)
+#      when 3 then Math.abs(x - @goal.x) * Math.abs(y - @goal.y)
+#      else 0
+#
+#
+#  search: (hIndex=0)->
+#    closed = make2DArray @width, @height, 0
+#    closed[@init.y][@init.x] = 1
+#    open = [[0, @init, distance @init, @goal]]
+#    found = false  # flag that is set when search is complete
+#    resign = false # flag set if we can't find expand
+#    expand = make2DArray @width, @height, megaValue
+#    action = make2DArray @width, @height, -1
+#    policy = make2DArray @width, @height, ''
+#    step = 0
+#    while not found and not resign
+#      if open.length is 0
+#        resign = true
+#      else
+#        open.sort (a,b) -> a[0]-b[0]
+#        open.reverse()
+#        next = open.pop()
+#        xy = next[1]
+#        g = next[2]
+#        expand[xy.y][xy.x] = step
+#        step += 1
+#        if equalPoints  xy, @goal
+#          found = true
+#        else
+#          for d, i in @delta
+#            x2 = xy.x + d[0]
+#            y2 = xy.y + d[1]
+#            if x2 >= 0 and x2 < @width and y2 >= 0 and y2 < @height and closed[y2][x2] is 0
+#              unless @data[y2][x2] is 'wall'
+#                xy2 = p(x2, y2)
+#                h = if hIndex > 0 then @heuristicsFuncs hIndex, xy2 else 0
+#                g2 = g + @cost
+#                gh = g2 + h
+#                open.push [gh, xy2, g2]
+#                closed[y2][x2] = 1
+#                action[y2][x2] = i
+#
+#    xy = @goal
+#    fail = false
+#    while not equalPoints(xy, @init) and not fail
+#      act = action[xy.y][xy.x]
+#      if act is -1
+#        fail = true
+#        break
+#      x2 = xy.x - @delta[act][0]
+#      y2 = xy.y - @delta[act][1]
+#      xy = p(x2, y2)
+#      if equalPoints xy, @init
+#        break
+#      policy[y2][x2] = @deltaName[act]
+#
+#    if fail
+#      policy = make2DArray @width, @height, ''
+#    return [expand, policy, fail]
+#
+#  optimum_policy: ->
+#    value = make2DArray @width, @height, megaValue
+#    policy = make2DArray @width, @height, ''
+#    change = true
+#
+#    while change
+#      change = false
+#      for row, yi in @data
+#        for cell, xi in row
+#          xy = p xi, yi
+#          if equalPoints xy, @goal
+#            if value[yi][xi] > 0
+#              value[yi][xi] = 0
+#              change = true
+#          else if cell is ''
+#            for d, i in @delta
+#              x2 = xi + d[0]
+#              y2 = yi + d[1]
+##              if x2 is 12 and y2 is 6
+##                console.log d, value[y2][x2], @data[y2][x2]
+#              if x2 >= 0 and x2 < @width and y2 >= 0 and y2 < @height and not(@data[y2][x2] is 'wall')
+#                v2 = value[y2][x2] + @cost
+#                if v2 < value[yi][xi]
+#                  change = true
+#                  policy[yi][xi] = @deltaName[i]
+#                  value[yi][xi] = v2
+#
+#    return [value, policy, false] # Make sure your function returns the expected grid.
 
 #Math function extraction
 random = Math.random
