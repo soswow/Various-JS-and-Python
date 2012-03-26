@@ -47,8 +47,9 @@ $ ->
   robot.draw()
   runner = new Runner(robot, world)
 
+  PID = [0.3020698159940172, 4.058570137849624, 0.003109729253799231]
   animateStep = ->
-    runner.step 0.1, 3, 0.004
+    runner.step PID[0],PID[1],PID[2]
 
   shouldStop = true
   start = ->
@@ -101,6 +102,42 @@ $ ->
       world.setDetalization ui.value
       $("#detalization_id").val ui.value
 
+  $("#slider_p_pid").slider
+    min: 0
+    max: 1
+    step: 0.001
+    value: 0.3
+    slide: (e, ui) ->
+      PID[0] = ui.value
+      $("#p_pid_id").val ui.value
+
+  $("#slider_d_pid").slider
+    min: 0.5
+    max: 20
+    step: 0.1
+    value: 12
+    slide: (e, ui) ->
+      PID[1] = ui.value
+      $("#d_pid_id").val ui.value
+
+  $("#slider_i_pid").slider
+    min: 0
+    max: 0.01
+    step: 0.0001
+    value: 0.003
+    slide: (e, ui) ->
+      PID[2] = ui.value
+      $("#i_pid_id").val ui.value
+
+  $("#slider_drift").slider
+    min: -30
+    max: 30
+    step: 1
+    value: 10
+    slide: (e, ui) ->
+      robot.setSteeringDrift ui.value / 180.0 * pi
+      $("#drift_id").val ui.value
+
   $("#start_robot_id").click ->
     shouldStop = false
     start()
@@ -108,8 +145,12 @@ $ ->
   $("#stop_robot_id").click ->
     shouldStop = true
 
-
-
+  $("#twiddle_id").click ->
+    robot = new Robot()
+    robot.set world.points[1].x+50, world.points[1].y, TWOPI
+    robot.setSteeringDrift 10 / 180.0 * pi
+    runner = new Runner(robot, world)
+    console.log runner.twiddle()
 
 
 #TODO
@@ -233,7 +274,7 @@ class World
     c = ctx.base
     c.beginPath()
     prevPoint = null
-    c.strokeStyle = "rgba(0,0,0,0.5)"
+    c.strokeStyle = "rgba(0,0,0,0.3)"
     for p, i in @points
       if prevPoint
         c.moveTo p.x, p.y
@@ -318,7 +359,7 @@ class Smoother
     c = ctx.smooth
     c.beginPath()
     prevPoint = null
-    c.strokeStyle = "rgb(255,50,50)"
+    c.strokeStyle = "rgba(255,50,50,0.7)"
     for p, i in @path
       if prevPoint
         c.moveTo p.x, p.y
@@ -336,7 +377,7 @@ class Smoother
     @drawSmoothLines()
 
 class Robot
-  constructor: (@len=20.0) ->
+  constructor: (@len=30.0) ->
     @x = 0
     @y = 0
     @orientation = 0
@@ -372,7 +413,7 @@ class Robot
 
     # apply steering drift
     steering2 += @steering_drift
-
+    @steering = steering2
     # Execute motion
     turn = Math.tan(steering2) * distance2 / @len
 
@@ -403,7 +444,7 @@ class Robot
     if len > 1
       prevP = @trace[0]
       for p, i in @trace[1..@trace.length - 1]
-        c.strokeStyle = "rgba(30,255,30,#{i/len})"
+        c.strokeStyle = "rgba(30,30,255,#{i/len})"
         c.beginPath()
         c.moveTo prevP.x, prevP.y
         c.lineTo p.x, p.y
@@ -417,18 +458,32 @@ class Robot
     c = ctx.robot
     @drawTrace()
     c.strokeStyle = "black"
-    c.beginPath()
-    c.moveTo @x + 15, @y
-    c.arc @x, @y, 15, 0, TWOPI, true
-    c.moveTo @x, @y
-    c.lineTo @x + 15 * cos(@orientation), @y + 15 * sin(@orientation)
-    c.closePath()
+#    c.beginPath()
+
+    [x, y] = [@x + 5 * cos(@orientation), @y + 5 * sin(@orientation)]
+#    c.lineTo x, y
+    [x, y] = [x + 10 * cos(@orientation - PI/2), y + 10 * sin(@orientation - PI/2)]
+    c.moveTo x, y
+#    c.lineTo x, y
+
+    [x, y] = [x + 20 * cos(@orientation + PI/2), y + 20 * sin(@orientation + PI/2)]
+    c.lineTo x, y
+
+    [x, y] = [x + @len * cos(@orientation + PI), y + @len * sin(@orientation + PI)]
+    c.lineTo x, y
+
+    [x, y] = [x + 20 * cos(@orientation - PI/2), y + 20 * sin(@orientation - PI/2)]
+    c.lineTo x, y
+
+    [x, y] = [x + @len * cos(@orientation), y + @len * sin(@orientation)]
+    c.lineTo x, y
+
     c.stroke()
 
 
 class Runner
-  constructor: (@robot, world) ->
-    @speed = 1.0 # motion distance is equal to speed (we assume time = 1)
+  constructor: (@robot, world, @speed = 1.0) ->
+    # motion distance is equal to speed (we assume time = 1)
     @old_cte = @countCrossTrackError()
     @err_sum = @old_cte
 
@@ -446,14 +501,47 @@ class Runner
     res *= if isLeft then 1 else -1
     res
 
-  step: (@tau_p, @tau_d, @tau_i) ->
+  twiddle: (tol = 0.0000000001) ->
+    p=[0.3, 4, 0.001]
+    dp=[0.001, 0.05, 0.001]
+    best_err = @dryRun p
+    while sum(dp) > tol
+      for i in [0..2]
+        p[i] += dp[i]
+        err = @dryRun p
+        if err < best_err
+          best_err = err
+          dp[i] *= 1.005
+        else
+          p[i] -= 2 * dp[i]
+          if err < best_err
+            best_err = err
+            dp[i] *= 1.005
+          else
+            p[i] += dp[i]
+            dp[i] *= 0.99
+
+    console.log sum(dp)
+    p
+
+  dryRun: (params, N=100) ->
+    err = 0
+    for i in [1..N*2]
+      cte = @step params[0], params[1], params[2], false
+      if i >= N
+        err += pow(cte, 2)
+    err / N
+
+  step: (@tau_p, @tau_d, @tau_i, draw=true) ->
     cte = @countCrossTrackError()
     diff = cte - @old_cte
     angle = -@tau_p * cte - @tau_d * diff - @tau_i * @err_sum
     @robot.move angle, @speed
     @err_sum += cte
     @old_cte = cte
-    @robot.draw()
+    if draw
+      @robot.draw()
+    cte
 
 #Units
 PI = Math.PI

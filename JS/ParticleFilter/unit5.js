@@ -12,7 +12,7 @@
   world = null;
 
   $(function() {
-    var animateStep, robot, runner, shouldStop, slideUpdate, start;
+    var PID, animateStep, robot, runner, shouldStop, slideUpdate, start;
     $('#canvasContainer canvas').each(function() {
       var ctx_id, gridDiv, that;
       that = $(this);
@@ -52,8 +52,9 @@
     robot.setSteeringDrift(10 / 180.0 * pi);
     robot.draw();
     runner = new Runner(robot, world);
+    PID = [0.3020698159940172, 4.058570137849624, 0.003109729253799231];
     animateStep = function() {
-      return runner.step(0.1, 3, 0.004);
+      return runner.step(PID[0], PID[1], PID[2]);
     };
     shouldStop = true;
     start = function() {
@@ -112,12 +113,59 @@
         return $("#detalization_id").val(ui.value);
       }
     });
+    $("#slider_p_pid").slider({
+      min: 0,
+      max: 1,
+      step: 0.001,
+      value: 0.3,
+      slide: function(e, ui) {
+        PID[0] = ui.value;
+        return $("#p_pid_id").val(ui.value);
+      }
+    });
+    $("#slider_d_pid").slider({
+      min: 0.5,
+      max: 20,
+      step: 0.1,
+      value: 12,
+      slide: function(e, ui) {
+        PID[1] = ui.value;
+        return $("#d_pid_id").val(ui.value);
+      }
+    });
+    $("#slider_i_pid").slider({
+      min: 0,
+      max: 0.01,
+      step: 0.0001,
+      value: 0.003,
+      slide: function(e, ui) {
+        PID[2] = ui.value;
+        return $("#i_pid_id").val(ui.value);
+      }
+    });
+    $("#slider_drift").slider({
+      min: -30,
+      max: 30,
+      step: 1,
+      value: 10,
+      slide: function(e, ui) {
+        robot.setSteeringDrift(ui.value / 180.0 * pi);
+        return $("#drift_id").val(ui.value);
+      }
+    });
     $("#start_robot_id").click(function() {
       shouldStop = false;
       return start();
     });
-    return $("#stop_robot_id").click(function() {
+    $("#stop_robot_id").click(function() {
       return shouldStop = true;
+    });
+    return $("#twiddle_id").click(function() {
+      robot = new Robot();
+      robot.set(world.points[1].x + 50, world.points[1].y, TWOPI);
+      robot.setSteeringDrift(10 / 180.0 * pi);
+      runner = new Runner(robot, world);
+      return console.log(runner.twiddle());
     });
   });
 
@@ -273,7 +321,7 @@
       c = ctx.base;
       c.beginPath();
       prevPoint = null;
-      c.strokeStyle = "rgba(0,0,0,0.5)";
+      c.strokeStyle = "rgba(0,0,0,0.3)";
       _ref = this.points;
       for (i = 0, _len = _ref.length; i < _len; i++) {
         p = _ref[i];
@@ -401,7 +449,7 @@
       c = ctx.smooth;
       c.beginPath();
       prevPoint = null;
-      c.strokeStyle = "rgb(255,50,50)";
+      c.strokeStyle = "rgba(255,50,50,0.7)";
       _ref = this.path;
       for (i = 0, _len = _ref.length; i < _len; i++) {
         p = _ref[i];
@@ -431,7 +479,7 @@
   Robot = (function() {
 
     function Robot(len) {
-      this.len = len != null ? len : 20.0;
+      this.len = len != null ? len : 30.0;
       this.x = 0;
       this.y = 0;
       this.orientation = 0;
@@ -467,6 +515,7 @@
       steering2 = randomGauss(steering, this.steering_noise);
       distance2 = randomGauss(dist, this.distance_noise);
       steering2 += this.steering_drift;
+      this.steering = steering2;
       turn = Math.tan(steering2) * distance2 / this.len;
       if (Math.abs(turn) < tolerance) {
         new_x = this.x + (distance2 * cos(this.orientation));
@@ -498,7 +547,7 @@
         _results = [];
         for (i = 0, _len = _ref.length; i < _len; i++) {
           p = _ref[i];
-          c.strokeStyle = "rgba(30,255,30," + (i / len) + ")";
+          c.strokeStyle = "rgba(30,30,255," + (i / len) + ")";
           c.beginPath();
           c.moveTo(prevP.x, prevP.y);
           c.lineTo(p.x, p.y);
@@ -511,17 +560,22 @@
     };
 
     Robot.prototype.draw = function() {
-      var c;
+      var c, x, y, _ref, _ref2, _ref3, _ref4, _ref5, _ref6;
       clear('robot');
       c = ctx.robot;
       this.drawTrace();
       c.strokeStyle = "black";
-      c.beginPath();
-      c.moveTo(this.x + 15, this.y);
-      c.arc(this.x, this.y, 15, 0, TWOPI, true);
-      c.moveTo(this.x, this.y);
-      c.lineTo(this.x + 15 * cos(this.orientation), this.y + 15 * sin(this.orientation));
-      c.closePath();
+      _ref = [this.x + 5 * cos(this.orientation), this.y + 5 * sin(this.orientation)], x = _ref[0], y = _ref[1];
+      _ref2 = [x + 10 * cos(this.orientation - PI / 2), y + 10 * sin(this.orientation - PI / 2)], x = _ref2[0], y = _ref2[1];
+      c.moveTo(x, y);
+      _ref3 = [x + 20 * cos(this.orientation + PI / 2), y + 20 * sin(this.orientation + PI / 2)], x = _ref3[0], y = _ref3[1];
+      c.lineTo(x, y);
+      _ref4 = [x + this.len * cos(this.orientation + PI), y + this.len * sin(this.orientation + PI)], x = _ref4[0], y = _ref4[1];
+      c.lineTo(x, y);
+      _ref5 = [x + 20 * cos(this.orientation - PI / 2), y + 20 * sin(this.orientation - PI / 2)], x = _ref5[0], y = _ref5[1];
+      c.lineTo(x, y);
+      _ref6 = [x + this.len * cos(this.orientation), y + this.len * sin(this.orientation)], x = _ref6[0], y = _ref6[1];
+      c.lineTo(x, y);
       return c.stroke();
     };
 
@@ -531,9 +585,9 @@
 
   Runner = (function() {
 
-    function Runner(robot, world) {
+    function Runner(robot, world, speed) {
       this.robot = robot;
-      this.speed = 1.0;
+      this.speed = speed != null ? speed : 1.0;
       this.old_cte = this.countCrossTrackError();
       this.err_sum = this.old_cte;
     }
@@ -565,18 +619,60 @@
       return res;
     };
 
-    Runner.prototype.step = function(tau_p, tau_d, tau_i) {
+    Runner.prototype.twiddle = function(tol) {
+      var best_err, dp, err, i, p;
+      if (tol == null) tol = 0.0000000001;
+      p = [0.3, 4, 0.001];
+      dp = [0.001, 0.05, 0.001];
+      best_err = this.dryRun(p);
+      while (sum(dp) > tol) {
+        for (i = 0; i <= 2; i++) {
+          p[i] += dp[i];
+          err = this.dryRun(p);
+          if (err < best_err) {
+            best_err = err;
+            dp[i] *= 1.005;
+          } else {
+            p[i] -= 2 * dp[i];
+            if (err < best_err) {
+              best_err = err;
+              dp[i] *= 1.005;
+            } else {
+              p[i] += dp[i];
+              dp[i] *= 0.99;
+            }
+          }
+        }
+      }
+      console.log(sum(dp));
+      return p;
+    };
+
+    Runner.prototype.dryRun = function(params, N) {
+      var cte, err, i, _ref;
+      if (N == null) N = 100;
+      err = 0;
+      for (i = 1, _ref = N * 2; 1 <= _ref ? i <= _ref : i >= _ref; 1 <= _ref ? i++ : i--) {
+        cte = this.step(params[0], params[1], params[2], false);
+        if (i >= N) err += pow(cte, 2);
+      }
+      return err / N;
+    };
+
+    Runner.prototype.step = function(tau_p, tau_d, tau_i, draw) {
       var angle, cte, diff;
       this.tau_p = tau_p;
       this.tau_d = tau_d;
       this.tau_i = tau_i;
+      if (draw == null) draw = true;
       cte = this.countCrossTrackError();
       diff = cte - this.old_cte;
       angle = -this.tau_p * cte - this.tau_d * diff - this.tau_i * this.err_sum;
       this.robot.move(angle, this.speed);
       this.err_sum += cte;
       this.old_cte = cte;
-      return this.robot.draw();
+      if (draw) this.robot.draw();
+      return cte;
     };
 
     return Runner;

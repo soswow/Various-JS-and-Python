@@ -58,7 +58,34 @@
     <input type="text" id="weight_smooth_id" value="0.1" size="10" style="border:0; color:#f6931f; font-weight:bold;" />
   </p>
   <div id="slider_weight_smooth" class=slider></div>
-  <button id="start_robot_id">Start robot</button><button id="stop_robot_id">Stop robot</button>
+  <br/>
+  <button id="start_robot_id">Start robot</button><button id="stop_robot_id">Stop robot</button><br/>
+
+  <p>
+    <label for="p_pid_id">P in PID:</label>
+    <input type="text" id="p_pid_id" value="0.3" size="10" style="border:0; color:#f6931f; font-weight:bold;" />
+  </p>
+  <div id="slider_p_pid" class=slider></div>
+
+  <p>
+    <label for="d_pid_id">D in PID:</label>
+    <input type="text" id="d_pid_id" value="12" size="10" style="border:0; color:#f6931f; font-weight:bold;" />
+  </p>
+  <div id="slider_d_pid" class=slider></div>
+
+  <p>
+    <label for="i_pid_id">I in PID:</label>
+    <input type="text" id="i_pid_id" value="0.003" size="10" style="border:0; color:#f6931f; font-weight:bold;" />
+  </p>
+  <div id="slider_i_pid" class=slider></div>
+
+  <p>
+    <label for="drift_id">Drift in deg.:</label>
+    <input type="text" id="drift_id" value="10" size="10" style="border:0; color:#f6931f; font-weight:bold;" />
+  </p>
+  <div id="slider_drift" class=slider></div>
+
+  <!--<button id="twiddle_id">Twiddle</button>-->
 </div>
 
 <script src="unit5.js"></script>
