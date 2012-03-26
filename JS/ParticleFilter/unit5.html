@@ -3,6 +3,8 @@
 <head>
   <title>Unit 5 Demos</title>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="jquery-ui-1.8.18.custom.css" type="text/css" media="all" />
+  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
   <style>
     #canvasContainer {
       border: 1px solid black;
@@ -23,6 +25,14 @@
     #canvas_base {
       position: relative !important;
     }
+    #controls{
+      float:left;
+      width: 200px;
+      padding: 5px;
+    }
+    #controls p{
+      margin: 4px 0;
+    }
 
   </style>
 </head>
@@ -31,7 +41,24 @@
   <canvas id="canvas_base"></canvas>
   <canvas id="canvas_smooth"></canvas>
 </div>
-<button id="test">Test</button>
+<div id="controls">
+  <p>
+    <label for="detalization_id">Detalization:</label>
+    <input type="text" id="detalization_id" value="5" size="10" style="border:0; color:#f6931f; font-weight:bold;" />
+  </p>
+  <div id="slider_detalization" class=slider></div>
+  <p>
+    <label for="weight_data_id">Weight data:</label>
+    <input type="text" id="weight_data_id" value="0.5" size="10" style="border:0; color:#f6931f; font-weight:bold;" />
+  </p>
+  <div id="slider_weight_data" class=slider></div>
+  <p>
+    <label for="weight_smooth_id">Weight smooth:</label>
+    <input type="text" id="weight_smooth_id" value="0.1" size="10" style="border:0; color:#f6931f; font-weight:bold;" />
+  </p>
+  <div id="slider_weight_smooth" class=slider></div>
+</div>
+
 <script src="unit5.js"></script>
 </body>
 </html>

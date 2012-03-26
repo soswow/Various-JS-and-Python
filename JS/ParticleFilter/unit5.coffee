@@ -36,20 +36,49 @@ $ ->
     if e.keyCode is 46
       world.deleteSelectedNode()
 
-  $("#test").click ->
-    smoother = new Smoother(copyPath world.points)
-    for i in [1..5]
-      smoother.smooth 0.5, 0.1
-      smoother.augmentNodesByFactorOf 5
-#    smoother.segmentatePath 50
-
-    smoother.draw()
-
   world = new World(width, height).draw()
 
+  slideUpdate = (key, value) ->
+    console.log key, value
+    obj = {}
+    obj[key] = value
+    world.setSmoothingParams obj
+    $("##{key}_id").val value
+
+  $("#slider_weight_data").slider
+    min: 0
+    max: 3
+    step: 0.01
+    value: 0.5
+    slide: (e, ui) ->
+      slideUpdate "weight_data", ui.value
+
+  $("#slider_weight_data").slider
+    min: 0
+    max: 0.2
+    step: 0.005
+    value: 0.01
+    slide: (e, ui) ->
+      slideUpdate "weight_data", ui.value
+
+  $("#slider_weight_smooth").slider
+    min: 0
+    max: 1
+    step: 0.01
+    value: 0.24
+    slide: (e, ui) ->
+      slideUpdate "weight_smooth", ui.value
+
+  $("#slider_detalization").slider
+    min: 5
+    max: 30
+    step: 1
+    value: 10
+    slide: (e, ui) ->
+      world.setDetalization ui.value
+      $("#detalization_id").val ui.value
 
 #TODO
-# 6. Making smoother path - Different canvas layer?
 # 7. ... Car simulation PID etc.
 
 nodeRadius = 8
@@ -60,7 +89,8 @@ class World
     @hoveredNodeIndex = -1
     @selectedNodeIndex = -1
     @moveNode = false
-
+    @smoothingParams = weight_data: 0.01, weight_smooth: 0.24
+    @detalization = 10
 
   addPoint: (x, y) ->
     #Searching where to put
@@ -68,6 +98,7 @@ class World
       p = pointAt x, y
       indexToInsert = @getClosestIndexToInsert p
       @points.splice indexToInsert, 0, p
+      @updateSmoothLine()
       @draw()
       @
 
@@ -114,6 +145,7 @@ class World
   hover: (x, y) ->
     if @moveNode and @selectedNodeIndex >= 0
       @points[@selectedNodeIndex] = pointAt x, y
+      @updateSmoothLine()
       @draw()
       true
     else
@@ -145,11 +177,29 @@ class World
       @points.splice @selectedNodeIndex, 1
       @selectedNodeIndex = -1
       @draw()
+      @updateSmoothLine()
+
+  setSmoothingParams: (params) ->
+    for key, value of params
+      @smoothingParams[key] = value
+      if @points.length > 2
+        @updateSmoothLine()
+
+  setDetalization: (@detalization) ->
+    if @points.length > 2
+      @updateSmoothLine()
+
+  updateSmoothLine: ->
+    smoother = new Smoother(@points)
+    smoother.segmentatePath @detalization
+    smoother.smooth @smoothingParams.weight_data, @smoothingParams.weight_smooth
+    smoother.draw()
 
   drawStraightLines: ->
     c = ctx.base
     c.beginPath()
     prevPoint = null
+    c.strokeStyle = "rgba(0,0,0,0.5)"
     for p, i in @points
       if prevPoint
         c.moveTo p.x, p.y
@@ -208,7 +258,6 @@ class Smoother
           @newAugmentedPath.push newPoint
       if doit
         @path = @newAugmentedPath
-    printNodes @path
 
   augmentNodesByFactorOf: (factor) ->
     for i in [1..factor]
@@ -224,16 +273,18 @@ class Smoother
     newpath = copyPath @path
     for p in [1..600]
       for k in ['x','y']
-        for i in [1..@path.length-2]
+        for i in [0..@path.length-1]
+          nextI = if i == @path.length-1 then 0 else i + 1
+          prevI = if i == 0 then @path.length-1 else i - 1
           newpath[i][k] = newpath[i][k] + weight_data * (@path[i][k] - newpath[i][k])
-          newpath[i][k] = newpath[i][k] + weight_smooth * (newpath[i+1][k] + newpath[i-1][k] - 2 * newpath[i][k])
+          newpath[i][k] = newpath[i][k] + weight_smooth * (newpath[nextI][k] + newpath[prevI][k] - 2 * newpath[i][k])
     @path = newpath
 
   drawSmoothLines: ->
     c = ctx.smooth
     c.beginPath()
     prevPoint = null
-    c.strokeStyle = "rgb(255,200,200)"
+    c.strokeStyle = "rgb(255,50,50)"
     for p, i in @path
       if prevPoint
         c.moveTo p.x, p.y

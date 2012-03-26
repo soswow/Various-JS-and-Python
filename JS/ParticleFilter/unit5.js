@@ -12,6 +12,7 @@
   world = null;
 
   $(function() {
+    var slideUpdate;
     $('#canvasContainer canvas').each(function() {
       var ctx_id, gridDiv, that;
       that = $(this);
@@ -42,16 +43,52 @@
     $(document).keydown(function(e) {
       if (e.keyCode === 46) return world.deleteSelectedNode();
     });
-    $("#test").click(function() {
-      var i, smoother;
-      smoother = new Smoother(copyPath(world.points));
-      for (i = 1; i <= 5; i++) {
-        smoother.smooth(0.5, 0.1);
-        smoother.augmentNodesByFactorOf(5);
+    world = new World(width, height).draw();
+    slideUpdate = function(key, value) {
+      var obj;
+      console.log(key, value);
+      obj = {};
+      obj[key] = value;
+      world.setSmoothingParams(obj);
+      return $("#" + key + "_id").val(value);
+    };
+    $("#slider_weight_data").slider({
+      min: 0,
+      max: 3,
+      step: 0.01,
+      value: 0.5,
+      slide: function(e, ui) {
+        return slideUpdate("weight_data", ui.value);
       }
-      return smoother.draw();
     });
-    return world = new World(width, height).draw();
+    $("#slider_weight_data").slider({
+      min: 0,
+      max: 0.2,
+      step: 0.005,
+      value: 0.01,
+      slide: function(e, ui) {
+        return slideUpdate("weight_data", ui.value);
+      }
+    });
+    $("#slider_weight_smooth").slider({
+      min: 0,
+      max: 1,
+      step: 0.01,
+      value: 0.24,
+      slide: function(e, ui) {
+        return slideUpdate("weight_smooth", ui.value);
+      }
+    });
+    return $("#slider_detalization").slider({
+      min: 5,
+      max: 30,
+      step: 1,
+      value: 10,
+      slide: function(e, ui) {
+        world.setDetalization(ui.value);
+        return $("#detalization_id").val(ui.value);
+      }
+    });
   });
 
   nodeRadius = 8;
@@ -65,6 +102,11 @@
       this.hoveredNodeIndex = -1;
       this.selectedNodeIndex = -1;
       this.moveNode = false;
+      this.smoothingParams = {
+        weight_data: 0.01,
+        weight_smooth: 0.24
+      };
+      this.detalization = 10;
     }
 
     World.prototype.addPoint = function(x, y) {
@@ -73,6 +115,7 @@
         p = pointAt(x, y);
         indexToInsert = this.getClosestIndexToInsert(p);
         this.points.splice(indexToInsert, 0, p);
+        this.updateSmoothLine();
         this.draw();
         return this;
       }
@@ -128,6 +171,7 @@
       var oldHoveredPointIndex, pointIndex;
       if (this.moveNode && this.selectedNodeIndex >= 0) {
         this.points[this.selectedNodeIndex] = pointAt(x, y);
+        this.updateSmoothLine();
         this.draw();
         return true;
       } else {
@@ -162,8 +206,37 @@
       if (this.selectedNodeIndex >= 0) {
         this.points.splice(this.selectedNodeIndex, 1);
         this.selectedNodeIndex = -1;
-        return this.draw();
+        this.draw();
+        return this.updateSmoothLine();
       }
+    };
+
+    World.prototype.setSmoothingParams = function(params) {
+      var key, value, _results;
+      _results = [];
+      for (key in params) {
+        value = params[key];
+        this.smoothingParams[key] = value;
+        if (this.points.length > 2) {
+          _results.push(this.updateSmoothLine());
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
+    };
+
+    World.prototype.setDetalization = function(detalization) {
+      this.detalization = detalization;
+      if (this.points.length > 2) return this.updateSmoothLine();
+    };
+
+    World.prototype.updateSmoothLine = function() {
+      var smoother;
+      smoother = new Smoother(this.points);
+      smoother.segmentatePath(this.detalization);
+      smoother.smooth(this.smoothingParams.weight_data, this.smoothingParams.weight_smooth);
+      return smoother.draw();
     };
 
     World.prototype.drawStraightLines = function() {
@@ -171,6 +244,7 @@
       c = ctx.base;
       c.beginPath();
       prevPoint = null;
+      c.strokeStyle = "rgba(0,0,0,0.5)";
       _ref = this.points;
       for (i = 0, _len = _ref.length; i < _len; i++) {
         p = _ref[i];
@@ -229,8 +303,9 @@
     };
 
     Smoother.prototype.segmentatePath = function(segmentLength) {
-      var doit, i, newPoint, nextPoint, p, _len, _ref;
+      var doit, i, newPoint, nextPoint, p, _len, _ref, _results;
       doit = true;
+      _results = [];
       while (doit) {
         doit = false;
         this.newAugmentedPath = [];
@@ -245,9 +320,13 @@
             this.newAugmentedPath.push(newPoint);
           }
         }
-        if (doit) this.path = this.newAugmentedPath;
+        if (doit) {
+          _results.push(this.path = this.newAugmentedPath);
+        } else {
+          _results.push(void 0);
+        }
       }
-      return printNodes(this.path);
+      return _results;
     };
 
     Smoother.prototype.augmentNodesByFactorOf = function(factor) {
@@ -269,7 +348,7 @@
     };
 
     Smoother.prototype.smooth = function(weight_data, weight_smooth) {
-      var i, k, newpath, p, _i, _len, _ref, _ref2;
+      var i, k, newpath, nextI, p, prevI, _i, _len, _ref, _ref2;
       if (weight_data == null) weight_data = 0.5;
       if (weight_smooth == null) weight_smooth = 0.1;
       newpath = copyPath(this.path);
@@ -277,9 +356,11 @@
         _ref = ['x', 'y'];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           k = _ref[_i];
-          for (i = 1, _ref2 = this.path.length - 2; 1 <= _ref2 ? i <= _ref2 : i >= _ref2; 1 <= _ref2 ? i++ : i--) {
+          for (i = 0, _ref2 = this.path.length - 1; 0 <= _ref2 ? i <= _ref2 : i >= _ref2; 0 <= _ref2 ? i++ : i--) {
+            nextI = i === this.path.length - 1 ? 0 : i + 1;
+            prevI = i === 0 ? this.path.length - 1 : i - 1;
             newpath[i][k] = newpath[i][k] + weight_data * (this.path[i][k] - newpath[i][k]);
-            newpath[i][k] = newpath[i][k] + weight_smooth * (newpath[i + 1][k] + newpath[i - 1][k] - 2 * newpath[i][k]);
+            newpath[i][k] = newpath[i][k] + weight_smooth * (newpath[nextI][k] + newpath[prevI][k] - 2 * newpath[i][k]);
           }
         }
       }
@@ -291,7 +372,7 @@
       c = ctx.smooth;
       c.beginPath();
       prevPoint = null;
-      c.strokeStyle = "rgb(255,200,200)";
+      c.strokeStyle = "rgb(255,50,50)";
       _ref = this.path;
       for (i = 0, _len = _ref.length; i < _len; i++) {
         p = _ref[i];
