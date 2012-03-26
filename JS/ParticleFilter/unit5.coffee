@@ -37,9 +37,32 @@ $ ->
       world.deleteSelectedNode()
 
   world = new World(width, height).draw()
+  world.addPoint 200, 100
+  world.addPoint 400, 100
+  world.addPoint 220, 300
+
+  robot = new Robot()
+  robot.set world.points[1].x+50, world.points[1].y, TWOPI
+  robot.setSteeringDrift 10 / 180.0 * pi
+  robot.draw()
+  runner = new Runner(robot, world)
+
+  animateStep = ->
+    runner.step 0.1, 3, 0.004
+
+  shouldStop = true
+  start = ->
+    shouldStop = false
+    requestAnimationFrame = window.requestAnimationFrame or window.mozRequestAnimationFrame or
+                            window.webkitRequestAnimationFrame or window.msRequestAnimationFrame
+    step = ->
+      unless shouldStop
+        animateStep()
+        requestAnimationFrame step
+
+    requestAnimationFrame step
 
   slideUpdate = (key, value) ->
-    console.log key, value
     obj = {}
     obj[key] = value
     world.setSmoothingParams obj
@@ -77,6 +100,17 @@ $ ->
     slide: (e, ui) ->
       world.setDetalization ui.value
       $("#detalization_id").val ui.value
+
+  $("#start_robot_id").click ->
+    shouldStop = false
+    start()
+
+  $("#stop_robot_id").click ->
+    shouldStop = true
+
+
+
+
 
 #TODO
 # 7. ... Car simulation PID etc.
@@ -190,10 +224,10 @@ class World
       @updateSmoothLine()
 
   updateSmoothLine: ->
-    smoother = new Smoother(@points)
-    smoother.segmentatePath @detalization
-    smoother.smooth @smoothingParams.weight_data, @smoothingParams.weight_smooth
-    smoother.draw()
+    @smoother = new Smoother(@points)
+    @smoother.segmentatePath @detalization
+    @smoother.smooth @smoothingParams.weight_data, @smoothingParams.weight_smooth
+    @smoother.draw()
 
   drawStraightLines: ->
     c = ctx.base
@@ -301,6 +335,126 @@ class Smoother
     clear 'smooth'
     @drawSmoothLines()
 
+class Robot
+  constructor: (@len=20.0) ->
+    @x = 0
+    @y = 0
+    @orientation = 0
+    @steering_noise = 0
+    @distance_noise = 0
+    @steering_drift = 0
+    @trace=[]
+    @maxTraceLength = 300
+
+  set: (@x, @y, new_orientation) ->
+    @orientation = new_orientation % TWOPI
+
+  setNoise: (@steering_noise, @distance_noise) ->
+
+  setSteeringDrift: (@steering_drift) ->
+
+  # --------
+  # move:
+  #    steering = front wheel steering angle, limited by max_steering_angle
+  #    dist = total dist driven, most be non-negative
+
+  move: (steering, dist, tolerance = 0.001, max_steering_angle = PI / 4.0) ->
+    if steering > max_steering_angle
+      steering = max_steering_angle
+    if steering < -max_steering_angle
+      steering = -max_steering_angle
+    if dist < 0
+      dist = 0
+
+    # apply noise
+    steering2 = randomGauss steering, @steering_noise
+    distance2 = randomGauss dist, @distance_noise
+
+    # apply steering drift
+    steering2 += @steering_drift
+
+    # Execute motion
+    turn = Math.tan(steering2) * distance2 / @len
+
+    if Math.abs(turn) < tolerance
+      # approximate by straight line motion
+      new_x = @x + (distance2 * cos @orientation)
+      new_y = @y + (distance2 * sin @orientation)
+      new_orientation = mod @orientation + turn, TWOPI
+    else
+      # approximate bicycle model for motion
+      radius = distance2 / turn
+      cx = @x - (sin(@orientation) * radius)
+      cy = @y + (cos(@orientation) * radius)
+      new_orientation = mod @orientation + turn, TWOPI
+      new_x = cx + (sin(new_orientation) * radius)
+      new_y = cy - (cos(new_orientation) * radius)
+    @x = new_x
+    @y = new_y
+    @trace.push pointAt new_x, new_y
+    if @trace.length > @maxTraceLength
+      @trace.shift()
+    @orientation = new_orientation
+    @
+
+  drawTrace: ->
+    c = ctx.robot
+    len = @trace.length
+    if len > 1
+      prevP = @trace[0]
+      for p, i in @trace[1..@trace.length - 1]
+        c.strokeStyle = "rgba(30,255,30,#{i/len})"
+        c.beginPath()
+        c.moveTo prevP.x, prevP.y
+        c.lineTo p.x, p.y
+        c.closePath()
+        c.stroke()
+        prevP = p
+
+
+  draw: ->
+    clear 'robot'
+    c = ctx.robot
+    @drawTrace()
+    c.strokeStyle = "black"
+    c.beginPath()
+    c.moveTo @x + 15, @y
+    c.arc @x, @y, 15, 0, TWOPI, true
+    c.moveTo @x, @y
+    c.lineTo @x + 15 * cos(@orientation), @y + 15 * sin(@orientation)
+    c.closePath()
+    c.stroke()
+
+
+class Runner
+  constructor: (@robot, world) ->
+    @speed = 1.0 # motion distance is equal to speed (we assume time = 1)
+    @old_cte = @countCrossTrackError()
+    @err_sum = @old_cte
+
+  isLeft: (a, b, c) ->
+    ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) > 0
+
+  countCrossTrackError: ->
+    @path = world.smoother.path
+    [res, index] = findMin((distance(p, @robot) for p in @path), true)
+    if index is @path.length-1
+      nextIndex = 0
+    else
+      nextIndex = index + 1
+    isLeft = @isLeft(@path[index], @path[nextIndex], @robot)
+    res *= if isLeft then 1 else -1
+    res
+
+  step: (@tau_p, @tau_d, @tau_i) ->
+    cte = @countCrossTrackError()
+    diff = cte - @old_cte
+    angle = -@tau_p * cte - @tau_d * diff - @tau_i * @err_sum
+    @robot.move angle, @speed
+    @err_sum += cte
+    @old_cte = cte
+    @robot.draw()
+
 #Units
 PI = Math.PI
 TWOPI = Math.PI * 2
@@ -338,3 +492,47 @@ copyPath = (path) ->
   for p in path
     pointAt p.x, p.y
 
+#Math function extraction
+random = Math.random
+pow = Math.pow
+sqrt = Math.sqrt
+log = Math.log
+pi = Math.PI
+TWOPI = pi * 2
+exp = Math.exp
+cos = Math.cos
+sin = Math.sin
+
+max = (arr) ->
+  result = -Number.MAX_VALUE
+  for el in arr
+    if el > result
+      result = el
+  result
+
+sum = (arr) ->
+  _sum = 0
+  for el in arr
+    _sum+=el
+  _sum
+
+randomGauss = (mu, sigma) ->
+  #Box–Muller transform implemtation. 2nd variant
+  #http://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
+  loop
+    x = 2 * random() - 1 # Random value from -1 to 1
+    y = 2 * random() - 1
+    s = pow(x,2) + pow(y, 2)
+    break unless s >= 1 || s == 0
+
+  z = x * sqrt(-2 * log(s) / s)
+  #  console.log "Gauss (#{mu}, #{sigma}) -> #{res}"
+  mu + sigma * z
+
+
+gauss = (mu, sigma, x) ->
+  # calculates the probability of x for 1-dim Gaussian with mean mu and var. sigma
+  exp(-(pow((mu - x), 2) / pow(sigma, 2) / 2.0) / sqrt TWOPI * pow(sigma, 2))
+
+#Modulo function which gives mod(-3, 10) == 7 (not -3 as in pure JS)
+mod = (a, b) -> a % b + (if a < 0 then b else 0)
