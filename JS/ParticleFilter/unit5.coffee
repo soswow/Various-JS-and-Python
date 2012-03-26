@@ -20,43 +20,49 @@ $ ->
     ctx[ctx_id] = @getContext? '2d'
     ctx[ctx_id].clearRect 0, 0, width, height
 
-  gridMouseDown = false
-  #  $("#canvasContainer").mousedown (e) ->
-  #      world.click e.offsetX, e.offsetY
-  #      gridMouseDown = true
-  #    .mouseup (e) ->
-  #      gridMouseDown = false
-  #      world.click e.offsetX, e.offsetY
-  #    .mouseleave ->
-  #      gridMouseDown = false
-  #    .mousemove (e) ->
-  #      world.hover e.offsetX, e.offsetY, gridMouseDown
-  #    .click (e) ->
-  #      world.click e.offsetX, e.offsetY
+  $('#canvasContainer')
+  .mousemove (e) ->
+    isOverNode = world.hover e.offsetX, e.offsetY
+    $(@).toggleClass "hovered", isOverNode
+  .mousedown (e) ->
+    isNodeSelected = world.selectNodeAt e.offsetX, e.offsetY
+    world.moveNode = isNodeSelected
+  .mouseup (e) ->
+    unless world.moveNode
+      world.addPoint e.offsetX, e.offsetY
+    world.moveNode = false
 
-  $('#canvasContainer').click (e) ->
-    world.addPoint e.offsetX, e.offsetY
+  $(document).keydown (e) ->
+    if e.keyCode is 46
+      world.deleteSelectedNode()
 
   world = new World(width, height).draw()
 
 
 #TODO
-# 2. Hoverable (change color
-# 3. Selectable (state of selected)
-# 4. Deleting with "Delete button" selected node
-# 5. Moving nodes
 # 6. Making smoother path - Different canvas layer?
 # 7. ... Car simulation PID etc.
+
+nodeRadius = 8
 
 class World
   constructor: (@w, @h) ->
     @points = []
+    @hoveredNodeIndex = -1
+    @selectedNodeIndex = -1
+    @moveNode = false
+
 
   addPoint: (x, y) ->
-  #Searching where to put
-    p = pointAt x, y
-    #    console.log @points
-    #    console.log @points[1..@points.length]
+    #Searching where to put
+    unless @findNodeNear(x, y)?
+      p = pointAt x, y
+      indexToInsert = @getClosestIndexToInsert p
+      @points.splice indexToInsert, 0, p
+      @draw()
+      @
+
+  getClosestIndexToInsert: (p) ->
     inBetween = false
     angles =
       if @points.length == 0
@@ -76,59 +82,103 @@ class World
           beta = Math.acos (root(ab) + root(bp) - root(ap)) / (2 * ab * bp)
           gamma = Math.acos (root(ab) + root(ap) - root(bp)) / (2 * ab * ap)
           if beta < PI / 2 and gamma < PI / 2
-            console.log "inBetween"
             inBetween = true
           alpha * 180 / PI
 
-    console.log angles
-
     if inBetween
       putAtIndex = findMaxIndex angles
-      putAtIndex = 0 if putAtIndex < 0
-      console.log putAtIndex
-      @points.splice putAtIndex, 0, p
+      if putAtIndex < 0
+        0
+      else
+        putAtIndex
     else
       if @points.length >= 2
         dToFirst = distance p, @points[0]
         dToLast = distance p, @points[@points.length - 1]
         if dToFirst < dToLast
-          console.log "First"
-          @points.unshift p
+          0
         else
-          console.log "Last"
-          @points.push p
+          @points.length
       else
-        @points.push p
-    @draw()
-    @
+        @points.length
 
-  removePoint: (x, y) ->
+  hover: (x, y) ->
+    if @moveNode and @selectedNodeIndex >= 0
+      @points[@selectedNodeIndex] = pointAt x, y
+      @draw()
+      true
+    else
+      pointIndex = @findNodeNear x, y
+      oldHoveredPointIndex = @hoveredNodeIndex
+      @hoveredNodeIndex = if pointIndex? then pointIndex else -1
+      unless @hoveredNodeIndex is oldHoveredPointIndex
+        @draw()
+
+      @hoveredNodeIndex >= 0
+
+  selectNodeAt: (x, y) ->
+    pointIndex = @findNodeNear x, y
+    oldSelectedNodeIndex = @selectedNodeIndex
+    @selectedNodeIndex = if pointIndex? then pointIndex else -1
+    unless @selectedNodeIndex is oldSelectedNodeIndex
+      @draw()
+
+    @selectedNodeIndex >= 0
+
+  findNodeNear: (x, y) ->
+    for p, i in @points
+      if distance(p, pointAt(x, y)) <= nodeRadius
+        return i
+    null
+
+  deleteSelectedNode: ->
+    if @selectedNodeIndex >= 0
+      @points.splice @selectedNodeIndex, 1
+      @selectedNodeIndex = -1
+      @draw()
+
 
   clear: (ctxId) ->
     if ctxId
       canvases[ctxId].width = width
 
-  drawPointsAndLines: ->
-    @clear 'simpleLines'
+  drawStraightLines: ->
     c = ctx.simpleLines
     c.beginPath()
     prevPoint = null
     for p, i in @points
-      c.moveTo p.x + 10, p.y
-      c.arc p.x, p.y, 10, 0, TWOPI, true
       if prevPoint
         c.moveTo p.x, p.y
         c.lineTo prevPoint.x, prevPoint.y
       prevPoint = p
+
     if @points.length > 2
       c.moveTo prevPoint.x, prevPoint.y
       c.lineTo @points[0].x, @points[0].y
-
     c.closePath()
     c.stroke()
 
+  drawNodes: ->
+    c = ctx.simpleLines
+    for p, i in @points
+      c.beginPath()
+      c.moveTo p.x + nodeRadius, p.y
+      c.arc p.x, p.y, nodeRadius, 0, TWOPI, true
+      c.closePath()
+      c.fillStyle =
+        if i == @selectedNodeIndex
+          "rgb(200,255,200)"
+        else if i == @hoveredNodeIndex
+          "rgb(200,200,255)"
+        else
+          "white"
+      c.fill()
+      c.stroke()
+
   draw: ->
-    @drawPointsAndLines()
+    @clear 'simpleLines'
+    @drawStraightLines()
+    @drawNodes()
     @
 
 #Units

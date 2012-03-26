@@ -1,5 +1,5 @@
 (function() {
-  var PI, TWOPI, World, canvases, ctx, distance, distanceToLine, findMax, findMaxIndex, findMin, findMinIndex, height, pointAt, root, width, world;
+  var PI, TWOPI, World, canvases, ctx, distance, distanceToLine, findMax, findMaxIndex, findMin, findMinIndex, height, nodeRadius, pointAt, root, width, world;
 
   ctx = {};
 
@@ -12,7 +12,6 @@
   world = null;
 
   $(function() {
-    var gridMouseDown;
     $('#canvasContainer canvas').each(function() {
       var ctx_id, gridDiv, that;
       that = $(this);
@@ -28,12 +27,25 @@
       ctx[ctx_id] = typeof this.getContext === "function" ? this.getContext('2d') : void 0;
       return ctx[ctx_id].clearRect(0, 0, width, height);
     });
-    gridMouseDown = false;
-    $('#canvasContainer').click(function(e) {
-      return world.addPoint(e.offsetX, e.offsetY);
+    $('#canvasContainer').mousemove(function(e) {
+      var isOverNode;
+      isOverNode = world.hover(e.offsetX, e.offsetY);
+      return $(this).toggleClass("hovered", isOverNode);
+    }).mousedown(function(e) {
+      var isNodeSelected;
+      isNodeSelected = world.selectNodeAt(e.offsetX, e.offsetY);
+      return world.moveNode = isNodeSelected;
+    }).mouseup(function(e) {
+      if (!world.moveNode) world.addPoint(e.offsetX, e.offsetY);
+      return world.moveNode = false;
+    });
+    $(document).keydown(function(e) {
+      if (e.keyCode === 46) return world.deleteSelectedNode();
     });
     return world = new World(width, height).draw();
   });
+
+  nodeRadius = 8;
 
   World = (function() {
 
@@ -41,11 +53,24 @@
       this.w = w;
       this.h = h;
       this.points = [];
+      this.hoveredNodeIndex = -1;
+      this.selectedNodeIndex = -1;
+      this.moveNode = false;
     }
 
     World.prototype.addPoint = function(x, y) {
-      var a, ab, alpha, angles, ap, b, beta, bp, dToFirst, dToLast, gamma, i, inBetween, p, putAtIndex;
-      p = pointAt(x, y);
+      var indexToInsert, p;
+      if (this.findNodeNear(x, y) == null) {
+        p = pointAt(x, y);
+        indexToInsert = this.getClosestIndexToInsert(p);
+        this.points.splice(indexToInsert, 0, p);
+        this.draw();
+        return this;
+      }
+    };
+
+    World.prototype.getClosestIndexToInsert = function(p) {
+      var a, ab, alpha, angles, ap, b, beta, bp, dToFirst, dToLast, gamma, i, inBetween, putAtIndex;
       inBetween = false;
       angles = (function() {
         var _ref, _results;
@@ -62,57 +87,88 @@
             alpha = Math.acos((root(ap) + root(bp) - root(ab)) / (2 * ap * bp));
             beta = Math.acos((root(ab) + root(bp) - root(ap)) / (2 * ab * bp));
             gamma = Math.acos((root(ab) + root(ap) - root(bp)) / (2 * ab * ap));
-            if (beta < PI / 2 && gamma < PI / 2) {
-              console.log("inBetween");
-              inBetween = true;
-            }
+            if (beta < PI / 2 && gamma < PI / 2) inBetween = true;
             _results.push(alpha * 180 / PI);
           }
           return _results;
         }
       }).call(this);
-      console.log(angles);
       if (inBetween) {
         putAtIndex = findMaxIndex(angles);
-        if (putAtIndex < 0) putAtIndex = 0;
-        console.log(putAtIndex);
-        this.points.splice(putAtIndex, 0, p);
+        if (putAtIndex < 0) {
+          return 0;
+        } else {
+          return putAtIndex;
+        }
       } else {
         if (this.points.length >= 2) {
           dToFirst = distance(p, this.points[0]);
           dToLast = distance(p, this.points[this.points.length - 1]);
           if (dToFirst < dToLast) {
-            console.log("First");
-            this.points.unshift(p);
+            return 0;
           } else {
-            console.log("Last");
-            this.points.push(p);
+            return this.points.length;
           }
         } else {
-          this.points.push(p);
+          return this.points.length;
         }
       }
-      this.draw();
-      return this;
     };
 
-    World.prototype.removePoint = function(x, y) {};
+    World.prototype.hover = function(x, y) {
+      var oldHoveredPointIndex, pointIndex;
+      if (this.moveNode && this.selectedNodeIndex >= 0) {
+        this.points[this.selectedNodeIndex] = pointAt(x, y);
+        this.draw();
+        return true;
+      } else {
+        pointIndex = this.findNodeNear(x, y);
+        oldHoveredPointIndex = this.hoveredNodeIndex;
+        this.hoveredNodeIndex = pointIndex != null ? pointIndex : -1;
+        if (this.hoveredNodeIndex !== oldHoveredPointIndex) this.draw();
+        return this.hoveredNodeIndex >= 0;
+      }
+    };
+
+    World.prototype.selectNodeAt = function(x, y) {
+      var oldSelectedNodeIndex, pointIndex;
+      pointIndex = this.findNodeNear(x, y);
+      oldSelectedNodeIndex = this.selectedNodeIndex;
+      this.selectedNodeIndex = pointIndex != null ? pointIndex : -1;
+      if (this.selectedNodeIndex !== oldSelectedNodeIndex) this.draw();
+      return this.selectedNodeIndex >= 0;
+    };
+
+    World.prototype.findNodeNear = function(x, y) {
+      var i, p, _len, _ref;
+      _ref = this.points;
+      for (i = 0, _len = _ref.length; i < _len; i++) {
+        p = _ref[i];
+        if (distance(p, pointAt(x, y)) <= nodeRadius) return i;
+      }
+      return null;
+    };
+
+    World.prototype.deleteSelectedNode = function() {
+      if (this.selectedNodeIndex >= 0) {
+        this.points.splice(this.selectedNodeIndex, 1);
+        this.selectedNodeIndex = -1;
+        return this.draw();
+      }
+    };
 
     World.prototype.clear = function(ctxId) {
       if (ctxId) return canvases[ctxId].width = width;
     };
 
-    World.prototype.drawPointsAndLines = function() {
+    World.prototype.drawStraightLines = function() {
       var c, i, p, prevPoint, _len, _ref;
-      this.clear('simpleLines');
       c = ctx.simpleLines;
       c.beginPath();
       prevPoint = null;
       _ref = this.points;
       for (i = 0, _len = _ref.length; i < _len; i++) {
         p = _ref[i];
-        c.moveTo(p.x + 10, p.y);
-        c.arc(p.x, p.y, 10, 0, TWOPI, true);
         if (prevPoint) {
           c.moveTo(p.x, p.y);
           c.lineTo(prevPoint.x, prevPoint.y);
@@ -127,8 +183,28 @@
       return c.stroke();
     };
 
+    World.prototype.drawNodes = function() {
+      var c, i, p, _len, _ref, _results;
+      c = ctx.simpleLines;
+      _ref = this.points;
+      _results = [];
+      for (i = 0, _len = _ref.length; i < _len; i++) {
+        p = _ref[i];
+        c.beginPath();
+        c.moveTo(p.x + nodeRadius, p.y);
+        c.arc(p.x, p.y, nodeRadius, 0, TWOPI, true);
+        c.closePath();
+        c.fillStyle = i === this.selectedNodeIndex ? "rgb(200,255,200)" : i === this.hoveredNodeIndex ? "rgb(200,200,255)" : "white";
+        c.fill();
+        _results.push(c.stroke());
+      }
+      return _results;
+    };
+
     World.prototype.draw = function() {
-      this.drawPointsAndLines();
+      this.clear('simpleLines');
+      this.drawStraightLines();
+      this.drawNodes();
       return this;
     };
 
