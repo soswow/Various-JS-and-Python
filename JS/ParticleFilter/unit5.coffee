@@ -40,6 +40,14 @@ $ ->
   world = new World(width, height).draw()
 
 
+#TODO
+# 2. Hoverable (change color
+# 3. Selectable (state of selected)
+# 4. Deleting with "Delete button" selected node
+# 5. Moving nodes
+# 6. Making smoother path - Different canvas layer?
+# 7. ... Car simulation PID etc.
+
 class World
   constructor: (@w, @h) ->
     @points = []
@@ -51,23 +59,26 @@ class World
     #    console.log @points[1..@points.length]
     inBetween = false
     angles =
-      for b, i in @points[1..@points.length]
-      #        console.log "i ",i
-        a = @points[i]
+      if @points.length == 0
+        []
+      else
+        for i in [0..@points.length - 1]
+          a = if i > 0
+            @points[i - 1]
+          else
+            @points[@points.length - 1]
+          b = @points[i]
 
-        ap = distance a, p
-        #b
-        bp = distance b, p
-        #c
-        ab = distance b, a
-        #a
-        alpha = Math.acos (root(ap) + root(bp) - root(ab)) / (2 * ap * bp)
-        beta = Math.acos (root(ab) + root(bp) - root(ap)) / (2 * ab * bp)
-        gamma = Math.acos (root(ab) + root(ap) - root(bp)) / (2 * ab * ap)
-        if beta < PI / 2 and gamma < PI / 2
-          console.log "inBetween"
-          inBetween = true
-        alpha * 180 / PI
+          ap = distance a, p
+          bp = distance b, p
+          ab = distance b, a
+          alpha = Math.acos (root(ap) + root(bp) - root(ab)) / (2 * ap * bp)
+          beta = Math.acos (root(ab) + root(bp) - root(ap)) / (2 * ab * bp)
+          gamma = Math.acos (root(ab) + root(ap) - root(bp)) / (2 * ab * ap)
+          if beta < PI / 2 and gamma < PI / 2
+            console.log "inBetween"
+            inBetween = true
+          alpha * 180 / PI
 
     console.log angles
 
@@ -75,7 +86,7 @@ class World
       putAtIndex = findMaxIndex angles
       putAtIndex = 0 if putAtIndex < 0
       console.log putAtIndex
-      @points.splice putAtIndex + 1, 0, p
+      @points.splice putAtIndex, 0, p
     else
       if @points.length >= 2
         dToFirst = distance p, @points[0]

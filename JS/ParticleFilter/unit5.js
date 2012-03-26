@@ -48,32 +48,35 @@
       p = pointAt(x, y);
       inBetween = false;
       angles = (function() {
-        var _len, _ref, _results;
-        _ref = this.points.slice(1, this.points.length + 1 || 9e9);
-        _results = [];
-        for (i = 0, _len = _ref.length; i < _len; i++) {
-          b = _ref[i];
-          a = this.points[i];
-          ap = distance(a, p);
-          bp = distance(b, p);
-          ab = distance(b, a);
-          alpha = Math.acos((root(ap) + root(bp) - root(ab)) / (2 * ap * bp));
-          beta = Math.acos((root(ab) + root(bp) - root(ap)) / (2 * ab * bp));
-          gamma = Math.acos((root(ab) + root(ap) - root(bp)) / (2 * ab * ap));
-          if (beta < PI / 2 && gamma < PI / 2) {
-            console.log("inBetween");
-            inBetween = true;
+        var _ref, _results;
+        if (this.points.length === 0) {
+          return [];
+        } else {
+          _results = [];
+          for (i = 0, _ref = this.points.length - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
+            a = i > 0 ? this.points[i - 1] : this.points[this.points.length - 1];
+            b = this.points[i];
+            ap = distance(a, p);
+            bp = distance(b, p);
+            ab = distance(b, a);
+            alpha = Math.acos((root(ap) + root(bp) - root(ab)) / (2 * ap * bp));
+            beta = Math.acos((root(ab) + root(bp) - root(ap)) / (2 * ab * bp));
+            gamma = Math.acos((root(ab) + root(ap) - root(bp)) / (2 * ab * ap));
+            if (beta < PI / 2 && gamma < PI / 2) {
+              console.log("inBetween");
+              inBetween = true;
+            }
+            _results.push(alpha * 180 / PI);
           }
-          _results.push(alpha * 180 / PI);
+          return _results;
         }
-        return _results;
       }).call(this);
       console.log(angles);
       if (inBetween) {
         putAtIndex = findMaxIndex(angles);
         if (putAtIndex < 0) putAtIndex = 0;
         console.log(putAtIndex);
-        this.points.splice(putAtIndex + 1, 0, p);
+        this.points.splice(putAtIndex, 0, p);
       } else {
         if (this.points.length >= 2) {
           dToFirst = distance(p, this.points[0]);
