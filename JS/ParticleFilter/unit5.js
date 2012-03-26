@@ -1,5 +1,5 @@
 (function() {
-  var PI, TWOPI, World, canvases, ctx, distance, distanceToLine, findMax, findMaxIndex, findMin, findMinIndex, height, nodeRadius, pointAt, root, width, world;
+  var PI, Smoother, TWOPI, World, canvases, clear, copyPath, ctx, distance, distanceToLine, findMax, findMaxIndex, findMin, findMinIndex, height, nodeRadius, pointAt, printNodes, root, width, world;
 
   ctx = {};
 
@@ -41,6 +41,15 @@
     });
     $(document).keydown(function(e) {
       if (e.keyCode === 46) return world.deleteSelectedNode();
+    });
+    $("#test").click(function() {
+      var i, smoother;
+      smoother = new Smoother(copyPath(world.points));
+      for (i = 1; i <= 5; i++) {
+        smoother.smooth(0.5, 0.1);
+        smoother.augmentNodesByFactorOf(5);
+      }
+      return smoother.draw();
     });
     return world = new World(width, height).draw();
   });
@@ -157,13 +166,9 @@
       }
     };
 
-    World.prototype.clear = function(ctxId) {
-      if (ctxId) return canvases[ctxId].width = width;
-    };
-
     World.prototype.drawStraightLines = function() {
       var c, i, p, prevPoint, _len, _ref;
-      c = ctx.simpleLines;
+      c = ctx.base;
       c.beginPath();
       prevPoint = null;
       _ref = this.points;
@@ -185,7 +190,7 @@
 
     World.prototype.drawNodes = function() {
       var c, i, p, _len, _ref, _results;
-      c = ctx.simpleLines;
+      c = ctx.base;
       _ref = this.points;
       _results = [];
       for (i = 0, _len = _ref.length; i < _len; i++) {
@@ -202,13 +207,114 @@
     };
 
     World.prototype.draw = function() {
-      this.clear('simpleLines');
+      clear('base');
       this.drawStraightLines();
       this.drawNodes();
       return this;
     };
 
     return World;
+
+  })();
+
+  Smoother = (function() {
+
+    function Smoother(initPath) {
+      this.initPath = initPath;
+      this.resetAugmentedPath();
+    }
+
+    Smoother.prototype.resetAugmentedPath = function() {
+      return this.path = copyPath(this.initPath);
+    };
+
+    Smoother.prototype.segmentatePath = function(segmentLength) {
+      var doit, i, newPoint, nextPoint, p, _len, _ref;
+      doit = true;
+      while (doit) {
+        doit = false;
+        this.newAugmentedPath = [];
+        _ref = this.path;
+        for (i = 0, _len = _ref.length; i < _len; i++) {
+          p = _ref[i];
+          nextPoint = i < this.path.length - 1 ? this.path[i + 1] : this.path[0];
+          this.newAugmentedPath.push(p);
+          if (distance(p, nextPoint) > segmentLength) {
+            doit = true;
+            newPoint = pointAt(Math.min(p.x, nextPoint.x) + Math.abs(p.x - nextPoint.x) / 2, Math.min(p.y, nextPoint.y) + Math.abs(p.y - nextPoint.y) / 2);
+            this.newAugmentedPath.push(newPoint);
+          }
+        }
+        if (doit) this.path = this.newAugmentedPath;
+      }
+      return printNodes(this.path);
+    };
+
+    Smoother.prototype.augmentNodesByFactorOf = function(factor) {
+      var i, newPoint, nextPoint, p, _len, _ref, _results;
+      _results = [];
+      for (i = 1; 1 <= factor ? i <= factor : i >= factor; 1 <= factor ? i++ : i--) {
+        this.newAugmentedPath = [];
+        _ref = this.path;
+        for (i = 0, _len = _ref.length; i < _len; i++) {
+          p = _ref[i];
+          nextPoint = i < this.path.length - 1 ? this.path[i + 1] : this.path[0];
+          newPoint = pointAt((p.x + nextPoint.x) / 2, (p.y + nextPoint.y) / 2);
+          this.newAugmentedPath.push(p);
+          this.newAugmentedPath.push(newPoint);
+        }
+        _results.push(this.path = this.newAugmentedPath);
+      }
+      return _results;
+    };
+
+    Smoother.prototype.smooth = function(weight_data, weight_smooth) {
+      var i, k, newpath, p, _i, _len, _ref, _ref2;
+      if (weight_data == null) weight_data = 0.5;
+      if (weight_smooth == null) weight_smooth = 0.1;
+      newpath = copyPath(this.path);
+      for (p = 1; p <= 600; p++) {
+        _ref = ['x', 'y'];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          k = _ref[_i];
+          for (i = 1, _ref2 = this.path.length - 2; 1 <= _ref2 ? i <= _ref2 : i >= _ref2; 1 <= _ref2 ? i++ : i--) {
+            newpath[i][k] = newpath[i][k] + weight_data * (this.path[i][k] - newpath[i][k]);
+            newpath[i][k] = newpath[i][k] + weight_smooth * (newpath[i + 1][k] + newpath[i - 1][k] - 2 * newpath[i][k]);
+          }
+        }
+      }
+      return this.path = newpath;
+    };
+
+    Smoother.prototype.drawSmoothLines = function() {
+      var c, i, p, prevPoint, _len, _ref;
+      c = ctx.smooth;
+      c.beginPath();
+      prevPoint = null;
+      c.strokeStyle = "rgb(255,200,200)";
+      _ref = this.path;
+      for (i = 0, _len = _ref.length; i < _len; i++) {
+        p = _ref[i];
+        if (prevPoint) {
+          c.moveTo(p.x, p.y);
+          c.lineTo(prevPoint.x, prevPoint.y);
+        }
+        prevPoint = p;
+      }
+      if (this.path.length > 2) {
+        c.moveTo(prevPoint.x, prevPoint.y);
+        c.lineTo(this.path[0].x, this.path[0].y);
+      }
+      c.closePath();
+      return c.stroke();
+    };
+
+    Smoother.prototype.draw = function() {
+      clear('smooth');
+      return this.drawSmoothLines();
+    };
+
+    return Smoother;
 
   })();
 
@@ -250,11 +356,28 @@
     return index;
   };
 
+  clear = function(ctxId) {
+    if (ctxId) return canvases[ctxId].width = width;
+  };
+
   pointAt = function(x, y) {
     return {
       x: x,
       y: y
     };
+  };
+
+  printNodes = function(nodes) {
+    var p;
+    return console.log(((function() {
+      var _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = nodes.length; _i < _len; _i++) {
+        p = nodes[_i];
+        _results.push("(x:" + p.x + ", y:" + p.y + ")");
+      }
+      return _results;
+    })()).join(", "));
   };
 
   root = function(a) {
@@ -267,6 +390,16 @@
 
   distanceToLine = function(a, b, p) {
     return Math.abs((p.x - a.x) * (b.y - a.y) - (p.y - a.y) * (b.x - a.x)) / distance(a, b);
+  };
+
+  copyPath = function(path) {
+    var p, _i, _len, _results;
+    _results = [];
+    for (_i = 0, _len = path.length; _i < _len; _i++) {
+      p = path[_i];
+      _results.push(pointAt(p.x, p.y));
+    }
+    return _results;
   };
 
 }).call(this);

@@ -15,21 +15,23 @@
       cursor: pointer;
     }
 
-    /*#canvasContainer canvas{*/
-    /*position: absolute;*/
-    /*top: 0;*/
-    /*left: 0;*/
-    /*}*/
-    #canvas_simpleLines {
-      position: relative;
+    #canvasContainer canvas{
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    #canvas_base {
+      position: relative !important;
     }
 
   </style>
 </head>
 <body>
 <div id="canvasContainer">
-  <canvas id="canvas_simpleLines"></canvas>
+  <canvas id="canvas_base"></canvas>
+  <canvas id="canvas_smooth"></canvas>
 </div>
+<button id="test">Test</button>
 <script src="unit5.js"></script>
 </body>
 </html>

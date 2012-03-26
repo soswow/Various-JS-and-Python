@@ -36,6 +36,15 @@ $ ->
     if e.keyCode is 46
       world.deleteSelectedNode()
 
+  $("#test").click ->
+    smoother = new Smoother(copyPath world.points)
+    for i in [1..5]
+      smoother.smooth 0.5, 0.1
+      smoother.augmentNodesByFactorOf 5
+#    smoother.segmentatePath 50
+
+    smoother.draw()
+
   world = new World(width, height).draw()
 
 
@@ -137,13 +146,8 @@ class World
       @selectedNodeIndex = -1
       @draw()
 
-
-  clear: (ctxId) ->
-    if ctxId
-      canvases[ctxId].width = width
-
   drawStraightLines: ->
-    c = ctx.simpleLines
+    c = ctx.base
     c.beginPath()
     prevPoint = null
     for p, i in @points
@@ -159,7 +163,7 @@ class World
     c.stroke()
 
   drawNodes: ->
-    c = ctx.simpleLines
+    c = ctx.base
     for p, i in @points
       c.beginPath()
       c.moveTo p.x + nodeRadius, p.y
@@ -176,10 +180,75 @@ class World
       c.stroke()
 
   draw: ->
-    @clear 'simpleLines'
+    clear 'base'
     @drawStraightLines()
     @drawNodes()
     @
+
+class Smoother
+  constructor: (@initPath) ->
+    @resetAugmentedPath()
+
+  resetAugmentedPath: ->
+    @path = copyPath @initPath
+
+  segmentatePath: (segmentLength) ->
+#    for i in [1..factor]
+    doit = true
+    while doit
+      doit = false
+      @newAugmentedPath = []
+      for p, i in @path
+        nextPoint = if i < @path.length-1 then @path[i+1] else @path[0]
+        @newAugmentedPath.push p
+        if distance(p, nextPoint) > segmentLength
+          doit = true
+          newPoint = pointAt Math.min(p.x, nextPoint.x) + Math.abs(p.x - nextPoint.x) / 2,
+              Math.min(p.y, nextPoint.y) + Math.abs(p.y - nextPoint.y) / 2
+          @newAugmentedPath.push newPoint
+      if doit
+        @path = @newAugmentedPath
+    printNodes @path
+
+  augmentNodesByFactorOf: (factor) ->
+    for i in [1..factor]
+      @newAugmentedPath = []
+      for p, i in @path
+        nextPoint = if i < @path.length-1 then @path[i+1] else @path[0]
+        newPoint = pointAt (p.x + nextPoint.x) / 2, (p.y + nextPoint.y) / 2
+        @newAugmentedPath.push p
+        @newAugmentedPath.push newPoint
+      @path = @newAugmentedPath
+
+  smooth: (weight_data = 0.5, weight_smooth = 0.1) ->
+    newpath = copyPath @path
+    for p in [1..600]
+      for k in ['x','y']
+        for i in [1..@path.length-2]
+          newpath[i][k] = newpath[i][k] + weight_data * (@path[i][k] - newpath[i][k])
+          newpath[i][k] = newpath[i][k] + weight_smooth * (newpath[i+1][k] + newpath[i-1][k] - 2 * newpath[i][k])
+    @path = newpath
+
+  drawSmoothLines: ->
+    c = ctx.smooth
+    c.beginPath()
+    prevPoint = null
+    c.strokeStyle = "rgb(255,200,200)"
+    for p, i in @path
+      if prevPoint
+        c.moveTo p.x, p.y
+        c.lineTo prevPoint.x, prevPoint.y
+      prevPoint = p
+
+    if @path.length > 2
+      c.moveTo prevPoint.x, prevPoint.y
+      c.lineTo @path[0].x, @path[0].y
+    c.closePath()
+    c.stroke()
+
+  draw: ->
+    clear 'smooth'
+    @drawSmoothLines()
 
 #Units
 PI = Math.PI
@@ -201,8 +270,20 @@ findMaxIndex = (arr) ->
   [_, index] = findMax arr, true
   return index
 
+clear = (ctxId) ->
+  if ctxId
+    canvases[ctxId].width = width
+
 pointAt = (x, y) -> x: x, y: y
+printNodes = (nodes) ->
+  console.log ("(x:#{p.x}, y:#{p.y})" for p in nodes).join(", ")
+
 root = (a) -> Math.pow a, 2
 distance = (a, b) -> Math.sqrt root(b.x - a.x) + root(b.y - a.y)
 distanceToLine = (a, b, p) ->
   Math.abs((p.x - a.x) * (b.y - a.y) - (p.y - a.y) * (b.x - a.x)) / distance a, b
+
+copyPath = (path) ->
+  for p in path
+    pointAt p.x, p.y
+
