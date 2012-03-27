@@ -425,110 +425,146 @@ class GridWorld
     @drawValues()
     @drawPolicy()
 
+class SearchAlgos
+  constructor: (@data, @init, @goal) ->
+    @height = @data.length
+    @width = @data[0].length
+    @delta = [[0, -1], # go up
+             [ -1, 0], # go left
+             [ 0, 1 ], # go down
+             [ 1, 0 ]] # go right
+    @deltaName = ['up','left','down','right']
+    @cost = 1
 
-#class SearchAlgos
-#  constructor: (@data, @init, @goal) ->
-#    @height = @data.length
-#    @width = @data[0].length
-#    @delta = [[0, -1 ], # go up
-#             [ -1, 0], # go left
-#             [ 0, 1 ], # go down
-#             [ 1, 0 ]] # go right
-#    @deltaName = ['up','left','down','right']
-#    @cost = 1
-#
-#  heuristicsFuncs: (index, xy) ->
-#    [x,y] = [xy.x, xy.y]
-#    switch index
-#      when 1 then distance xy, @goal
-#      when 2 then Math.abs(x - @goal.x) + Math.abs(y - @goal.y)
-#      when 3 then Math.abs(x - @goal.x) * Math.abs(y - @goal.y)
-#      else 0
-#
-#
-#  search: (hIndex=0)->
-#    closed = make2DArray @width, @height, 0
-#    closed[@init.y][@init.x] = 1
-#    open = [[0, @init, distance @init, @goal]]
-#    found = false  # flag that is set when search is complete
-#    resign = false # flag set if we can't find expand
-#    expand = make2DArray @width, @height, megaValue
-#    action = make2DArray @width, @height, -1
-#    policy = make2DArray @width, @height, ''
-#    step = 0
-#    while not found and not resign
-#      if open.length is 0
-#        resign = true
-#      else
-#        open.sort (a,b) -> a[0]-b[0]
-#        open.reverse()
-#        next = open.pop()
-#        xy = next[1]
-#        g = next[2]
-#        expand[xy.y][xy.x] = step
-#        step += 1
-#        if equalPoints  xy, @goal
-#          found = true
-#        else
-#          for d, i in @delta
-#            x2 = xy.x + d[0]
-#            y2 = xy.y + d[1]
-#            if x2 >= 0 and x2 < @width and y2 >= 0 and y2 < @height and closed[y2][x2] is 0
-#              unless @data[y2][x2] is 'wall'
-#                xy2 = p(x2, y2)
-#                h = if hIndex > 0 then @heuristicsFuncs hIndex, xy2 else 0
-#                g2 = g + @cost
-#                gh = g2 + h
-#                open.push [gh, xy2, g2]
-#                closed[y2][x2] = 1
-#                action[y2][x2] = i
-#
-#    xy = @goal
-#    fail = false
-#    while not equalPoints(xy, @init) and not fail
-#      act = action[xy.y][xy.x]
-#      if act is -1
-#        fail = true
-#        break
-#      x2 = xy.x - @delta[act][0]
-#      y2 = xy.y - @delta[act][1]
-#      xy = p(x2, y2)
-#      if equalPoints xy, @init
-#        break
-#      policy[y2][x2] = @deltaName[act]
-#
-#    if fail
-#      policy = make2DArray @width, @height, ''
-#    return [expand, policy, fail]
-#
-#  optimum_policy: ->
-#    value = make2DArray @width, @height, megaValue
-#    policy = make2DArray @width, @height, ''
-#    change = true
-#
-#    while change
-#      change = false
-#      for row, yi in @data
-#        for cell, xi in row
-#          xy = p xi, yi
-#          if equalPoints xy, @goal
-#            if value[yi][xi] > 0
-#              value[yi][xi] = 0
-#              change = true
-#          else if cell is ''
-#            for d, i in @delta
-#              x2 = xi + d[0]
-#              y2 = yi + d[1]
-##              if x2 is 12 and y2 is 6
-##                console.log d, value[y2][x2], @data[y2][x2]
-#              if x2 >= 0 and x2 < @width and y2 >= 0 and y2 < @height and not(@data[y2][x2] is 'wall')
-#                v2 = value[y2][x2] + @cost
-#                if v2 < value[yi][xi]
-#                  change = true
-#                  policy[yi][xi] = @deltaName[i]
-#                  value[yi][xi] = v2
-#
-#    return [value, policy, false] # Make sure your function returns the expected grid.
+  heuristicsFuncs: (index, xy) ->
+    [x,y] = [xy.x, xy.y]
+    switch index
+      when 1 then distance xy, @goal
+      when 2 then Math.abs(x - @goal.x) + Math.abs(y - @goal.y)
+      when 3 then Math.abs(x - @goal.x) * Math.abs(y - @goal.y)
+      else 0
+
+  search: (hIndex=0)->
+    closed = make2DArray @width, @height, 0
+    closed[@init.y][@init.x] = 1
+    open = [[0, @init, distance @init, @goal]]
+    found = false  # flag that is set when search is complete
+    resign = false # flag set if we can't find expand
+    expand = make2DArray @width, @height, megaValue
+    action = make2DArray @width, @height, -1
+    policy = make2DArray @width, @height, ''
+    step = 0
+    while not found and not resign
+      if open.length is 0
+        resign = true
+      else
+        open.sort (a,b) -> a[0]-b[0]
+        open.reverse()
+        next = open.pop()
+        xy = next[1]
+        g = next[2]
+        expand[xy.y][xy.x] = step
+        step += 1
+        if equalPoints  xy, @goal
+          found = true
+        else
+          for d, i in @delta
+            x2 = xy.x + d[0]
+            y2 = xy.y + d[1]
+            if x2 >= 0 and x2 < @width and y2 >= 0 and y2 < @height and closed[y2][x2] is 0
+              unless @data[y2][x2] is 'wall'
+                xy2 = p(x2, y2)
+                h = if hIndex > 0 then @heuristicsFuncs hIndex, xy2 else 0
+                g2 = g + @cost
+                gh = g2 + h
+                open.push [gh, xy2, g2]
+                closed[y2][x2] = 1
+                action[y2][x2] = i
+
+    xy = @goal
+    fail = false
+    while not equalPoints(xy, @init) and not fail
+      act = action[xy.y][xy.x]
+      if act is -1
+        fail = true
+        break
+      x2 = xy.x - @delta[act][0]
+      y2 = xy.y - @delta[act][1]
+      xy = p(x2, y2)
+      if equalPoints xy, @init
+        break
+      policy[y2][x2] = @deltaName[act]
+
+    if fail
+      policy = make2DArray @width, @height, ''
+    return [expand, policy, fail]
+
+  optimum_policy: (motionProbs={f:1, l:0, r:0, b:0}, collision_cost=100) ->
+    sum = 0
+    for k,v of motionProbs
+      sum += v
+    unless sum is 0
+      for k,v of motionProbs
+        motionProbs[k] = v / sum
+    else
+      motionProbs = f:1, l:0, r:0, b:0
+
+    value = make2DArray @width, @height, megaValue
+    policy = make2DArray @width, @height, ''
+    change = true
+
+    while change
+      change = false
+      for row, yi in @data
+        for cell, xi in row
+          xy = p xi, yi
+          if equalPoints xy, @goal
+            if value[yi][xi] > 0
+              value[yi][xi] = 0
+              change = true
+          else if cell is ''
+            for d, i in @delta
+              x2 = xi + d[0]
+              y2 = yi + d[1]
+#              if x2 is 12 and y2 is 6
+#                console.log d, value[y2][x2], @data[y2][x2]
+              if x2 >= 0 and x2 < @width and y2 >= 0 and y2 < @height and not(@data[y2][x2] is 'wall')
+                forward_cost = value[y2][x2] * motionProbs.f
+
+                lx2 = xi + @delta[mod(i+1, 4)][0]
+                ly2 = yi + @delta[mod(i+1, 4)][1]
+                left_cost = 0
+                if lx2 >= 0 and lx2 < @width and ly2 >= 0 and ly2 < @height and not(@data[ly2][lx2] is 'wall')
+                  if value[ly2][lx2] < megaValue
+                    left_cost = value[ly2][lx2] * motionProbs.l
+                else
+                  left_cost = collision_cost * motionProbs.l
+
+                rx2 = xi + @delta[mod(i-1, 4)][0]
+                ry2 = yi + @delta[mod(i-1, 4)][1]
+                right_cost = 0
+                if rx2 >= 0 and rx2 < @width and ry2 >= 0 and ry2 < @height and not(@data[ry2][rx2] is 'wall')
+                  if value[ry2][rx2] < megaValue
+                    right_cost = value[ry2][rx2] * motionProbs.r
+                else
+                  right_cost = collision_cost * motionProbs.r
+
+                bx2 = xi + @delta[mod(i+2, 4)][0]
+                by2 = yi + @delta[mod(i+2, 4)][1]
+                back_cost = 0
+                if bx2 >= 0 and bx2 < @width and by2 >= 0 and by2 < @height and not(@data[by2][bx2] is 'wall')
+                  if value[by2][bx2] < megaValue
+                    back_cost = value[by2][bx2] * motionProbs.b
+                else
+                  back_cost = collision_cost * motionProbs.b
+
+                v2 = forward_cost + right_cost + left_cost + back_cost + @cost
+                if v2 < value[yi][xi]
+                  change = true
+                  policy[yi][xi] = @deltaName[i]
+                  value[yi][xi] = v2
+
+    return [value, policy, false] # Make sure your function returns the expected grid.
 
 #Math function extraction
 random = Math.random
@@ -540,3 +576,4 @@ p = (x, y) -> x:x, y:y  #Stands for point
 equalPoints = (p1, p2) -> p1.x is p2.x and p1.y is p2.y
 make2DArray = (w, h, fill) ->
   (((if fill? then fill else dp()) for i in [1..Math.floor(w)]) for j in [1..Math.floor(h)])
+mod = (a, b) -> a % b + (if a < 0 then b else 0)

@@ -1,5 +1,5 @@
 (function() {
-  var GridWorld, canvases, ctx, distance, dp, equalPoints, gridColors, height, initWalls, make2DArray, megaValue, p, random, width, world;
+  var GridWorld, SearchAlgos, canvases, ctx, distance, dp, equalPoints, gridColors, height, initWalls, make2DArray, megaValue, mod, p, random, width, world;
 
   ctx = {};
 
@@ -541,6 +541,202 @@
 
   })();
 
+  SearchAlgos = (function() {
+
+    function SearchAlgos(data, init, goal) {
+      this.data = data;
+      this.init = init;
+      this.goal = goal;
+      this.height = this.data.length;
+      this.width = this.data[0].length;
+      this.delta = [[0, -1], [-1, 0], [0, 1], [1, 0]];
+      this.deltaName = ['up', 'left', 'down', 'right'];
+      this.cost = 1;
+    }
+
+    SearchAlgos.prototype.heuristicsFuncs = function(index, xy) {
+      var x, y, _ref;
+      _ref = [xy.x, xy.y], x = _ref[0], y = _ref[1];
+      switch (index) {
+        case 1:
+          return distance(xy, this.goal);
+        case 2:
+          return Math.abs(x - this.goal.x) + Math.abs(y - this.goal.y);
+        case 3:
+          return Math.abs(x - this.goal.x) * Math.abs(y - this.goal.y);
+        default:
+          return 0;
+      }
+    };
+
+    SearchAlgos.prototype.search = function(hIndex) {
+      var act, action, closed, d, expand, fail, found, g, g2, gh, h, i, next, open, policy, resign, step, x2, xy, xy2, y2, _len, _ref;
+      if (hIndex == null) hIndex = 0;
+      closed = make2DArray(this.width, this.height, 0);
+      closed[this.init.y][this.init.x] = 1;
+      open = [[0, this.init, distance(this.init, this.goal)]];
+      found = false;
+      resign = false;
+      expand = make2DArray(this.width, this.height, megaValue);
+      action = make2DArray(this.width, this.height, -1);
+      policy = make2DArray(this.width, this.height, '');
+      step = 0;
+      while (!found && !resign) {
+        if (open.length === 0) {
+          resign = true;
+        } else {
+          open.sort(function(a, b) {
+            return a[0] - b[0];
+          });
+          open.reverse();
+          next = open.pop();
+          xy = next[1];
+          g = next[2];
+          expand[xy.y][xy.x] = step;
+          step += 1;
+          if (equalPoints(xy, this.goal)) {
+            found = true;
+          } else {
+            _ref = this.delta;
+            for (i = 0, _len = _ref.length; i < _len; i++) {
+              d = _ref[i];
+              x2 = xy.x + d[0];
+              y2 = xy.y + d[1];
+              if (x2 >= 0 && x2 < this.width && y2 >= 0 && y2 < this.height && closed[y2][x2] === 0) {
+                if (this.data[y2][x2] !== 'wall') {
+                  xy2 = p(x2, y2);
+                  h = hIndex > 0 ? this.heuristicsFuncs(hIndex, xy2) : 0;
+                  g2 = g + this.cost;
+                  gh = g2 + h;
+                  open.push([gh, xy2, g2]);
+                  closed[y2][x2] = 1;
+                  action[y2][x2] = i;
+                }
+              }
+            }
+          }
+        }
+      }
+      xy = this.goal;
+      fail = false;
+      while (!equalPoints(xy, this.init) && !fail) {
+        act = action[xy.y][xy.x];
+        if (act === -1) {
+          fail = true;
+          break;
+        }
+        x2 = xy.x - this.delta[act][0];
+        y2 = xy.y - this.delta[act][1];
+        xy = p(x2, y2);
+        if (equalPoints(xy, this.init)) break;
+        policy[y2][x2] = this.deltaName[act];
+      }
+      if (fail) policy = make2DArray(this.width, this.height, '');
+      return [expand, policy, fail];
+    };
+
+    SearchAlgos.prototype.optimum_policy = function(motionProbs, collision_cost) {
+      var back_cost, bx2, by2, cell, change, d, forward_cost, i, k, left_cost, lx2, ly2, policy, right_cost, row, rx2, ry2, sum, v, v2, value, x2, xi, xy, y2, yi, _len, _len2, _len3, _ref, _ref2;
+      if (motionProbs == null) {
+        motionProbs = {
+          f: 1,
+          l: 0,
+          r: 0,
+          b: 0
+        };
+      }
+      if (collision_cost == null) collision_cost = 100;
+      sum = 0;
+      for (k in motionProbs) {
+        v = motionProbs[k];
+        sum += v;
+      }
+      if (sum !== 0) {
+        for (k in motionProbs) {
+          v = motionProbs[k];
+          motionProbs[k] = v / sum;
+        }
+      } else {
+        motionProbs = {
+          f: 1,
+          l: 0,
+          r: 0,
+          b: 0
+        };
+      }
+      value = make2DArray(this.width, this.height, megaValue);
+      policy = make2DArray(this.width, this.height, '');
+      change = true;
+      while (change) {
+        change = false;
+        _ref = this.data;
+        for (yi = 0, _len = _ref.length; yi < _len; yi++) {
+          row = _ref[yi];
+          for (xi = 0, _len2 = row.length; xi < _len2; xi++) {
+            cell = row[xi];
+            xy = p(xi, yi);
+            if (equalPoints(xy, this.goal)) {
+              if (value[yi][xi] > 0) {
+                value[yi][xi] = 0;
+                change = true;
+              }
+            } else if (cell === '') {
+              _ref2 = this.delta;
+              for (i = 0, _len3 = _ref2.length; i < _len3; i++) {
+                d = _ref2[i];
+                x2 = xi + d[0];
+                y2 = yi + d[1];
+                if (x2 >= 0 && x2 < this.width && y2 >= 0 && y2 < this.height && !(this.data[y2][x2] === 'wall')) {
+                  forward_cost = value[y2][x2] * motionProbs.f;
+                  lx2 = xi + this.delta[mod(i + 1, 4)][0];
+                  ly2 = yi + this.delta[mod(i + 1, 4)][1];
+                  left_cost = 0;
+                  if (lx2 >= 0 && lx2 < this.width && ly2 >= 0 && ly2 < this.height && !(this.data[ly2][lx2] === 'wall')) {
+                    if (value[ly2][lx2] < megaValue) {
+                      left_cost = value[ly2][lx2] * motionProbs.l;
+                    }
+                  } else {
+                    left_cost = collision_cost * motionProbs.l;
+                  }
+                  rx2 = xi + this.delta[mod(i - 1, 4)][0];
+                  ry2 = yi + this.delta[mod(i - 1, 4)][1];
+                  right_cost = 0;
+                  if (rx2 >= 0 && rx2 < this.width && ry2 >= 0 && ry2 < this.height && !(this.data[ry2][rx2] === 'wall')) {
+                    if (value[ry2][rx2] < megaValue) {
+                      right_cost = value[ry2][rx2] * motionProbs.r;
+                    }
+                  } else {
+                    right_cost = collision_cost * motionProbs.r;
+                  }
+                  bx2 = xi + this.delta[mod(i + 2, 4)][0];
+                  by2 = yi + this.delta[mod(i + 2, 4)][1];
+                  back_cost = 0;
+                  if (bx2 >= 0 && bx2 < this.width && by2 >= 0 && by2 < this.height && !(this.data[by2][bx2] === 'wall')) {
+                    if (value[by2][bx2] < megaValue) {
+                      back_cost = value[by2][bx2] * motionProbs.b;
+                    }
+                  } else {
+                    back_cost = collision_cost * motionProbs.b;
+                  }
+                  v2 = forward_cost + right_cost + left_cost + back_cost + this.cost;
+                  if (v2 < value[yi][xi]) {
+                    change = true;
+                    policy[yi][xi] = this.deltaName[i];
+                    value[yi][xi] = v2;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      return [value, policy, false];
+    };
+
+    return SearchAlgos;
+
+  })();
+
   random = Math.random;
 
   distance = function(from, to) {
@@ -581,6 +777,10 @@
       })());
     }
     return _results;
+  };
+
+  mod = function(a, b) {
+    return a % b + (a < 0 ? b : 0);
   };
 
 }).call(this);
