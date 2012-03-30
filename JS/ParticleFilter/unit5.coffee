@@ -398,6 +398,14 @@ class Robot
   # move:
   #    steering = front wheel steering angle, limited by max_steering_angle
   #    dist = total dist driven, most be non-negative
+#
+#  move2: (desiredOrientation, steeringSpeed, dist,
+#          tolerance = 0.001, max_steering_angle = PI / 4.0,
+#          maxDesiredOrientation = nil) ->
+#
+#    orientDiff  desiredOrientation - @orientation
+#    if
+#      @steering += steeringSpeed
 
   move: (steering, dist, tolerance = 0.001, max_steering_angle = PI / 4.0) ->
     if steering > max_steering_angle
@@ -490,16 +498,20 @@ class Runner
   isLeft: (a, b, c) ->
     ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) > 0
 
-  countCrossTrackError: ->
+  closestSegment: ->
     @path = world.smoother.path
-    [res, index] = findMin((distance(p, @robot) for p in @path), true)
+    [dist, index] = findMin((distance(p, @robot) for p in @path), true)
+
     if index is @path.length-1
       nextIndex = 0
     else
       nextIndex = index + 1
-    isLeft = @isLeft(@path[index], @path[nextIndex], @robot)
-    res *= if isLeft then 1 else -1
-    res
+    [dist, @path[index], @path[nextIndex]]
+
+  countCrossTrackError: ->
+    [dist, a, b] = @closestSegment()
+    isLeft = @isLeft(a, b, @robot)
+    dist *= if isLeft then 1 else -1
 
   twiddle: (tol = 0.0000000001) ->
     p=[0.3, 4, 0.001]
@@ -533,14 +545,54 @@ class Runner
     err / N
 
   step: (@tau_p, @tau_d, @tau_i, draw=true) ->
+    [dist, p1, p2] = @closestSegment()
+    a = p2.x - p1.x
+    b = p2.y - p1.y
+    alpha = Math.atan b / a
+    cond = (a < 0 and b > 0) or (a < 0 and b < 0)
+    if cond
+      alpha += PI
+    alpha = mod alpha, TWOPI
+#    angleToLine = PI - @robot.orientation - alpha
+#    angleToLineDeg =angleToLine / (PI/180)
+    robOrDeg = @robot.orientation / (PI/180)
+    alphaDeg = alpha / (PI/180)
+
     cte = @countCrossTrackError()
+    diff = mod(@robot.orientation - alpha, TWOPI)
+    if diff > PI
+      diff -= TWOPI
+    angleDiff = Math.abs(diff)
+
+    diffDef = angleDiff / (PI/180)
+    $("#box").html """
+                    #{a.toFixed 4} #{b.toFixed 4}<br/>
+                    #{alphaDeg} - slope<br/>
+                    #{robOrDeg} - orient<br/>
+                    #{diffDef} - diff<br/>#{cte} - cte
+                  """
+#                    #{angleToLineDeg}<br/>
+#                    #{alphaDeg}<br/>
     diff = cte - @old_cte
     angle = -@tau_p * cte - @tau_d * diff - @tau_i * @err_sum
+#    if angleDiff > PI/2
+#      angle = -(angleDiff - PI/2) * 0.1
     @robot.move angle, @speed
     @err_sum += cte
     @old_cte = cte
     if draw
       @robot.draw()
+
+    c = ctx.base
+    c.strokeStyle = 'black'
+    c.beginPath()
+    c.moveTo p2.x, p2.y
+    c.lineTo p2.x + 30 * cos(alpha-PI/2), p2.y + 30 * sin(alpha-PI/2)
+    c.moveTo p2.x, p2.y
+    c.lineTo p2.x + 30 * cos(alpha), p2.y + 30 * sin(alpha)
+    c.closePath()
+    c.stroke()
+
     cte
 
 #Units

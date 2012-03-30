@@ -596,8 +596,8 @@
       return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) > 0;
     };
 
-    Runner.prototype.countCrossTrackError = function() {
-      var index, isLeft, nextIndex, p, res, _ref;
+    Runner.prototype.closestSegment = function() {
+      var dist, index, nextIndex, p, _ref;
       this.path = world.smoother.path;
       _ref = findMin((function() {
         var _i, _len, _ref, _results;
@@ -608,15 +608,20 @@
           _results.push(distance(p, this.robot));
         }
         return _results;
-      }).call(this), true), res = _ref[0], index = _ref[1];
+      }).call(this), true), dist = _ref[0], index = _ref[1];
       if (index === this.path.length - 1) {
         nextIndex = 0;
       } else {
         nextIndex = index + 1;
       }
-      isLeft = this.isLeft(this.path[index], this.path[nextIndex], this.robot);
-      res *= isLeft ? 1 : -1;
-      return res;
+      return [dist, this.path[index], this.path[nextIndex]];
+    };
+
+    Runner.prototype.countCrossTrackError = function() {
+      var a, b, dist, isLeft, _ref;
+      _ref = this.closestSegment(), dist = _ref[0], a = _ref[1], b = _ref[2];
+      isLeft = this.isLeft(a, b, this.robot);
+      return dist *= isLeft ? 1 : -1;
     };
 
     Runner.prototype.twiddle = function(tol) {
@@ -660,18 +665,41 @@
     };
 
     Runner.prototype.step = function(tau_p, tau_d, tau_i, draw) {
-      var angle, cte, diff;
+      var a, alpha, alphaDeg, angle, angleDiff, b, c, cond, cte, diff, diffDef, dist, p1, p2, robOrDeg, _ref;
       this.tau_p = tau_p;
       this.tau_d = tau_d;
       this.tau_i = tau_i;
       if (draw == null) draw = true;
+      _ref = this.closestSegment(), dist = _ref[0], p1 = _ref[1], p2 = _ref[2];
+      a = p2.x - p1.x;
+      b = p2.y - p1.y;
+      alpha = Math.atan(b / a);
+      cond = (a < 0 && b > 0) || (a < 0 && b < 0);
+      if (cond) alpha += PI;
+      alpha = mod(alpha, TWOPI);
+      robOrDeg = this.robot.orientation / (PI / 180);
+      alphaDeg = alpha / (PI / 180);
       cte = this.countCrossTrackError();
+      diff = mod(this.robot.orientation - alpha, TWOPI);
+      if (diff > PI) diff -= TWOPI;
+      angleDiff = Math.abs(diff);
+      diffDef = angleDiff / (PI / 180);
+      $("#box").html("" + (a.toFixed(4)) + " " + (b.toFixed(4)) + "<br/>\n" + alphaDeg + " - slope<br/>\n" + robOrDeg + " - orient<br/>\n" + diffDef + " - diff<br/>" + cte + " - cte");
       diff = cte - this.old_cte;
       angle = -this.tau_p * cte - this.tau_d * diff - this.tau_i * this.err_sum;
       this.robot.move(angle, this.speed);
       this.err_sum += cte;
       this.old_cte = cte;
       if (draw) this.robot.draw();
+      c = ctx.base;
+      c.strokeStyle = 'black';
+      c.beginPath();
+      c.moveTo(p2.x, p2.y);
+      c.lineTo(p2.x + 30 * cos(alpha - PI / 2), p2.y + 30 * sin(alpha - PI / 2));
+      c.moveTo(p2.x, p2.y);
+      c.lineTo(p2.x + 30 * cos(alpha), p2.y + 30 * sin(alpha));
+      c.closePath();
+      c.stroke();
       return cte;
     };
 
