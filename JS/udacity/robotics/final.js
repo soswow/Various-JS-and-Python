@@ -1,5 +1,5 @@
 (function() {
-  var RoadWorld, abs, canvases, clear, ctx, gp, height, hsv_to_rgb, pointAt, width, world;
+  var RoadWorld, abs, canvases, clear, ctx, getCleanLanes, gp, height, hsv_to_rgb, pointAt, width, world;
 
   ctx = {};
 
@@ -12,7 +12,7 @@
   world = null;
 
   $(function() {
-    var goal_img, init_img, lanes;
+    var goal_img, init_img;
     $('#canvasContainer canvas').each(function() {
       var ctx_id, gridDiv, that;
       that = $(this);
@@ -28,8 +28,7 @@
       ctx[ctx_id] = typeof this.getContext === "function" ? this.getContext('2d') : void 0;
       return ctx[ctx_id].clearRect(0, 0, width, height);
     });
-    lanes = [[100, 100, 100, 200, 300], [50, 50, 50, 50, 50], [1, 1, 1, 1, 1]];
-    world = new RoadWorld(lanes);
+    world = new RoadWorld(getCleanLanes($("#dataBox").val()));
     init_img = new Image();
     init_img.src = 'arrow_up_32x32.png';
     $(init_img).load(function() {
@@ -42,25 +41,33 @@
       world.goal_img = goal_img;
       return world.draw();
     });
-    return $(canvases.initgoal).click(function(e) {
+    $(canvases.initgoal).click(function(e) {
       return world.bottomClick(e.offsetX);
+    });
+    return $("#dataBox").keyup(function(e) {
+      world.setLanes(getCleanLanes($(this).val()));
+      return world.draw();
     });
   });
 
   RoadWorld = (function() {
 
     function RoadWorld(lanes) {
-      this.lanes = lanes;
-      this.h = this.lanes.length;
-      this.w = this.lanes[0].length;
+      this.setLanes(lanes);
       this.init = 0;
-      this.goal = this.w - 1;
-      this.cell_w = width / this.w;
-      this.cell_h = height / this.h;
       this.goal_img;
       this.init_img;
       this.draw();
     }
+
+    RoadWorld.prototype.setLanes = function(lanes) {
+      this.lanes = lanes;
+      this.h = this.lanes.length;
+      this.w = this.lanes[0].length;
+      if (!(this.goal && this.goal <= this.w - 1)) this.goal = this.w - 1;
+      this.cell_w = width / this.w;
+      return this.cell_h = height / this.h;
+    };
 
     RoadWorld.prototype.bottomClick = function(x) {
       var xIndex;
@@ -125,6 +132,43 @@
     return RoadWorld;
 
   })();
+
+  getCleanLanes = function(data) {
+    var cell, clean_lanes, i, lane, laneRow, lanes, maxW, row, _i, _j, _len, _len2, _len3;
+    lanes = (function() {
+      var _i, _len, _ref, _results;
+      _ref = data.split(/[\r\n]/);
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        row = _ref[_i];
+        _results.push(row.trim().split(/[^\d.]+/i));
+      }
+      return _results;
+    })();
+    maxW = 0;
+    clean_lanes = [];
+    for (i = 0, _len = lanes.length; i < _len; i++) {
+      lane = lanes[i];
+      if (lanes.length > 0) {
+        laneRow = [];
+        for (_i = 0, _len2 = lane.length; _i < _len2; _i++) {
+          cell = lane[_i];
+          if (cell) laneRow.push(parseFloat(cell));
+        }
+        if (laneRow.length > 0) {
+          clean_lanes.push(laneRow);
+          if (laneRow.length > maxW) maxW = laneRow.length;
+        }
+      }
+    }
+    for (_j = 0, _len3 = clean_lanes.length; _j < _len3; _j++) {
+      lane = clean_lanes[_j];
+      while (lane.length < maxW) {
+        lane.push(0);
+      }
+    }
+    return clean_lanes;
+  };
 
   pointAt = function(x, y) {
     return {

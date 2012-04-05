@@ -1,3 +1,7 @@
+#unless String.prototype.trim
+#  String.prototype.trim = ->
+#    @replace /^\s+|\s+$/g,''
+
 ctx = {}
 canvases = {}
 width = 800
@@ -20,11 +24,8 @@ $ ->
     ctx[ctx_id] = @getContext? '2d'
     ctx[ctx_id].clearRect 0, 0, width, height
 
-  lanes = [ [100,100,100,200,300],
-            [50,50,50,50,50],
-            [1,1,1,1,1]]
 
-  world = new RoadWorld(lanes)
+  world = new RoadWorld(getCleanLanes $("#dataBox").val())
 
   init_img = new Image();
   init_img.src = 'arrow_up_32x32.png'
@@ -40,18 +41,25 @@ $ ->
   $(canvases.initgoal).click (e) ->
     world.bottomClick e.offsetX
 
+  $("#dataBox").keyup (e) ->
+    world.setLanes getCleanLanes $(this).val()
+    world.draw()
 
 class RoadWorld
-  constructor: (@lanes) ->
-    @h = @lanes.length
-    @w = @lanes[0].length
+  constructor: (lanes) ->
+    @setLanes lanes
     @init = 0
-    @goal = @w-1
-    @cell_w = width / @w
-    @cell_h = height / @h
     @goal_img
     @init_img
     @draw()
+
+  setLanes: (@lanes) ->
+    @h = @lanes.length
+    @w = @lanes[0].length
+    unless @goal and @goal <= @w - 1
+      @goal = @w-1
+    @cell_w = width / @w
+    @cell_h = height / @h
 
   bottomClick: (x) ->
     xIndex = Math.floor(x / @cell_w)
@@ -105,10 +113,29 @@ class RoadWorld
         c.closePath()
     c.stroke()
 
+getCleanLanes = (data) ->
+  lanes = (row.trim().split(/[^\d.]+/i) for row in data.split(/[\r\n]/))
+  maxW = 0
+
+  clean_lanes = []
+  for lane, i in lanes
+    if lanes.length > 0
+      laneRow = []
+      for cell in lane
+        if cell
+          laneRow.push parseFloat cell
+      if laneRow.length > 0
+        clean_lanes.push laneRow
+        if laneRow.length > maxW
+          maxW = laneRow.length
+  for lane in clean_lanes
+    while lane.length < maxW
+      lane.push 0
+  clean_lanes
+
 pointAt = (x, y) -> x: x, y: y
 gp = (any) -> Math.ceil(any) + 0.5
 hsv_to_rgb = (h,s,v) ->
-
   c = s * v
   _h = h / 60
   x = c * (1 - abs((_h % 2) - 1))
@@ -132,3 +159,5 @@ abs = Math.abs
 clear = (ctxId) ->
   if ctxId
     canvases[ctxId].width = width
+
+

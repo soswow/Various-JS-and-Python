@@ -29,6 +29,10 @@
     #canvas_base {
       position: relative !important;
     }
+    #otherControls{
+      clear: both;
+      padding-top: 45px;
+    }
   </style>
 </head>
 <body>
@@ -36,7 +40,20 @@
   <canvas id="canvas_initgoal"></canvas>
   <canvas id="canvas_base"></canvas>
 </div>
-
+<div id="otherControls">
+  <label for="predefinedRoads">Load road:</label>
+  <select id="predefinedRoads">
+    <option value="0">Fast left lane</option>
+    <option value="1">More realistic road</option>
+    <option value="2">Obstacles included</option>
+    <option value="3">Slalom</option>
+  </select>
+</div>
+<textarea id="dataBox" rows="20" cols="100">
+100 100 100 200 300
+50  50  50  50  50
+1 1 1 1 1
+</textarea>
 <script src="final.js"></script>
 </body>
 </html>
