@@ -44,27 +44,42 @@
     $(canvases.initgoal).click(function(e) {
       return world.bottomClick(e.offsetX);
     });
-    return $("#dataBox").keyup(function(e) {
+    $("#dataBox").keyup(function(e) {
       world.setLanes(getCleanLanes($(this).val()));
       return world.draw();
+    });
+    return $("#predefinedRoads").change(function() {
+      var predefined, raw, sel;
+      predefined = ["100 100 100 100 100 100 100 100\n10  10  10  10  10  10  10  10\n1   1   1   1   1   1   1   1", "80 80 80 80 80 80 80 80 80 80 80 80 80 80\n60 60 60 60 60 60 60 60 60 60 60 60 60 60\n40 40 40 40 40 40 40 40 40 40 40 40 40 40\n20 20 20 20 20 20 20 20 20 20 20 20 20 20", "[50, 50, 50, 50, 50, 40, 0, 40, 50, 50, 50, 50, 50, 50, 50]\n[40, 40, 40, 40, 40, 30, 20, 30, 40, 40, 40, 40, 40, 40, 40],\n[30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]", "[50, 50, 50, 50, 50, 40,  0, 40, 50, 50,  0, 50, 50, 50, 50],\n[40, 40, 40, 40,  0, 30, 20, 30,  0, 40, 40, 40, 40, 40, 40],\n[30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]"];
+      sel = $(this).val();
+      if (sel) {
+        raw = predefined[sel];
+        $("#dataBox").val(raw);
+        world.setLanes(getCleanLanes(raw), true);
+        return world.draw();
+      }
     });
   });
 
   RoadWorld = (function() {
 
     function RoadWorld(lanes) {
-      this.setLanes(lanes);
-      this.init = 0;
+      this.setLanes(lanes, true);
       this.goal_img;
       this.init_img;
       this.draw();
     }
 
-    RoadWorld.prototype.setLanes = function(lanes) {
+    RoadWorld.prototype.setLanes = function(lanes, forceResetInitGoal) {
       this.lanes = lanes;
+      if (forceResetInitGoal == null) forceResetInitGoal = false;
       this.h = this.lanes.length;
       this.w = this.lanes[0].length;
       if (!(this.goal && this.goal <= this.w - 1)) this.goal = this.w - 1;
+      if (forceResetInitGoal) {
+        this.init = 0;
+        this.goal = this.w - 1;
+      }
       this.cell_w = width / this.w;
       return this.cell_h = height / this.h;
     };

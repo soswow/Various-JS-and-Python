@@ -45,18 +45,50 @@ $ ->
     world.setLanes getCleanLanes $(this).val()
     world.draw()
 
+  $("#predefinedRoads").change ->
+    predefined =["""
+    100 100 100 100 100 100 100 100
+    10  10  10  10  10  10  10  10
+    1   1   1   1   1   1   1   1""",
+    """
+    80 80 80 80 80 80 80 80 80 80 80 80 80 80
+    60 60 60 60 60 60 60 60 60 60 60 60 60 60
+    40 40 40 40 40 40 40 40 40 40 40 40 40 40
+    20 20 20 20 20 20 20 20 20 20 20 20 20 20
+    """,
+    """
+   [50, 50, 50, 50, 50, 40, 0, 40, 50, 50, 50, 50, 50, 50, 50]
+   [40, 40, 40, 40, 40, 30, 20, 30, 40, 40, 40, 40, 40, 40, 40],
+   [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
+    """,
+    """
+   [50, 50, 50, 50, 50, 40,  0, 40, 50, 50,  0, 50, 50, 50, 50],
+   [40, 40, 40, 40,  0, 30, 20, 30,  0, 40, 40, 40, 40, 40, 40],
+   [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
+    """]
+    sel = $(this).val()
+    if sel
+      raw = predefined[sel]
+      $("#dataBox").val raw
+      world.setLanes(getCleanLanes(raw), true)
+      world.draw()
+
+
+
 class RoadWorld
   constructor: (lanes) ->
-    @setLanes lanes
-    @init = 0
+    @setLanes lanes, true
     @goal_img
     @init_img
     @draw()
 
-  setLanes: (@lanes) ->
+  setLanes: (@lanes, forceResetInitGoal=false) ->
     @h = @lanes.length
     @w = @lanes[0].length
     unless @goal and @goal <= @w - 1
+      @goal = @w-1
+    if forceResetInitGoal
+      @init = 0
       @goal = @w-1
     @cell_w = width / @w
     @cell_h = height / @h
