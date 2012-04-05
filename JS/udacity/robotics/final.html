@@ -1,0 +1,34 @@
+<!DOCTYPE>
+<html>
+<head>
+  <title>Final demo</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <style>
+    #canvasContainer {
+      border: 1px solid black;
+      float: left;
+      cursor: crosshair;
+      position: relative;
+    }
+
+    #canvasContainer.hovered {
+      cursor: pointer;
+    }
+
+    #canvasContainer canvas{
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    #canvas_base {
+      position: relative !important;
+    }
+  </style>
+</head>
+<body>
+<div id="canvasContainer">
+  <canvas id="canvas_base"></canvas>
+</div>
+<script src="final.js"></script>
+</body>
+</html>
