@@ -51,11 +51,17 @@ class RoadWorld
         c.beginPath()
         [x,y,w,h] = [gp(cell_w * xi), gp(cell_h * yi), cell_w, cell_h]
         c.strokeRect x,y,w,h
+
         speed = @lanes[yi][xi]
-        hue = Math.floor((speed-min) * 240 / max)
-        [r,g,b] = hsv_to_rgb(hue, 0.6, 1)
+        hue = Math.floor((speed-min) * 180 / max)
+        [r,g,b] = hsv_to_rgb(hue, 0.4, 1)
         c.fillStyle = "rgb(#{r},#{g},#{b})"
         c.fillRect x,y,w,h
+
+        c.fillStyle = 'black'
+        c.font = '20px sans-serif'
+        c.fillText(speed,x+cell_w/2-20, y+20)
+
         c.closePath()
     c.stroke()
 
