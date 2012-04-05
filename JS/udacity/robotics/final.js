@@ -1,5 +1,5 @@
 (function() {
-  var RoadWorld, abs, canvases, clear, ctx, gp, height, hsv_to_rgb, width, world;
+  var RoadWorld, abs, canvases, clear, ctx, gp, height, hsv_to_rgb, pointAt, width, world;
 
   ctx = {};
 
@@ -12,7 +12,7 @@
   world = null;
 
   $(function() {
-    var lanes;
+    var goal_img, init_img, lanes;
     $('#canvasContainer canvas').each(function() {
       var ctx_id, gridDiv, that;
       that = $(this);
@@ -29,7 +29,22 @@
       return ctx[ctx_id].clearRect(0, 0, width, height);
     });
     lanes = [[100, 100, 100, 200, 300], [50, 50, 50, 50, 50], [1, 1, 1, 1, 1]];
-    return world = new RoadWorld(lanes);
+    world = new RoadWorld(lanes);
+    init_img = new Image();
+    init_img.src = 'arrow_up_32x32.png';
+    $(init_img).load(function() {
+      world.init_img = init_img;
+      return world.draw();
+    });
+    goal_img = new Image();
+    goal_img.src = 'arrow_down_32x32.png';
+    $(goal_img).load(function() {
+      world.goal_img = goal_img;
+      return world.draw();
+    });
+    return $(canvases.initgoal).click(function(e) {
+      return world.bottomClick(e.offsetX);
+    });
   });
 
   RoadWorld = (function() {
@@ -38,15 +53,44 @@
       this.lanes = lanes;
       this.h = this.lanes.length;
       this.w = this.lanes[0].length;
+      this.init = 0;
+      this.goal = this.w - 1;
+      this.cell_w = width / this.w;
+      this.cell_h = height / this.h;
+      this.goal_img;
+      this.init_img;
       this.draw();
     }
 
+    RoadWorld.prototype.bottomClick = function(x) {
+      var xIndex;
+      xIndex = Math.floor(x / this.cell_w);
+      if (xIndex > this.init + (this.goal - this.init) / 2) {
+        this.goal = xIndex;
+      } else {
+        this.init = xIndex;
+      }
+      return this.drawArrows();
+    };
+
+    RoadWorld.prototype.drawArrows = function() {
+      var c, placeImg,
+        _this = this;
+      clear('initgoal');
+      c = ctx.initgoal;
+      placeImg = function(x, img) {
+        x = x * _this.cell_w + _this.cell_w / 2 - img.width;
+        return c.drawImage(img, x, height - 35);
+      };
+      if (this.init_img) placeImg(this.init, this.init_img);
+      if (this.goal_img) return placeImg(this.goal, this.goal_img);
+    };
+
     RoadWorld.prototype.draw = function() {
-      var b, c, cell_h, cell_w, g, h, hue, lane, max, min, r, speed, w, x, xi, y, yi, _i, _j, _len, _len2, _ref, _ref2, _ref3, _ref4, _ref5;
+      var b, c, g, h, hue, lane, max, min, r, speed, w, x, xi, y, yi, _i, _j, _len, _len2, _ref, _ref2, _ref3, _ref4, _ref5;
       clear('base');
+      this.drawArrows();
       c = ctx.base;
-      cell_w = width / this.w;
-      cell_h = height / this.h;
       min = Number.MAX_VALUE;
       max = -1 * Number.MAX_VALUE;
       _ref = this.lanes;
@@ -62,7 +106,7 @@
       for (xi = 0, _ref2 = this.w - 1; 0 <= _ref2 ? xi <= _ref2 : xi >= _ref2; 0 <= _ref2 ? xi++ : xi--) {
         for (yi = 0, _ref3 = this.h - 1; 0 <= _ref3 ? yi <= _ref3 : yi >= _ref3; 0 <= _ref3 ? yi++ : yi--) {
           c.beginPath();
-          _ref4 = [gp(cell_w * xi), gp(cell_h * yi), cell_w, cell_h], x = _ref4[0], y = _ref4[1], w = _ref4[2], h = _ref4[3];
+          _ref4 = [gp(this.cell_w * xi), gp(this.cell_h * yi), this.cell_w, this.cell_h], x = _ref4[0], y = _ref4[1], w = _ref4[2], h = _ref4[3];
           c.strokeRect(x, y, w, h);
           speed = this.lanes[yi][xi];
           hue = Math.floor((speed - min) * 180 / max);
@@ -71,7 +115,7 @@
           c.fillRect(x, y, w, h);
           c.fillStyle = 'black';
           c.font = '20px sans-serif';
-          c.fillText(speed, x + cell_w / 2 - 20, y + 20);
+          c.fillText(speed, x + 10, y + 20);
           c.closePath();
         }
       }
@@ -81,6 +125,13 @@
     return RoadWorld;
 
   })();
+
+  pointAt = function(x, y) {
+    return {
+      x: x,
+      y: y
+    };
+  };
 
   gp = function(any) {
     return Math.ceil(any) + 0.5;

@@ -26,17 +26,57 @@ $ ->
 
   world = new RoadWorld(lanes)
 
+  init_img = new Image();
+  init_img.src = 'arrow_up_32x32.png'
+  $(init_img).load ->
+    world.init_img = init_img
+    world.draw()
+  goal_img = new Image();
+  goal_img.src = 'arrow_down_32x32.png'
+  $(goal_img).load ->
+    world.goal_img = goal_img
+    world.draw()
+
+  $(canvases.initgoal).click (e) ->
+    world.bottomClick e.offsetX
+
+
 class RoadWorld
   constructor: (@lanes) ->
     @h = @lanes.length
     @w = @lanes[0].length
+    @init = 0
+    @goal = @w-1
+    @cell_w = width / @w
+    @cell_h = height / @h
+    @goal_img
+    @init_img
     @draw()
+
+  bottomClick: (x) ->
+    xIndex = Math.floor(x / @cell_w)
+    if xIndex > @init + (@goal - @init) / 2
+      @goal = xIndex
+    else
+      @init = xIndex
+    @drawArrows()
+
+  drawArrows: ->
+    clear 'initgoal'
+    c = ctx.initgoal
+    placeImg = (x, img) =>
+      x = x * @cell_w + @cell_w/2 - img.width
+      c.drawImage img, x, height - 35
+    if @init_img
+      placeImg @init, @init_img
+    if @goal_img
+      placeImg @goal, @goal_img
 
   draw: ->
     clear 'base'
+    @drawArrows()
     c = ctx.base
-    cell_w = width / @w
-    cell_h = height / @h
+
     min = Number.MAX_VALUE
     max = -1 * Number.MAX_VALUE
     for lane in @lanes
@@ -49,7 +89,7 @@ class RoadWorld
     for xi in [0..@w-1]
       for yi in [0..@h-1]
         c.beginPath()
-        [x,y,w,h] = [gp(cell_w * xi), gp(cell_h * yi), cell_w, cell_h]
+        [x,y,w,h] = [gp(@cell_w * xi), gp(@cell_h * yi), @cell_w, @cell_h]
         c.strokeRect x,y,w,h
 
         speed = @lanes[yi][xi]
@@ -60,11 +100,12 @@ class RoadWorld
 
         c.fillStyle = 'black'
         c.font = '20px sans-serif'
-        c.fillText(speed,x+cell_w/2-20, y+20)
+        c.fillText(speed,x+10, y+20)
 
         c.closePath()
     c.stroke()
 
+pointAt = (x, y) -> x: x, y: y
 gp = (any) -> Math.ceil(any) + 0.5
 hsv_to_rgb = (h,s,v) ->
 
