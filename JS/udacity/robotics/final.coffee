@@ -105,10 +105,18 @@ class RoadWorld
     else
       @init = xIndex
     @calculatePolicy()
-    @drawArrows()
+    @draw()
 
   calculatePolicy: ->
     calculatePolicy.call @
+
+  iterateCells: (func) ->
+    for xi in [0..@w-1]
+      for yi in [0..@h-1]
+        d = @policy[yi][xi]
+#        [x,y,w,h] = [gp(@cell_w * xi), gp(@cell_h * yi), @cell_w, @cell_h]
+        [x,y,w,h] = [@cell_w * xi, @cell_h * yi, @cell_w, @cell_h]
+        func yi, xi, x, y, w, h
 
   drawArrows: ->
     clear 'initgoal'
@@ -121,11 +129,32 @@ class RoadWorld
     if @goal_img
       placeImg @goal, @goal_img
 
-  draw: ->
-    clear 'base'
-    @drawArrows()
-    c = ctx.base
+  drawPolicy: ->
+    clear 'policy'
+    c = ctx.policy
+    c.lineWidth = 2
+    c.strokeStyle = "rgba(0,0,0,0.4)";
+    @iterateCells (yi,xi,x,y,w,h) =>
+      d = @policy[yi][xi]
+      ys = y + h/2
+      c.moveTo x, ys
+      xf = x + w
+      switch d
+        when 'up'
+          yf = y - h/2
+        when 'dw'
+          yf = y + h + h/2
+        when 'no'
+          yf = y + h/2
+      if yf
+        c.bezierCurveTo x + w/3, ys, xf - w/3, yf, xf , yf
+    c.stroke()
 
+  draw: ->
+    @drawArrows()
+    @drawPolicy()
+    clear 'base'
+    c = ctx.base
     min = Number.MAX_VALUE
     max = -1 * Number.MAX_VALUE
     for lane in @lanes
@@ -135,24 +164,20 @@ class RoadWorld
         if speed < min
           min = speed
     max = max - min + 1
-    for xi in [0..@w-1]
-      for yi in [0..@h-1]
-        c.beginPath()
-        [x,y,w,h] = [gp(@cell_w * xi), gp(@cell_h * yi), @cell_w, @cell_h]
-        c.strokeRect x,y,w,h
+    @iterateCells (yi,xi,x,y,w,h) =>
+      c.strokeRect x,y,w,h
 
-        speed = @lanes[yi][xi]
-        hue = Math.floor((speed-min) * 180 / max)
-        [r,g,b] = hsv_to_rgb(hue, 0.4, 1)
-        c.fillStyle = "rgb(#{r},#{g},#{b})"
-        c.fillRect x,y,w,h
+      speed = @lanes[yi][xi]
+      hue = Math.floor((speed-min) * 180 / max)
+      [r,g,b] = hsv_to_rgb(hue, 0.4, 1)
+      c.fillStyle = "rgb(#{r},#{g},#{b})"
+      c.fillRect x,y,w,h
 
-        c.fillStyle = 'black'
-        c.font = '20px sans-serif'
-        c.fillText(speed,x+10, y+20)
+      c.fillStyle = 'black'
+      c.font = '20px sans-serif'
+      c.fillText(speed,x+10, y+20)
 
-        c.closePath()
-    c.stroke()
+      c.closePath()
 
 getCleanLanes = (data) ->
   lanes = (row.trim().split(/[^\d.]+/i) for row in data.split(/[\r\n]/))

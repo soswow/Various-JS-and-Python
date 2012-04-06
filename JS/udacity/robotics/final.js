@@ -101,11 +101,29 @@
         this.init = xIndex;
       }
       this.calculatePolicy();
-      return this.drawArrows();
+      return this.draw();
     };
 
     RoadWorld.prototype.calculatePolicy = function() {
       return calculatePolicy.call(this);
+    };
+
+    RoadWorld.prototype.iterateCells = function(func) {
+      var d, h, w, x, xi, y, yi, _ref, _results;
+      _results = [];
+      for (xi = 0, _ref = this.w - 1; 0 <= _ref ? xi <= _ref : xi >= _ref; 0 <= _ref ? xi++ : xi--) {
+        _results.push((function() {
+          var _ref2, _ref3, _results2;
+          _results2 = [];
+          for (yi = 0, _ref2 = this.h - 1; 0 <= _ref2 ? yi <= _ref2 : yi >= _ref2; 0 <= _ref2 ? yi++ : yi--) {
+            d = this.policy[yi][xi];
+            _ref3 = [this.cell_w * xi, this.cell_h * yi, this.cell_w, this.cell_h], x = _ref3[0], y = _ref3[1], w = _ref3[2], h = _ref3[3];
+            _results2.push(func(yi, xi, x, y, w, h));
+          }
+          return _results2;
+        }).call(this));
+      }
+      return _results;
     };
 
     RoadWorld.prototype.drawArrows = function() {
@@ -121,10 +139,40 @@
       if (this.goal_img) return placeImg(this.goal, this.goal_img);
     };
 
+    RoadWorld.prototype.drawPolicy = function() {
+      var c,
+        _this = this;
+      clear('policy');
+      c = ctx.policy;
+      c.lineWidth = 2;
+      c.strokeStyle = "rgba(0,0,0,0.4)";
+      this.iterateCells(function(yi, xi, x, y, w, h) {
+        var d, xf, yf, ys;
+        d = _this.policy[yi][xi];
+        ys = y + h / 2;
+        c.moveTo(x, ys);
+        xf = x + w;
+        switch (d) {
+          case 'up':
+            yf = y - h / 2;
+            break;
+          case 'dw':
+            yf = y + h + h / 2;
+            break;
+          case 'no':
+            yf = y + h / 2;
+        }
+        if (yf) return c.bezierCurveTo(x + w / 3, ys, xf - w / 3, yf, xf, yf);
+      });
+      return c.stroke();
+    };
+
     RoadWorld.prototype.draw = function() {
-      var b, c, g, h, hue, lane, max, min, r, speed, w, x, xi, y, yi, _i, _j, _len, _len2, _ref, _ref2, _ref3, _ref4, _ref5;
-      clear('base');
+      var c, lane, max, min, speed, _i, _j, _len, _len2, _ref,
+        _this = this;
       this.drawArrows();
+      this.drawPolicy();
+      clear('base');
       c = ctx.base;
       min = Number.MAX_VALUE;
       max = -1 * Number.MAX_VALUE;
@@ -138,23 +186,19 @@
         }
       }
       max = max - min + 1;
-      for (xi = 0, _ref2 = this.w - 1; 0 <= _ref2 ? xi <= _ref2 : xi >= _ref2; 0 <= _ref2 ? xi++ : xi--) {
-        for (yi = 0, _ref3 = this.h - 1; 0 <= _ref3 ? yi <= _ref3 : yi >= _ref3; 0 <= _ref3 ? yi++ : yi--) {
-          c.beginPath();
-          _ref4 = [gp(this.cell_w * xi), gp(this.cell_h * yi), this.cell_w, this.cell_h], x = _ref4[0], y = _ref4[1], w = _ref4[2], h = _ref4[3];
-          c.strokeRect(x, y, w, h);
-          speed = this.lanes[yi][xi];
-          hue = Math.floor((speed - min) * 180 / max);
-          _ref5 = hsv_to_rgb(hue, 0.4, 1), r = _ref5[0], g = _ref5[1], b = _ref5[2];
-          c.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
-          c.fillRect(x, y, w, h);
-          c.fillStyle = 'black';
-          c.font = '20px sans-serif';
-          c.fillText(speed, x + 10, y + 20);
-          c.closePath();
-        }
-      }
-      return c.stroke();
+      return this.iterateCells(function(yi, xi, x, y, w, h) {
+        var b, g, hue, r, _ref2;
+        c.strokeRect(x, y, w, h);
+        speed = _this.lanes[yi][xi];
+        hue = Math.floor((speed - min) * 180 / max);
+        _ref2 = hsv_to_rgb(hue, 0.4, 1), r = _ref2[0], g = _ref2[1], b = _ref2[2];
+        c.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
+        c.fillRect(x, y, w, h);
+        c.fillStyle = 'black';
+        c.font = '20px sans-serif';
+        c.fillText(speed, x + 10, y + 20);
+        return c.closePath();
+      });
     };
 
     return RoadWorld;
