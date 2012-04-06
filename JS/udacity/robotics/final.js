@@ -1,6 +1,8 @@
 (function() {
   var RoadWorld, abs, canvases, clear, ctx, getCleanLanes, gp, height, hsv_to_rgb, pointAt, width, world;
 
+  abs = Math.abs;
+
   ctx = {};
 
   canvases = {};
@@ -12,7 +14,7 @@
   world = null;
 
   $(function() {
-    var goal_img, init_img;
+    var cost, goal_img, init_img;
     $('#canvasContainer canvas').each(function() {
       var ctx_id, gridDiv, that;
       that = $(this);
@@ -28,7 +30,8 @@
       ctx[ctx_id] = typeof this.getContext === "function" ? this.getContext('2d') : void 0;
       return ctx[ctx_id].clearRect(0, 0, width, height);
     });
-    world = new RoadWorld(getCleanLanes($("#dataBox").val()));
+    cost = parseFloat($("#shiftCost").val());
+    world = new RoadWorld(getCleanLanes($("#dataBox").val()), cost);
     init_img = new Image();
     init_img.src = 'arrow_up_32x32.png';
     $(init_img).load(function() {
@@ -49,12 +52,15 @@
       return world.draw();
     });
     return $("#predefinedRoads").change(function() {
-      var predefined, raw, sel;
+      var costs, predefined, raw, sel;
       predefined = ["100 100 100 100 100 100 100 100\n10  10  10  10  10  10  10  10\n1   1   1   1   1   1   1   1", "80 80 80 80 80 80 80 80 80 80 80 80 80 80\n60 60 60 60 60 60 60 60 60 60 60 60 60 60\n40 40 40 40 40 40 40 40 40 40 40 40 40 40\n20 20 20 20 20 20 20 20 20 20 20 20 20 20", "[50, 50, 50, 50, 50, 40, 0, 40, 50, 50, 50, 50, 50, 50, 50]\n[40, 40, 40, 40, 40, 30, 20, 30, 40, 40, 40, 40, 40, 40, 40],\n[30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]", "[50, 50, 50, 50, 50, 40,  0, 40, 50, 50,  0, 50, 50, 50, 50],\n[40, 40, 40, 40,  0, 30, 20, 30,  0, 40, 40, 40, 40, 40, 40],\n[30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]"];
+      costs = [1.0 / 1000.0, 1.0 / 100.0, 1.0 / 500.0, 1.0 / 65.0];
       sel = $(this).val();
       if (sel) {
         raw = predefined[sel];
         $("#dataBox").val(raw);
+        $("#shiftCost").val(costs[sel]);
+        world.lane_change_cost = costs[sel];
         world.setLanes(getCleanLanes(raw), true);
         return world.draw();
       }
@@ -63,7 +69,8 @@
 
   RoadWorld = (function() {
 
-    function RoadWorld(lanes) {
+    function RoadWorld(lanes, lane_change_cost) {
+      this.lane_change_cost = lane_change_cost;
       this.setLanes(lanes, true);
       this.goal_img;
       this.init_img;
@@ -81,7 +88,8 @@
         this.goal = this.w - 1;
       }
       this.cell_w = width / this.w;
-      return this.cell_h = height / this.h;
+      this.cell_h = height / this.h;
+      return this.calculatePolicy();
     };
 
     RoadWorld.prototype.bottomClick = function(x) {
@@ -92,7 +100,12 @@
       } else {
         this.init = xIndex;
       }
+      this.calculatePolicy();
       return this.drawArrows();
+    };
+
+    RoadWorld.prototype.calculatePolicy = function() {
+      return calculatePolicy.call(this);
     };
 
     RoadWorld.prototype.drawArrows = function() {
@@ -211,8 +224,6 @@
     m = v - c;
     return [Math.round((r1 + m) * 255), Math.round((g1 + m) * 255), Math.round((b1 + m) * 255)];
   };
-
-  abs = Math.abs;
 
   clear = function(ctxId) {
     if (ctxId) return canvases[ctxId].width = width;

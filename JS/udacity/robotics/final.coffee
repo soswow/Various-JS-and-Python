@@ -1,6 +1,7 @@
 #unless String.prototype.trim
 #  String.prototype.trim = ->
 #    @replace /^\s+|\s+$/g,''
+abs = Math.abs
 
 ctx = {}
 canvases = {}
@@ -24,8 +25,8 @@ $ ->
     ctx[ctx_id] = @getContext? '2d'
     ctx[ctx_id].clearRect 0, 0, width, height
 
-
-  world = new RoadWorld(getCleanLanes $("#dataBox").val())
+  cost = parseFloat $("#shiftCost").val()
+  world = new RoadWorld(getCleanLanes($("#dataBox").val()), cost)
 
   init_img = new Image();
   init_img.src = 'arrow_up_32x32.png'
@@ -66,17 +67,20 @@ $ ->
    [40, 40, 40, 40,  0, 30, 20, 30,  0, 40, 40, 40, 40, 40, 40],
    [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
     """]
+    costs = [1.0 / 1000.0, 1.0 / 100.0, 1.0 / 500.0, 1.0 / 65.0]
     sel = $(this).val()
     if sel
       raw = predefined[sel]
       $("#dataBox").val raw
+      $("#shiftCost").val costs[sel]
+      world.lane_change_cost = costs[sel]
       world.setLanes(getCleanLanes(raw), true)
       world.draw()
 
 
 
 class RoadWorld
-  constructor: (lanes) ->
+  constructor: (lanes, @lane_change_cost) ->
     @setLanes lanes, true
     @goal_img
     @init_img
@@ -92,6 +96,7 @@ class RoadWorld
       @goal = @w-1
     @cell_w = width / @w
     @cell_h = height / @h
+    @calculatePolicy()
 
   bottomClick: (x) ->
     xIndex = Math.floor(x / @cell_w)
@@ -99,7 +104,11 @@ class RoadWorld
       @goal = xIndex
     else
       @init = xIndex
+    @calculatePolicy()
     @drawArrows()
+
+  calculatePolicy: ->
+    calculatePolicy.call @
 
   drawArrows: ->
     clear 'initgoal'
@@ -187,7 +196,7 @@ hsv_to_rgb = (h,s,v) ->
   m = v - c
   [Math.round((r1+m) * 255), Math.round((g1+m) * 255), Math.round((b1+m) * 255)]
 
-abs = Math.abs
+
 clear = (ctxId) ->
   if ctxId
     canvases[ctxId].width = width
