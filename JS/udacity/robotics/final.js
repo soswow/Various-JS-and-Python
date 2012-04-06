@@ -100,6 +100,7 @@
     RoadWorld.prototype.calculatePolicy = function() {
       var laneArr, x, y, _ref, _ref2, _ref3, _ref4, _results;
       calculatePolicy.call(this);
+      $("#pathCost").html(this.values[this.h - 1][this.init]);
       this.resultPath = [];
       for (y = 0, _ref = this.h - 1; 0 <= _ref ? y <= _ref : y >= _ref; 0 <= _ref ? y++ : y--) {
         laneArr = [];

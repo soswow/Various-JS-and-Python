@@ -104,6 +104,7 @@ class RoadWorld
 
   calculatePolicy: ->
     calculatePolicy.call @
+    $("#pathCost").html @values[@h-1][@init]
 
     @resultPath = []
     for y in [0..@h-1]
