@@ -51,7 +51,7 @@
       world.setLanes(getCleanLanes($(this).val()));
       return world.draw();
     });
-    return $("#predefinedRoads").change(function() {
+    $("#predefinedRoads").change(function() {
       var costs, predefined, raw, sel;
       predefined = ["100 100 100 100 100 100 100 100\n10  10  10  10  10  10  10  10\n1   1   1   1   1   1   1   1", "80 80 80 80 80 80 80 80 80 80 80 80 80 80\n60 60 60 60 60 60 60 60 60 60 60 60 60 60\n40 40 40 40 40 40 40 40 40 40 40 40 40 40\n20 20 20 20 20 20 20 20 20 20 20 20 20 20", "[50, 50, 50, 50, 50, 40, 0, 40, 50, 50, 50, 50, 50, 50, 50]\n[40, 40, 40, 40, 40, 30, 20, 30, 40, 40, 40, 40, 40, 40, 40],\n[30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]", "[50, 50, 50, 50, 50, 40,  0, 40, 50, 50,  0, 50, 50, 50, 50],\n[40, 40, 40, 40,  0, 30, 20, 30,  0, 40, 40, 40, 40, 40, 40],\n[30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]"];
       costs = [1.0 / 1000.0, 1.0 / 100.0, 1.0 / 500.0, 1.0 / 65.0];
@@ -64,6 +64,11 @@
         world.setLanes(getCleanLanes(raw), true);
         return world.draw();
       }
+    });
+    return $("#shiftCost").keyup(function(e) {
+      world.lane_change_cost = parseFloat($(this).val());
+      world.calculatePolicy();
+      return world.draw();
     });
   });
 

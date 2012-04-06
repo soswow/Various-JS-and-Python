@@ -77,6 +77,10 @@ $ ->
       world.setLanes(getCleanLanes(raw), true)
       world.draw()
 
+  $("#shiftCost").keyup (e) ->
+    world.lane_change_cost = parseFloat $(this).val()
+    world.calculatePolicy()
+    world.draw()
 
 
 class RoadWorld
