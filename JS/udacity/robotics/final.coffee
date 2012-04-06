@@ -82,6 +82,7 @@ $ ->
     world.calculatePolicy()
     world.draw()
 
+  $("#predefinedRoads").val(2).change()
 
 class RoadWorld
   constructor: (lanes, @lane_change_cost) ->

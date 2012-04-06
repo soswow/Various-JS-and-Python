@@ -65,11 +65,12 @@
         return world.draw();
       }
     });
-    return $("#shiftCost").keyup(function(e) {
+    $("#shiftCost").keyup(function(e) {
       world.lane_change_cost = parseFloat($(this).val());
       world.calculatePolicy();
       return world.draw();
     });
+    return $("#predefinedRoads").val(2).change();
   });
 
   RoadWorld = (function() {
