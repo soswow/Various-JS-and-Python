@@ -97,6 +97,35 @@
       return this.calculatePolicy();
     };
 
+    RoadWorld.prototype.calculatePolicy = function() {
+      var laneArr, x, y, _ref, _ref2, _ref3, _ref4, _results;
+      calculatePolicy.call(this);
+      this.resultPath = [];
+      for (y = 0, _ref = this.h - 1; 0 <= _ref ? y <= _ref : y >= _ref; 0 <= _ref ? y++ : y--) {
+        laneArr = [];
+        for (x = 0, _ref2 = this.w - 1; 0 <= _ref2 ? x <= _ref2 : x >= _ref2; 0 <= _ref2 ? x++ : x--) {
+          laneArr.push('');
+        }
+        this.resultPath.push(laneArr);
+      }
+      y = this.h - 1;
+      _results = [];
+      for (x = _ref3 = this.init, _ref4 = this.goal; _ref3 <= _ref4 ? x <= _ref4 : x >= _ref4; _ref3 <= _ref4 ? x++ : x--) {
+        this.resultPath[y][x] = '*';
+        switch (this.policy[y][x]) {
+          case 'up':
+            _results.push(y -= 1);
+            break;
+          case 'dw':
+            _results.push(y += 1);
+            break;
+          default:
+            _results.push(void 0);
+        }
+      }
+      return _results;
+    };
+
     RoadWorld.prototype.bottomClick = function(x) {
       var xIndex;
       xIndex = Math.floor(x / this.cell_w);
@@ -107,10 +136,6 @@
       }
       this.calculatePolicy();
       return this.draw();
-    };
-
-    RoadWorld.prototype.calculatePolicy = function() {
-      return calculatePolicy.call(this);
     };
 
     RoadWorld.prototype.iterateCells = function(func) {
@@ -149,10 +174,12 @@
         _this = this;
       clear('policy');
       c = ctx.policy;
-      c.lineWidth = 2;
-      c.strokeStyle = "rgba(0,0,0,0.4)";
-      this.iterateCells(function(yi, xi, x, y, w, h) {
-        var d, xf, yf, ys;
+      return this.iterateCells(function(yi, xi, x, y, w, h) {
+        var d, isResultPath, xf, yf, ys;
+        c.beginPath();
+        isResultPath = _this.resultPath[yi][xi] === '*';
+        c.lineWidth = isResultPath ? 4 : 2;
+        c.strokeStyle = "rgba(0,0,0," + (isResultPath ? 1 : 0.4) + ")";
         d = _this.policy[yi][xi];
         ys = y + h / 2;
         c.moveTo(x, ys);
@@ -167,9 +194,10 @@
           case 'no':
             yf = y + h / 2;
         }
-        if (yf) return c.bezierCurveTo(x + w / 3, ys, xf - w / 3, yf, xf, yf);
+        if (yf) c.bezierCurveTo(x + w / 3, ys, xf - w / 3, yf, xf, yf);
+        c.stroke();
+        return c.closePath();
       });
-      return c.stroke();
     };
 
     RoadWorld.prototype.draw = function() {

@@ -102,6 +102,22 @@ class RoadWorld
     @cell_h = height / @h
     @calculatePolicy()
 
+  calculatePolicy: ->
+    calculatePolicy.call @
+
+    @resultPath = []
+    for y in [0..@h-1]
+      laneArr = []
+      for x in [0..@w-1]
+        laneArr.push ''
+      @resultPath.push laneArr
+    y = @h-1
+    for x in [@init..@goal]
+      @resultPath[y][x] = '*'
+      switch @policy[y][x]
+        when 'up' then y-=1
+        when 'dw' then y+=1
+
   bottomClick: (x) ->
     xIndex = Math.floor(x / @cell_w)
     if xIndex > @init + (@goal - @init) / 2
@@ -110,9 +126,6 @@ class RoadWorld
       @init = xIndex
     @calculatePolicy()
     @draw()
-
-  calculatePolicy: ->
-    calculatePolicy.call @
 
   iterateCells: (func) ->
     for xi in [0..@w-1]
@@ -136,9 +149,11 @@ class RoadWorld
   drawPolicy: ->
     clear 'policy'
     c = ctx.policy
-    c.lineWidth = 2
-    c.strokeStyle = "rgba(0,0,0,0.4)";
     @iterateCells (yi,xi,x,y,w,h) =>
+      c.beginPath()
+      isResultPath = @resultPath[yi][xi] is '*'
+      c.lineWidth = if isResultPath then 4 else 2
+      c.strokeStyle = "rgba(0,0,0,#{if isResultPath then 1 else 0.4})";
       d = @policy[yi][xi]
       ys = y + h/2
       c.moveTo x, ys
@@ -152,7 +167,9 @@ class RoadWorld
           yf = y + h/2
       if yf
         c.bezierCurveTo x + w/3, ys, xf - w/3, yf, xf , yf
-    c.stroke()
+      c.stroke()
+      c.closePath()
+
 
   draw: ->
     @drawArrows()
