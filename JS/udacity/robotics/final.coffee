@@ -156,7 +156,12 @@ class RoadWorld
       c.lineWidth = if isResultPath then 4 else 2
       c.strokeStyle = "rgba(0,0,0,#{if isResultPath then 1 else 0.4})";
       d = @policy[yi][xi]
-      ys = y + h/2
+      ys =
+        if yi is @h-1 and xi is @init
+          y + h
+        else
+          y + h/2
+
       c.moveTo x, ys
       xf = x + w
       switch d
@@ -166,6 +171,9 @@ class RoadWorld
           yf = y + h + h/2
         when 'no'
           yf = y + h/2
+        when '*'
+          yf = y + h
+
       if yf
         c.bezierCurveTo x + w/3, ys, xf - w/3, yf, xf , yf
       c.stroke()

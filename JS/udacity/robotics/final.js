@@ -182,7 +182,7 @@
         c.lineWidth = isResultPath ? 4 : 2;
         c.strokeStyle = "rgba(0,0,0," + (isResultPath ? 1 : 0.4) + ")";
         d = _this.policy[yi][xi];
-        ys = y + h / 2;
+        ys = yi === _this.h - 1 && xi === _this.init ? y + h : y + h / 2;
         c.moveTo(x, ys);
         xf = x + w;
         switch (d) {
@@ -194,6 +194,9 @@
             break;
           case 'no':
             yf = y + h / 2;
+            break;
+          case '*':
+            yf = y + h;
         }
         if (yf) c.bezierCurveTo(x + w / 3, ys, xf - w / 3, yf, xf, yf);
         c.stroke();
