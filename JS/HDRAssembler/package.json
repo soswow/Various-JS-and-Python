@@ -1,0 +1,8 @@
+{
+    "name":"HDR_assembler",
+    "version":"0.0.1",
+    "dependencies":{
+        "async":"",
+        "fs.extra":""
+    }
+}
