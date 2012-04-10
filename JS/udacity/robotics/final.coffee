@@ -104,9 +104,11 @@ class RoadWorld
     @calculatePolicy()
 
   calculatePolicy: ->
-    calculatePolicy.call @
+    @calculatePolicyAndValues()
     $("#pathCost").html @values[@h-1][@init]
+    @makeResultPath()
 
+  makeResultPath: ->
     @resultPath = []
     for y in [0..@h-1]
       laneArr = []
@@ -136,6 +138,43 @@ class RoadWorld
 #        [x,y,w,h] = [gp(@cell_w * xi), gp(@cell_h * yi), @cell_w, @cell_h]
         [x,y,w,h] = [@cell_w * xi, @cell_h * yi, @cell_w, @cell_h]
         func yi, xi, x, y, w, h
+
+  calculatePolicyAndValues: ->
+    @values = []
+    @policy = []
+    for i in [0..@h-1]
+      @values.push []
+      @policy.push []
+      for j in [1..@w]
+        @values[i].push 99999
+        @policy[i].push ' '
+
+    lane_delta = [-1, 1, 0]
+    shift_names = ['up','dw','no']
+
+    change = true
+    while change
+      change = false
+      for lane, y in @lanes
+        for speed, x in lane
+          if y is @h-1 and @goal is x
+            if @values[y][x] > 0
+              @values[y][x] = 0
+              @policy[y][x] = '*'
+              change = true
+          else if speed > 0
+            x2 = x + 1
+            if x2 >= 0 and x2 < @w
+              for lane_shift, i in lane_delta
+                y2 = y + lane_shift
+                if y2 >= 0 and y2 < @h and @lanes[y][x] > 0
+                  speed_cost = 1 / @lanes[y][x]
+                  lane_shift_cost = abs(lane_shift) * @lane_change_cost
+                  v2 = @values[y2][x2] + speed_cost + lane_shift_cost
+                  if v2 < @values[y][x]
+                    change = true
+                    @values[y][x] = v2
+                    @policy[y][x] = shift_names[i]
 
   drawArrows: ->
     clear 'initgoal'
@@ -199,14 +238,15 @@ class RoadWorld
       c.strokeRect x,y,w,h
 
       speed = @lanes[yi][xi]
-      hue = Math.floor((speed-min) * 180 / max)
-      [r,g,b] = hsv_to_rgb(hue, 0.4, 1)
+      hue = Math.floor (speed-min) * 180 / max
+      v = if @resultPath[yi][xi] then 0.7 else 1
+      [r,g,b] = hsv_to_rgb hue, 0.4, v
       c.fillStyle = "rgb(#{r},#{g},#{b})"
       c.fillRect x,y,w,h
 
       c.fillStyle = 'black'
       c.font = '20px sans-serif'
-      c.fillText(speed,x+10, y+20)
+      c.fillText speed,x+10, y+20
 
       c.closePath()
 

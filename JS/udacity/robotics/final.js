@@ -99,9 +99,13 @@
     };
 
     RoadWorld.prototype.calculatePolicy = function() {
-      var laneArr, x, y, _ref, _ref2, _ref3, _ref4, _results;
-      calculatePolicy.call(this);
+      this.calculatePolicyAndValues();
       $("#pathCost").html(this.values[this.h - 1][this.init]);
+      return this.makeResultPath();
+    };
+
+    RoadWorld.prototype.makeResultPath = function() {
+      var laneArr, x, y, _ref, _ref2, _ref3, _ref4, _results;
       this.resultPath = [];
       for (y = 0, _ref = this.h - 1; 0 <= _ref ? y <= _ref : y >= _ref; 0 <= _ref ? y++ : y--) {
         laneArr = [];
@@ -151,6 +155,85 @@
             d = this.policy[yi][xi];
             _ref3 = [this.cell_w * xi, this.cell_h * yi, this.cell_w, this.cell_h], x = _ref3[0], y = _ref3[1], w = _ref3[2], h = _ref3[3];
             _results2.push(func(yi, xi, x, y, w, h));
+          }
+          return _results2;
+        }).call(this));
+      }
+      return _results;
+    };
+
+    RoadWorld.prototype.calculatePolicyAndValues = function() {
+      var change, i, j, lane, lane_delta, lane_shift, lane_shift_cost, shift_names, speed, speed_cost, v2, x, x2, y, y2, _ref, _ref2, _results;
+      this.values = [];
+      this.policy = [];
+      for (i = 0, _ref = this.h - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
+        this.values.push([]);
+        this.policy.push([]);
+        for (j = 1, _ref2 = this.w; 1 <= _ref2 ? j <= _ref2 : j >= _ref2; 1 <= _ref2 ? j++ : j--) {
+          this.values[i].push(99999);
+          this.policy[i].push(' ');
+        }
+      }
+      lane_delta = [-1, 1, 0];
+      shift_names = ['up', 'dw', 'no'];
+      change = true;
+      _results = [];
+      while (change) {
+        change = false;
+        _results.push((function() {
+          var _len, _ref3, _results2;
+          _ref3 = this.lanes;
+          _results2 = [];
+          for (y = 0, _len = _ref3.length; y < _len; y++) {
+            lane = _ref3[y];
+            _results2.push((function() {
+              var _len2, _results3;
+              _results3 = [];
+              for (x = 0, _len2 = lane.length; x < _len2; x++) {
+                speed = lane[x];
+                if (y === this.h - 1 && this.goal === x) {
+                  if (this.values[y][x] > 0) {
+                    this.values[y][x] = 0;
+                    this.policy[y][x] = '*';
+                    _results3.push(change = true);
+                  } else {
+                    _results3.push(void 0);
+                  }
+                } else if (speed > 0) {
+                  x2 = x + 1;
+                  if (x2 >= 0 && x2 < this.w) {
+                    _results3.push((function() {
+                      var _len3, _results4;
+                      _results4 = [];
+                      for (i = 0, _len3 = lane_delta.length; i < _len3; i++) {
+                        lane_shift = lane_delta[i];
+                        y2 = y + lane_shift;
+                        if (y2 >= 0 && y2 < this.h && this.lanes[y][x] > 0) {
+                          speed_cost = 1 / this.lanes[y][x];
+                          lane_shift_cost = abs(lane_shift) * this.lane_change_cost;
+                          v2 = this.values[y2][x2] + speed_cost + lane_shift_cost;
+                          if (v2 < this.values[y][x]) {
+                            change = true;
+                            this.values[y][x] = v2;
+                            _results4.push(this.policy[y][x] = shift_names[i]);
+                          } else {
+                            _results4.push(void 0);
+                          }
+                        } else {
+                          _results4.push(void 0);
+                        }
+                      }
+                      return _results4;
+                    }).call(this));
+                  } else {
+                    _results3.push(void 0);
+                  }
+                } else {
+                  _results3.push(void 0);
+                }
+              }
+              return _results3;
+            }).call(this));
           }
           return _results2;
         }).call(this));
@@ -225,11 +308,12 @@
       }
       max = max - min + 1;
       return this.iterateCells(function(yi, xi, x, y, w, h) {
-        var b, g, hue, r, _ref2;
+        var b, g, hue, r, v, _ref2;
         c.strokeRect(x, y, w, h);
         speed = _this.lanes[yi][xi];
         hue = Math.floor((speed - min) * 180 / max);
-        _ref2 = hsv_to_rgb(hue, 0.4, 1), r = _ref2[0], g = _ref2[1], b = _ref2[2];
+        v = _this.resultPath[yi][xi] ? 0.7 : 1;
+        _ref2 = hsv_to_rgb(hue, 0.4, v), r = _ref2[0], g = _ref2[1], b = _ref2[2];
         c.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
         c.fillRect(x, y, w, h);
         c.fillStyle = 'black';
