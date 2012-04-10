@@ -260,14 +260,15 @@
       clear('policy');
       c = ctx.policy;
       return this.iterateCells(function(yi, xi, x, y, w, h) {
-        var d, isResultPath, xf, yf, ys;
+        var d, isInit, isResultPath, xf, yf, ys;
         c.beginPath();
         isResultPath = _this.resultPath[yi][xi] === '*';
         c.lineWidth = isResultPath ? 4 : 2;
         c.strokeStyle = "rgba(0,0,0," + (isResultPath ? 1 : 0.4) + ")";
         d = _this.policy[yi][xi];
-        ys = yi === _this.h - 1 && xi === _this.init ? y + h : y + h / 2;
-        c.moveTo(x, ys);
+        isInit = yi === _this.h - 1 && xi === _this.init;
+        ys = isInit ? y + h : y + h / 2;
+        c.moveTo(x + w / 2, ys);
         xf = x + w;
         switch (d) {
           case 'up':
@@ -282,7 +283,7 @@
           case '*':
             yf = y + h;
         }
-        if (yf) c.bezierCurveTo(x + w / 3, ys, xf - w / 3, yf, xf, yf);
+        if (yf) c.bezierCurveTo(x + w, ys, xf, yf, xf + w / 2, yf);
         c.stroke();
         return c.closePath();
       });
