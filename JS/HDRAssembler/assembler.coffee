@@ -3,6 +3,7 @@ fs = require 'fs.extra'
 path = require 'path'
 async = require 'async'
 util = require 'util'
+require './expansions.js'
 
 if process.argv.length < 3
   throw "Folder should be specified!"
@@ -11,29 +12,60 @@ folder = process.argv[2]
 fs.readdir folder, (err, files) ->
   unless_error err, ->
     for file in files
-      unless file.indexOf('.SH') is -1
-        fs.readFile path.join(folder, file), 'utf8', readShFile
+      if file.endsWith '.SH'
+        fs.readFile fullPath(file), 'utf8', readShFile
 
-readShFile = (err, data) ->
+alignQueue = async.queue (image, cb) ->
+  allignImage imgs, cb
+, 4
+
+hdrQueue = async.queue (images, cb) ->
+  alignQueue.push images, (err) ->
+    unless_error err, ->
+      makeHdr images, cb
+, 4
+
+readShFile = (err, content) ->
   unless_error err, ->
-    for line in data.split /\n/i
+    for line in content.lines
       if line.startsWith "enfuse"
         backUpFuncs =
           for token in line.split /\s/ when token.startsWith "IMG"
             do (token) ->
               (cb) ->
-                backUpPicture path.join(folder, token), cb
+                backUpPicture fullPath(token), cb
 
         async.parallel backUpFuncs, (err, files) ->
           unless_error err, ->
             console.log "Backup done. #{files}"
-            #TODO Do other thing with files
+#            hdrQueue.push [files], (err) ->
+#              unless_error err, ->
+#                console.log "Done with #{files}"
 
 backUpPicture = (file, cb) ->
-  backUpName = file.replace(/\.([^.]*)$/, '_backup.$1')
-  fs.copy file, backUpName, (err) ->
-    unless_error err, -> cb(err, file)
+  backupFolder = fullPath 'backup'
+  backUpName = "#{backupFolder}/#{file}"
+  console.log "Checking backup folder"
+  fs.stat backupFolder, (err, stats) ->
+    if err
+      fs.mkdirSync backupFolder
+    doingCopy()
 
+  doingCopy = ->
+    console.log "doing copy"
+    fs.copy file, backUpName, (err) ->
+      unless_error err, -> cb(err, file)
+
+allignImage = (image) ->
+  #TODO
+  cb()
+
+makeHdr = (img, cb) ->
+  #TODO
+  cb()
+
+
+fullPath = (filename) -> path.join folder, filename
 
 unless_error = (err, func) ->
   unless err
@@ -41,16 +73,3 @@ unless_error = (err, func) ->
   else
     console.error err
 
-unless String.prototype.startsWith
-  String.prototype.startsWith = (thing) ->
-    @.indexOf(thing) is 0
-
-throw "error in startsWith" unless "SOME_DO".startsWith("SOME")
-throw "error in startsWith" if "SOME_DO".startsWith("DO")
-
-unless String.prototype.endsWith
-  String.prototype.endsWith = (thing) ->
-    @.indexOf(thing) is (@.length - thing.length)
-
-throw "error in endsWith" unless "SOME_DO".endsWith("DO")
-throw "error in endsWith" if "SOME_DO".endsWith("SOME")

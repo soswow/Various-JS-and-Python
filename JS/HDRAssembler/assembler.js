@@ -1,4 +1,4 @@
-var async, backUpPicture, folder, fs, path, readShFile, spawn, unless_error, util;
+var alignQueue, allignImage, async, backUpPicture, folder, fs, fullPath, hdrQueue, makeHdr, path, readShFile, spawn, unless_error, util;
 
 spawn = require('child_process').spawn;
 
@@ -10,6 +10,8 @@ async = require('async');
 
 util = require('util');
 
+require('./expansions.js');
+
 if (process.argv.length < 3) throw "Folder should be specified!";
 
 folder = process.argv[2];
@@ -20,8 +22,8 @@ fs.readdir(folder, function(err, files) {
     _results = [];
     for (_i = 0, _len = files.length; _i < _len; _i++) {
       file = files[_i];
-      if (file.indexOf('.SH') !== -1) {
-        _results.push(fs.readFile(path.join(folder, file), 'utf8', readShFile));
+      if (file.endsWith('.SH')) {
+        _results.push(fs.readFile(fullPath(file), 'utf8', readShFile));
       } else {
         _results.push(void 0);
       }
@@ -30,10 +32,22 @@ fs.readdir(folder, function(err, files) {
   });
 });
 
-readShFile = function(err, data) {
+alignQueue = async.queue(function(image, cb) {
+  return allignImage(imgs, cb);
+}, 4);
+
+hdrQueue = async.queue(function(images, cb) {
+  return alignQueue.push(images, function(err) {
+    return unless_error(err, function() {
+      return makeHdr(images, cb);
+    });
+  });
+}, 4);
+
+readShFile = function(err, content) {
   return unless_error(err, function() {
     var backUpFuncs, line, token, _i, _len, _ref, _results;
-    _ref = data.split(/\n/i);
+    _ref = content.lines;
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       line = _ref[_i];
@@ -47,7 +61,7 @@ readShFile = function(err, data) {
             if (token.startsWith("IMG")) {
               _results2.push((function(token) {
                 return function(cb) {
-                  return backUpPicture(path.join(folder, token), cb);
+                  return backUpPicture(fullPath(token), cb);
                 };
               })(token));
             }
@@ -68,13 +82,34 @@ readShFile = function(err, data) {
 };
 
 backUpPicture = function(file, cb) {
-  var backUpName;
-  backUpName = file.replace(/\.([^.]*)$/, '_backup.$1');
-  return fs.copy(file, backUpName, function(err) {
-    return unless_error(err, function() {
-      return cb(err, file);
-    });
+  var backUpName, backupFolder, doingCopy;
+  backupFolder = fullPath('backup');
+  backUpName = "" + backupFolder + "/" + file;
+  console.log("Checking backup folder");
+  fs.stat(backupFolder, function(err, stats) {
+    if (err) fs.mkdirSync(backupFolder);
+    return doingCopy();
   });
+  return doingCopy = function() {
+    console.log("doing copy");
+    return fs.copy(file, backUpName, function(err) {
+      return unless_error(err, function() {
+        return cb(err, file);
+      });
+    });
+  };
+};
+
+allignImage = function(image) {
+  return cb();
+};
+
+makeHdr = function(img, cb) {
+  return cb();
+};
+
+fullPath = function(filename) {
+  return path.join(folder, filename);
 };
 
 unless_error = function(err, func) {
@@ -84,23 +119,3 @@ unless_error = function(err, func) {
     return console.error(err);
   }
 };
-
-if (!String.prototype.startsWith) {
-  String.prototype.startsWith = function(thing) {
-    return this.indexOf(thing) === 0;
-  };
-}
-
-if (!"SOME_DO".startsWith("SOME")) throw "error in startsWith";
-
-if ("SOME_DO".startsWith("DO")) throw "error in startsWith";
-
-if (!String.prototype.endsWith) {
-  String.prototype.endsWith = function(thing) {
-    return this.indexOf(thing) === (this.length - thing.length);
-  };
-}
-
-if (!"SOME_DO".endsWith("DO")) throw "error in endsWith";
-
-if ("SOME_DO".endsWith("SOME")) throw "error in endsWith";
