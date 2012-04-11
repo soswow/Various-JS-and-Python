@@ -69,18 +69,16 @@ makeBackupFolder(function() {
 });
 
 alignQueue = async.queue(function(images, cb) {
-  return allignImage(images, function(err) {
+  return allignImage(images, cb);
+}, 4);
+
+hdrQueue = async.queue(function(images, cb) {
+  return alignQueue.push([images], function(err) {
     return unless_error(err, function() {
-      return hdrQueue.push(images, function(err) {
-        return cb();
-      });
+      return makeHdr(images, cb);
     });
   });
-}, 2);
-
-hdrQueue = async.queue(function(image, cb) {
-  return makeHdr(image, cb);
-}, 2);
+}, 4);
 
 readShFile = function(err, content) {
   return unless_error(err, function() {
@@ -110,7 +108,7 @@ readShFile = function(err, content) {
         console.log("Starting parralel for " + tokens);
         _results.push(async.parallel(backUpFuncs, function(err, files) {
           console.log("Backup done. " + files);
-          return alignQueue.push([files], function(err) {
+          return hdrQueue.push([files], function(err) {
             return unless_error(err, function() {
               return console.log("Done with " + files);
             });
@@ -151,11 +149,15 @@ makePrefix = function(files) {
   }).join("_") + "-";
 };
 
-makeHdr = function(img, cb) {
-  var execLine;
-  console.log("Making HDR for " + img);
-  execLine = "" + hdrMergeExecPath + " \"$@\" --output=" + img + "_HDR.jpg ";
-  return cb();
+makeHdr = function(imgs, cb) {
+  var execLine, name;
+  console.log("Making HDR for " + imgs);
+  name = imgs.split(/-/);
+  execLine = "" + hdrMergeExecPath + " \"$@\" --output=" + (fullPath(name)) + "_HDR.jpg " + (images.map(fullPath).join(' '));
+  return exec(execLine, function(error, stdout, stderr) {
+    mention_error(error);
+    return cb();
+  });
 };
 
 mention_error = function(err) {

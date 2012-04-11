@@ -37,14 +37,14 @@ makeBackupFolder ->
           fs.readFile fullPath(file), 'utf8', readShFile
 
 alignQueue = async.queue (images, cb) ->
-  allignImage images, (err) ->
-    unless_error err, ->
-      hdrQueue.push images, (err) -> cb()
-, 2
+  allignImage images, cb
+, 4
 
-hdrQueue = async.queue (image, cb) ->
-  makeHdr image, cb
-, 2
+hdrQueue = async.queue (images, cb) ->
+  alignQueue.push [images], (err) ->
+    unless_error err, ->
+      makeHdr images, cb
+, 4
 
 readShFile = (err, content) ->
   unless_error err, ->
@@ -62,7 +62,7 @@ readShFile = (err, content) ->
         console.log "Starting parralel for #{tokens}"
         async.parallel backUpFuncs, (err, files) ->
           console.log "Backup done. #{files}"
-          alignQueue.push [files], (err) ->
+          hdrQueue.push [files], (err) ->
             unless_error err, ->
               console.log "Done with #{files}"
 
@@ -84,11 +84,13 @@ allignImage = (images, cb) ->
 makePrefix = (files) ->
   files.map((file) -> file.split('.')[0]).join("_") + "-"
 
-makeHdr = (img, cb) ->
-  console.log "Making HDR for #{img}"
-  execLine = "#{hdrMergeExecPath} \"$@\" --output=#{img}_HDR.jpg "
-  #TODO
-  cb()
+makeHdr = (imgs, cb) ->
+  console.log "Making HDR for #{imgs}"
+  name = imgs.split /-/
+  execLine = "#{hdrMergeExecPath} \"$@\" --output=#{fullPath(name)}_HDR.jpg #{images.map(fullPath).join(' ')}"
+  exec execLine, (error, stdout, stderr) ->
+    mention_error error
+    cb()
 
 mention_error = (err) ->
   console.error err.message if err
