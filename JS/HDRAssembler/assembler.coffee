@@ -1,26 +1,47 @@
-spawn = require('child_process').spawn
+exec = require('child_process').exec
 fs = require 'fs.extra'
 path = require 'path'
 async = require 'async'
 util = require 'util'
 require './expansions.js'
 
+alignExecPath = '/Applications/Hugin/Hugin.app/Contents/MacOS/align_image_stack'
+hdrMergeExecPath = 'enfuse'
+
 if process.argv.length < 3
   throw "Folder should be specified!"
 
-folder = process.argv[2]
-fs.readdir folder, (err, files) ->
-  unless_error err, ->
-    for file in files
-      if file.endsWith '.SH'
-        fs.readFile fullPath(file), 'utf8', readShFile
+fullPath = (args...) ->
+  s = folder
+  (s = path.join s, arg for arg in args)
+  s
 
-alignQueue = async.queue (image, cb) ->
-  allignImage imgs, cb
+makeBackupFolder = (cb) ->
+  backupFolder = fullPath 'backup'
+  fs.stat backupFolder, (err, stats) ->
+    if err
+      console.log 'Making backup folder'
+      fs.mkdir backupFolder, (err) -> unless_error err, -> cb()
+    cb()
+
+folder = process.argv[2]
+
+makeBackupFolder ->
+  c = 0
+  fs.readdir folder, (err, files) ->
+    unless_error err, ->
+      for file in files
+        if file.endsWith '.SH'
+#          c += 1
+#          unless c > 2
+          fs.readFile fullPath(file), 'utf8', readShFile
+
+alignQueue = async.queue (images, cb) ->
+  allignImage images, cb
 , 4
 
 hdrQueue = async.queue (images, cb) ->
-  alignQueue.push images, (err) ->
+  alignQueue.push [images], (err) ->
     unless_error err, ->
       makeHdr images, cb
 , 4
@@ -29,47 +50,54 @@ readShFile = (err, content) ->
   unless_error err, ->
     for line in content.lines
       if line.startsWith "enfuse"
+
+        tokens = []
         backUpFuncs =
           for token in line.split /\s/ when token.startsWith "IMG"
+            tokens.push token
             do (token) ->
               (cb) ->
-                backUpPicture fullPath(token), cb
+                backUpPicture token, cb
 
+        console.log "Starting parralel for #{tokens}"
         async.parallel backUpFuncs, (err, files) ->
-          unless_error err, ->
-            console.log "Backup done. #{files}"
-#            hdrQueue.push [files], (err) ->
-#              unless_error err, ->
-#                console.log "Done with #{files}"
+          console.log "Backup done. #{files}"
+          hdrQueue.push [files], (err) ->
+            unless_error err, ->
+              console.log "Done with #{files}"
 
 backUpPicture = (file, cb) ->
-  backupFolder = fullPath 'backup'
-  backUpName = "#{backupFolder}/#{file}"
-  console.log "Checking backup folder"
-  fs.stat backupFolder, (err, stats) ->
-    if err
-      fs.mkdirSync backupFolder
-    doingCopy()
+  copyFrom = fullPath file
+  copyTo = fullPath 'backup', file
+  console.log "doing copy of file #{file}"
+  fs.copy copyFrom, copyTo, (err) ->
+    mention_error err
+    cb null, file
 
-  doingCopy = ->
-    console.log "doing copy"
-    fs.copy file, backUpName, (err) ->
-      unless_error err, -> cb(err, file)
+allignImage = (images, cb) ->
+  execLine = "#{alignExecPath} -a #{fullPath(makePrefix(images))} -C #{images.map(fullPath).join(' ')}"
+  console.log "Allign #{images} with line\n#{execLine}"
+  exec execLine, (error, stdout, stderr) ->
+    mention_error error
+    cb()
 
-allignImage = (image) ->
-  #TODO
-  cb()
+makePrefix = (files) ->
+  files.map((file) -> file.split('.')[0]).join("_") + "-"
 
-makeHdr = (img, cb) ->
-  #TODO
-  cb()
+makeHdr = (imgs, cb) ->
+  console.log "Making HDR for #{imgs}"
+  name = imgs.split /-/
+  execLine = "#{hdrMergeExecPath} \"$@\" --output=#{fullPath(name)}_HDR.jpg #{images.map(fullPath).join(' ')}"
+  exec execLine, (error, stdout, stderr) ->
+    mention_error error
+    cb()
 
-
-fullPath = (filename) -> path.join folder, filename
+mention_error = (err) ->
+  console.error err.message if err
 
 unless_error = (err, func) ->
   unless err
     func.apply this
   else
-    console.error err
+    console.error err.message
 
