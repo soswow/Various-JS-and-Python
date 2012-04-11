@@ -5,8 +5,10 @@ async = require 'async'
 util = require 'util'
 require './expansions.js'
 
-alignExecPath = '/Applications/Hugin/Hugin.app/Contents/MacOS/align_image_stack'
-hdrMergeExecPath = 'enfuse'
+#alignExecPath = '/Applications/Hugin/Hugin.app/Contents/MacOS/align_image_stack'
+#hdrMergeExecPath = 'enfuse'
+alignExecPath = '/Users/soswow/Work/Hugin/Hugin-2011.4.0/HuginTools/align_image_stack'
+hdrMergeExecPath = '/Users/soswow/Work/Hugin/enblend-enfuse-4.0/Tiger-Universal/enfuse'
 
 if process.argv.length < 3
   throw "Folder should be specified!"
@@ -84,10 +86,18 @@ allignImage = (images, cb) ->
 makePrefix = (files) ->
   files.map((file) -> file.split('.')[0]).join("_") + "-"
 
+prependZeros = (str, size) ->
+  str += ""
+  while str.length < size
+    str = "0" + str
+  str
+  
+  
 makeHdr = (imgs, cb) ->
-  console.log "Making HDR for #{imgs}"
-  name = imgs.split /-/
-  execLine = "#{hdrMergeExecPath} \"$@\" --output=#{fullPath(name)}_HDR.jpg #{images.map(fullPath).join(' ')}"
+  prefix = makePrefix imgs
+  alignedImgs = (fullPath "#{prefix}#{prependZeros(n, 4)}.tif" for n in [0..imgs.length-1])
+  execLine = "#{hdrMergeExecPath} \"$@\" --output=#{fullPath(prefix)}_HDR.jpg #{alignedImgs.join(' ')}"
+  console.log "Making HDR for #{imgs} with line\n#{execLine}"
   exec execLine, (error, stdout, stderr) ->
     mention_error error
     cb()

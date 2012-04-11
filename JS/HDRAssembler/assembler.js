@@ -1,4 +1,4 @@
-var alignExecPath, alignQueue, allignImage, async, backUpPicture, exec, folder, fs, fullPath, hdrMergeExecPath, hdrQueue, makeBackupFolder, makeHdr, makePrefix, mention_error, path, readShFile, unless_error, util,
+var alignExecPath, alignQueue, allignImage, async, backUpPicture, exec, folder, fs, fullPath, hdrMergeExecPath, hdrQueue, makeBackupFolder, makeHdr, makePrefix, mention_error, path, prependZeros, readShFile, unless_error, util,
   __slice = Array.prototype.slice;
 
 exec = require('child_process').exec;
@@ -13,9 +13,9 @@ util = require('util');
 
 require('./expansions.js');
 
-alignExecPath = '/Applications/Hugin/Hugin.app/Contents/MacOS/align_image_stack';
+alignExecPath = '/Users/soswow/Work/Hugin/Hugin-2011.4.0/HuginTools/align_image_stack';
 
-hdrMergeExecPath = 'enfuse';
+hdrMergeExecPath = '/Users/soswow/Work/Hugin/enblend-enfuse-4.0/Tiger-Universal/enfuse';
 
 if (process.argv.length < 3) throw "Folder should be specified!";
 
@@ -149,11 +149,27 @@ makePrefix = function(files) {
   }).join("_") + "-";
 };
 
+prependZeros = function(str, size) {
+  str += "";
+  while (str.length < size) {
+    str = "0" + str;
+  }
+  return str;
+};
+
 makeHdr = function(imgs, cb) {
-  var execLine, name;
-  console.log("Making HDR for " + imgs);
-  name = imgs.split(/-/);
-  execLine = "" + hdrMergeExecPath + " \"$@\" --output=" + (fullPath(name)) + "_HDR.jpg " + (images.map(fullPath).join(' '));
+  var alignedImgs, execLine, n, prefix;
+  prefix = makePrefix(imgs);
+  alignedImgs = (function() {
+    var _ref, _results;
+    _results = [];
+    for (n = 0, _ref = imgs.length - 1; 0 <= _ref ? n <= _ref : n >= _ref; 0 <= _ref ? n++ : n--) {
+      _results.push(fullPath("" + prefix + (prependZeros(n, 4)) + ".tif"));
+    }
+    return _results;
+  })();
+  execLine = "" + hdrMergeExecPath + " \"$@\" --output=" + (fullPath(prefix)) + "_HDR.jpg " + (alignedImgs.join(' '));
+  console.log("Making HDR for " + imgs + " with line\n" + execLine);
   return exec(execLine, function(error, stdout, stderr) {
     mention_error(error);
     return cb();
