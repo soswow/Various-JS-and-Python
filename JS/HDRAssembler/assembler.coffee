@@ -5,10 +5,10 @@ async = require 'async'
 util = require 'util'
 require './expansions.js'
 
-#alignExecPath = '/Applications/Hugin/Hugin.app/Contents/MacOS/align_image_stack'
-#hdrMergeExecPath = 'enfuse'
-alignExecPath = '/Users/soswow/Work/Hugin/Hugin-2011.4.0/HuginTools/align_image_stack'
-hdrMergeExecPath = '/Users/soswow/Work/Hugin/enblend-enfuse-4.0/Tiger-Universal/enfuse'
+alignExecPath = '/Applications/Hugin/Hugin.app/Contents/MacOS/align_image_stack'
+hdrMergeExecPath = 'enfuse'
+#alignExecPath = '/Users/soswow/Work/Hugin/Hugin-2011.4.0/HuginTools/align_image_stack'
+#hdrMergeExecPath = '/Users/soswow/Work/Hugin/enblend-enfuse-4.0/Tiger-Universal/enfuse'
 
 #---- UTIL methods ----
 #----------------------
@@ -33,8 +33,7 @@ unless_error = (err, func) ->
     func.apply this
   else
     console.error err.message
-    
-    
+
 
 
 if process.argv.length < 3
@@ -56,8 +55,6 @@ startReadingSHFiles = ->
     unless_error err, ->
       for file in files
         if file.endsWith '.SH'
-        #          c += 1
-        #          unless c > 2
           fs.readFile fullPath(file), 'utf8', readShFile
 
 alignQueue = async.queue (images, cb) ->
@@ -112,7 +109,7 @@ makeHdr = (imgs, cb) ->
   prefix = makePrefix imgs
   alignedImgs = (fullPath "#{prefix}#{prependZeros(n, 4)}.tif" for n in [0..imgs.length-1])
   execLine = "#{hdrMergeExecPath} \"$@\" --output=#{fullPath(prefix)}_HDR.jpg #{alignedImgs.join(' ')}"
-  
+
   console.log "Making HDR for #{imgs} with line\n#{execLine}"
   
   exec execLine, (error, stdout, stderr) ->
