@@ -1,5 +1,5 @@
 (function() {
-  var BALL_SIZE, Ball, Canvas, Game, HALF_WALL_THICK, INIT_PLAYER_SIZE, INNER_SIDE, Player, Point, SIDE, SPEED_RANGE, State, TWOPI, WALL_THICK, degToRad, randomInRange, xy;
+  var BALL_SIZE, Ball, Canvas, Game, HALF_WALL_THICK, INIT_PLAYER_SIZE, INNER_SIDE, Player, Point, SIDE, SPEED_RANGE, State, TWOPI, WALL_THICK, angleBetweenLines, degToRad, distance, game, lineIntersections, radToDeg, randomInRange, xy;
 
   INNER_SIDE = 500;
 
@@ -17,8 +17,9 @@
 
   TWOPI = Math.PI * 2;
 
+  game = null;
+
   $(function() {
-    var game;
     console.log("ready");
     game = new Game();
     return $("#button").bind('click', function() {
@@ -157,9 +158,21 @@
     Ball.prototype.getBoundingBox = function() {};
 
     Ball.prototype.move = function(time, walls) {
-      var newPos;
+      var anglBet, intPoint, newPos, wall, _i, _len;
       newPos = this.findNextPoint(time);
-      return this.pos = newPos;
+      intPoint = null;
+      for (_i = 0, _len = walls.length; _i < _len; _i++) {
+        wall = walls[_i];
+        if (!intPoint) {
+          intPoint = lineIntersections(this.pos, newPos, wall[0], wall[1]);
+          if (intPoint) {
+            anglBet = radToDeg(angleBetweenLines(this.pos, newPos, wall[0], wall[1]));
+            console.log(this.angle, " + 2 x " + anglBet + " -> ", this.angle + anglBet * 2);
+            this.angle += anglBet * 2;
+          }
+        }
+      }
+      if (!intPoint) return this.pos = newPos;
     };
 
     Ball.prototype.findNextPoint = function(time) {
@@ -236,7 +249,7 @@
 
     State.prototype.update = function(timeleft, clientX) {
       if (clientX) this.players[0].move(clientX);
-      if (timeleft) return this.ball.move(timeleft, this.walls);
+      if (timeleft) return this.ball.move(timeleft, this.walls());
     };
 
     return State;
@@ -287,6 +300,10 @@
     return deg * (Math.PI / 180);
   };
 
+  radToDeg = function(rad) {
+    return rad * (180 / Math.PI);
+  };
+
   xy = function(x, y) {
     return new Point(x, y);
   };
@@ -305,5 +322,29 @@
     return Point;
 
   })();
+
+  distance = function(from, to) {
+    return Math.sqrt(Math.pow(from.x - to.x, 2) + Math.pow(from.y - to.y, 2));
+  };
+
+  angleBetweenLines = function(p1, p2, p3, p4) {
+    var angle1, angle2, x1, x2, x3, x4, y1, y2, y3, y4, _ref, _ref2;
+    _ref = [p1.x, p2.x, p3.x, p4.x], x1 = _ref[0], x2 = _ref[1], x3 = _ref[2], x4 = _ref[3];
+    _ref2 = [p1.y, p2.y, p3.y, p4.y], y1 = _ref2[0], y2 = _ref2[1], y3 = _ref2[2], y4 = _ref2[3];
+    angle1 = Math.atan2(y1 - y2, x1 - x2);
+    angle2 = Math.atan2(y3 - y4, x3 - x4);
+    return angle1 - angle2;
+  };
+
+  lineIntersections = function(p1, p2, p3, p4) {
+    var ua, ub, x1, x2, x3, x4, y1, y2, y3, y4, _ref, _ref2;
+    _ref = [p1.x, p2.x, p3.x, p4.x], x1 = _ref[0], x2 = _ref[1], x3 = _ref[2], x4 = _ref[3];
+    _ref2 = [p1.y, p2.y, p3.y, p4.y], y1 = _ref2[0], y2 = _ref2[1], y3 = _ref2[2], y4 = _ref2[3];
+    ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
+    ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
+    if ((0 <= ua && ua <= 1) && (0 <= ub && ub <= 1)) {
+      return xy(x1 + ua * (x2 - x1), y1 + ua * (y2 - y1));
+    }
+  };
 
 }).call(this);

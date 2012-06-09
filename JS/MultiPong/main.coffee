@@ -9,6 +9,8 @@ SPEED_RANGE = [200, 400]
 
 TWOPI = Math.PI * 2
 
+game = null
+
 $ ->
   console.log "ready"
   game = new Game()
@@ -112,8 +114,16 @@ class Ball
 
   move: (time, walls) ->
     newPos = @findNextPoint time
-    #if ...
-    @pos = newPos
+    intPoint = null
+    for wall in walls
+      unless intPoint
+        intPoint = lineIntersections(@pos, newPos, wall[0], wall[1])
+        if intPoint
+          anglBet = radToDeg angleBetweenLines @pos, newPos, wall[0], wall[1]
+          console.log @angle, " + 2 x #{anglBet} -> ", @angle + anglBet * 2
+          @angle += anglBet * 2
+    unless intPoint
+      @pos = newPos
 
   findNextPoint: (time) ->
     distance = Math.round(@speed * time)
@@ -122,9 +132,6 @@ class Ball
     deltaX = Math.cos(radians) * distance
     x = @pos.x + deltaX
     y = @pos.y - deltaY
-#    console.log distance
-#    console.log "Angle:", @angle, radians, " Time:",time, " R:",distance,
-#      " dx:",deltaX, " dy:",deltaY, x, y
     return xy x, y
 
 
@@ -165,7 +172,7 @@ class State
     if clientX
       @players[0].move clientX
     if timeleft
-      @ball.move timeleft, @walls
+      @ball.move timeleft, @walls()
 
 
 class Player
@@ -191,9 +198,9 @@ class Player
     @pos = 1 if @pos > 1
     @pos = 0 if @pos < 0
 
-
 randomInRange = (from, to) -> Math.random() * (to - from) + from;
 degToRad = (deg) -> deg * (Math.PI / 180)
+radToDeg = (rad) -> rad * (180 / Math.PI)
 
 xy = (x, y) -> new Point(x, y)
 class Point
@@ -201,3 +208,21 @@ class Point
 #  shifted: ->
 #    new Point(@x + W)
   toString: -> "(#{@x}, #{@y})"
+
+distance = (from, to) ->
+  Math.sqrt (Math.pow((from.x - to.x), 2) + Math.pow((from.y - to.y), 2))
+
+angleBetweenLines = (p1, p2, p3, p4) ->
+  [x1,x2,x3,x4] = [p1.x,p2.x,p3.x,p4.x]
+  [y1,y2,y3,y4] = [p1.y,p2.y,p3.y,p4.y]
+  angle1 = Math.atan2  y1 - y2, x1 - x2
+  angle2 = Math.atan2  y3 - y4, x3 - x4
+  angle1 - angle2
+
+lineIntersections = (p1, p2, p3, p4) ->
+  [x1,x2,x3,x4] = [p1.x,p2.x,p3.x,p4.x]
+  [y1,y2,y3,y4] = [p1.y,p2.y,p3.y,p4.y]
+  ua = ((x4-x3)*(y1-y3)-(y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1))
+  ub = ((x2-x1)*(y1-y3)-(y2-y1)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1))
+  if 0 <= ua <= 1 and 0 <= ub <= 1
+    xy x1 + ua * (x2 - x1), y1 + ua * (y2 - y1)
