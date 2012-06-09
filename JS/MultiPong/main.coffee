@@ -4,11 +4,21 @@ WALL_THICK = 5
 SIDE = INNER_SIDE + WALL_THICK * 2
 INIT_PLAYER_SIZE = 0.1 * INNER_SIDE
 HALF_WALL_THICK = WALL_THICK / 2
+BALL_SIZE = 10 #diameter
+SPEED_RANGE = [200, 400]
+
+TWOPI = Math.PI * 2
 
 $ ->
   console.log "ready"
   game = new Game()
-  $("#button").bind 'click', -> game.initMainLoop()
+  $("#button").bind 'click', ->
+    if @innerHTML is 'Start'
+      game.startMainLoop()
+      @innerHTML = 'Stop'
+    else
+      game.stopMainLoop()
+      @innerHTML = 'Start'
 
 class Game
   constructor: ->
@@ -24,22 +34,24 @@ class Game
       @updateAndRepaint 0, e.offsetX
 
   updateAndRepaint: (timeLeft, clientX) ->
-    @state.update timeLeft, clientX
+    @state.update timeLeft / 1000, clientX
     @canvas.repaint()
 
-  initMainLoop: ->
-    console.log "initMainLoop"
-    shouldStop = false
+  startMainLoop: ->
+#    console.log "startMainLoop"
+    @shouldStop = false
     requestAnimationFrame = window.requestAnimationFrame or window.mozRequestAnimationFrame or
                             window.webkitRequestAnimationFrame or window.msRequestAnimationFrame
-    prevTimestamp = null
+    prevTimestamp = Date.now()
     step = (timestamp) =>
-      prevTimestamp ?= timestamp
-      unless shouldStop
+      unless @shouldStop
         @updateAndRepaint timestamp - prevTimestamp
         requestAnimationFrame step
       prevTimestamp = timestamp
     requestAnimationFrame step
+
+  stopMainLoop: ->
+    @shouldStop = true
 
 
 class Canvas
@@ -64,7 +76,7 @@ class Canvas
 
   drawWalls: ->
     for [from, to] in @state.walls()
-      console.log from+"", to+""
+#      console.log from+"", to+""
       @context.lineWidth = WALL_THICK
       @context.beginPath()
       @context.moveTo from.x, from.y
@@ -74,7 +86,14 @@ class Canvas
       @context.lineWidth = 1
 
   drawBall: ->
-    #TODO
+    [x,y] = [@state.ball.pos.x, @state.ball.pos.y]
+    @context.fillStyle = 'red'
+    @context.beginPath()
+    @context.moveTo x, y
+    @context.arc x, y, BALL_SIZE, 0, TWOPI, true
+    @context.closePath()
+    @context.fill()
+    @context.fillStyle = 'black'
 
 
 class Ball
@@ -85,10 +104,29 @@ class Ball
   randomInit: ->
     @pos = xy SIDE/2, SIDE/2
     @angle = randomInRange 0, 360
-    @speed = randomInRange 5, 10
+    @speed = randomInRange SPEED_RANGE[0], SPEED_RANGE[1]
+    console.log 'Ball setup', @pos, @angle, @speed
 
-  move: (walls) ->
-    #TODO
+  getBoundingBox: ->
+    #TODO if needed
+
+  move: (time, walls) ->
+    newPos = @findNextPoint time
+    #if ...
+    @pos = newPos
+
+  findNextPoint: (time) ->
+    distance = Math.round(@speed * time)
+    radians = degToRad(@angle)
+    deltaY = Math.sin(radians) * distance
+    deltaX = Math.cos(radians) * distance
+    x = @pos.x + deltaX
+    y = @pos.y - deltaY
+#    console.log distance
+#    console.log "Angle:", @angle, radians, " Time:",time, " R:",distance,
+#      " dx:",deltaX, " dy:",deltaY, x, y
+    return xy x, y
+
 
 class State
   @playerIndexSideMap: ['bottom', 'top', 'right', 'left']
@@ -102,7 +140,7 @@ class State
     # - active Player platforms
     # - walls on place of inactive players
     #TODO Identify what is wall and what is player
-    console.log "walls"
+#    console.log "walls"
     for side, i in State.playerIndexSideMap
       [wallStart, wallEnd] =
         if @players[i]
@@ -124,9 +162,11 @@ class State
         return @players[i] = newPlayer
 
   update: (timeleft, clientX) ->
-#    console.log timeleft
     if clientX
       @players[0].move clientX
+    if timeleft
+      @ball.move timeleft, @walls
+
 
 class Player
   constructor: (@name) ->
@@ -138,7 +178,7 @@ class Player
     #Return pair of points: start & end of the wall
     wallCenter = (INNER_SIDE - @size) * @pos
     [from, to] = [wallCenter+WALL_THICK, wallCenter + @size + WALL_THICK]
-    console.log this, wallCenter, from, to
+#    console.log this, wallCenter, from, to
     switch @side
       when 'bottom' then [xy(from, SIDE-HALF_WALL_THICK), xy(to, SIDE-HALF_WALL_THICK)]
       when 'top'    then [xy(from, HALF_WALL_THICK), xy(to, HALF_WALL_THICK)]

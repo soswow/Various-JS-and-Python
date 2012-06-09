@@ -1,5 +1,5 @@
 (function() {
-  var Ball, Canvas, Game, HALF_WALL_THICK, INIT_PLAYER_SIZE, INNER_SIDE, Player, Point, SIDE, State, WALL_THICK, degToRad, randomInRange, xy;
+  var BALL_SIZE, Ball, Canvas, Game, HALF_WALL_THICK, INIT_PLAYER_SIZE, INNER_SIDE, Player, Point, SIDE, SPEED_RANGE, State, TWOPI, WALL_THICK, degToRad, randomInRange, xy;
 
   INNER_SIDE = 500;
 
@@ -11,12 +11,24 @@
 
   HALF_WALL_THICK = WALL_THICK / 2;
 
+  BALL_SIZE = 10;
+
+  SPEED_RANGE = [200, 400];
+
+  TWOPI = Math.PI * 2;
+
   $(function() {
     var game;
     console.log("ready");
     game = new Game();
     return $("#button").bind('click', function() {
-      return game.initMainLoop();
+      if (this.innerHTML === 'Start') {
+        game.startMainLoop();
+        return this.innerHTML = 'Stop';
+      } else {
+        game.stopMainLoop();
+        return this.innerHTML = 'Start';
+      }
     });
   });
 
@@ -39,26 +51,28 @@
     };
 
     Game.prototype.updateAndRepaint = function(timeLeft, clientX) {
-      this.state.update(timeLeft, clientX);
+      this.state.update(timeLeft / 1000, clientX);
       return this.canvas.repaint();
     };
 
-    Game.prototype.initMainLoop = function() {
-      var prevTimestamp, requestAnimationFrame, shouldStop, step,
+    Game.prototype.startMainLoop = function() {
+      var prevTimestamp, requestAnimationFrame, step,
         _this = this;
-      console.log("initMainLoop");
-      shouldStop = false;
+      this.shouldStop = false;
       requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
-      prevTimestamp = null;
+      prevTimestamp = Date.now();
       step = function(timestamp) {
-        if (prevTimestamp == null) prevTimestamp = timestamp;
-        if (!shouldStop) {
+        if (!_this.shouldStop) {
           _this.updateAndRepaint(timestamp - prevTimestamp);
           requestAnimationFrame(step);
         }
         return prevTimestamp = timestamp;
       };
       return requestAnimationFrame(step);
+    };
+
+    Game.prototype.stopMainLoop = function() {
+      return this.shouldStop = true;
     };
 
     return Game;
@@ -97,7 +111,6 @@
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         _ref2 = _ref[_i], from = _ref2[0], to = _ref2[1];
-        console.log(from + "", to + "");
         this.context.lineWidth = WALL_THICK;
         this.context.beginPath();
         this.context.moveTo(from.x, from.y);
@@ -109,7 +122,17 @@
       return _results;
     };
 
-    Canvas.prototype.drawBall = function() {};
+    Canvas.prototype.drawBall = function() {
+      var x, y, _ref;
+      _ref = [this.state.ball.pos.x, this.state.ball.pos.y], x = _ref[0], y = _ref[1];
+      this.context.fillStyle = 'red';
+      this.context.beginPath();
+      this.context.moveTo(x, y);
+      this.context.arc(x, y, BALL_SIZE, 0, TWOPI, true);
+      this.context.closePath();
+      this.context.fill();
+      return this.context.fillStyle = 'black';
+    };
 
     return Canvas;
 
@@ -127,10 +150,28 @@
     Ball.prototype.randomInit = function() {
       this.pos = xy(SIDE / 2, SIDE / 2);
       this.angle = randomInRange(0, 360);
-      return this.speed = randomInRange(5, 10);
+      this.speed = randomInRange(SPEED_RANGE[0], SPEED_RANGE[1]);
+      return console.log('Ball setup', this.pos, this.angle, this.speed);
     };
 
-    Ball.prototype.move = function(walls) {};
+    Ball.prototype.getBoundingBox = function() {};
+
+    Ball.prototype.move = function(time, walls) {
+      var newPos;
+      newPos = this.findNextPoint(time);
+      return this.pos = newPos;
+    };
+
+    Ball.prototype.findNextPoint = function(time) {
+      var deltaX, deltaY, distance, radians, x, y;
+      distance = Math.round(this.speed * time);
+      radians = degToRad(this.angle);
+      deltaY = Math.sin(radians) * distance;
+      deltaX = Math.cos(radians) * distance;
+      x = this.pos.x + deltaX;
+      y = this.pos.y - deltaY;
+      return xy(x, y);
+    };
 
     return Ball;
 
@@ -155,7 +196,6 @@
 
     State.prototype.walls = function() {
       var i, side, wallEnd, wallStart, _len, _ref, _ref2, _results;
-      console.log("walls");
       _ref = State.playerIndexSideMap;
       _results = [];
       for (i = 0, _len = _ref.length; i < _len; i++) {
@@ -195,7 +235,8 @@
     };
 
     State.prototype.update = function(timeleft, clientX) {
-      if (clientX) return this.players[0].move(clientX);
+      if (clientX) this.players[0].move(clientX);
+      if (timeleft) return this.ball.move(timeleft, this.walls);
     };
 
     return State;
@@ -215,7 +256,6 @@
       var from, to, wallCenter, _ref;
       wallCenter = (INNER_SIDE - this.size) * this.pos;
       _ref = [wallCenter + WALL_THICK, wallCenter + this.size + WALL_THICK], from = _ref[0], to = _ref[1];
-      console.log(this, wallCenter, from, to);
       switch (this.side) {
         case 'bottom':
           return [xy(from, SIDE - HALF_WALL_THICK), xy(to, SIDE - HALF_WALL_THICK)];
