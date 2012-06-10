@@ -2,7 +2,7 @@
 INNER_SIDE = 500
 WALL_THICK = 5
 SIDE = INNER_SIDE + WALL_THICK * 2
-INIT_PLAYER_SIZE = 0.1 * INNER_SIDE
+INIT_PLAYER_SIZE = 0.2 * INNER_SIDE
 HALF_WALL_THICK = WALL_THICK / 2
 BALL_SIZE = 10 #diameter
 SPEED_RANGE = [400, 600]
@@ -90,11 +90,10 @@ class Canvas
     @context.fillStyle = 'black'
 
   drawPrevBalls: ->
-
     for ball, i in @state.prevBalls
       [x,y] = [ball.pos.x, ball.pos.y]
       portion = i / @state.prevBalls.length
-      @context.fillStyle = "rgba(255,0,0,#{portion})"
+      @context.fillStyle = "rgba(255,0,0,#{Math.pow(portion, 4)})"
       size = BALL_SIZE * portion
       @context.beginPath()
       @context.moveTo x + size, y
@@ -126,10 +125,11 @@ class Ball
         intPoint = lineIntersections(@pos, newPos, wall[0], wall[1])
         if intPoint
           anglBet = radToDeg angleBetweenLines @pos, newPos, wall[0], wall[1]
-#          console.log @angle, " + 2 x #{anglBet} -> ", @angle + anglBet * 2
           @angle += anglBet * 2
     unless intPoint
       @pos = newPos
+
+    return 0 < @pos.x < SIDE and 0 < @pos.y < SIDE
 
   findNextPoint: (time) ->
     distance = @speed * time
@@ -182,7 +182,8 @@ class State
       @prevBalls.push new Ball(@ball.pos, @ball.angle, @ball.speed)
       if @prevBalls.length > 15
         @prevBalls.shift()
-      @ball.move timeleft, @walls()
+      unless @ball.move timeleft, @walls()
+        game.state.ball.randomInit()
 
 
 class Player

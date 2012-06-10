@@ -7,7 +7,7 @@
 
   SIDE = INNER_SIDE + WALL_THICK * 2;
 
-  INIT_PLAYER_SIZE = 0.1 * INNER_SIDE;
+  INIT_PLAYER_SIZE = 0.2 * INNER_SIDE;
 
   HALF_WALL_THICK = WALL_THICK / 2;
 
@@ -137,7 +137,7 @@
         ball = _ref[i];
         _ref2 = [ball.pos.x, ball.pos.y], x = _ref2[0], y = _ref2[1];
         portion = i / this.state.prevBalls.length;
-        this.context.fillStyle = "rgba(255,0,0," + portion + ")";
+        this.context.fillStyle = "rgba(255,0,0," + (Math.pow(portion, 4)) + ")";
         size = BALL_SIZE * portion;
         this.context.beginPath();
         this.context.moveTo(x + size, y);
@@ -172,7 +172,7 @@
     Ball.prototype.getBoundingBox = function() {};
 
     Ball.prototype.move = function(time, walls) {
-      var anglBet, intPoint, newPos, wall, _i, _len;
+      var anglBet, intPoint, newPos, wall, _i, _len, _ref, _ref2;
       newPos = this.findNextPoint(time);
       intPoint = null;
       for (_i = 0, _len = walls.length; _i < _len; _i++) {
@@ -185,7 +185,8 @@
           }
         }
       }
-      if (!intPoint) return this.pos = newPos;
+      if (!intPoint) this.pos = newPos;
+      return (0 < (_ref = this.pos.x) && _ref < SIDE) && (0 < (_ref2 = this.pos.y) && _ref2 < SIDE);
     };
 
     Ball.prototype.findNextPoint = function(time) {
@@ -266,7 +267,9 @@
       if (timeleft) {
         this.prevBalls.push(new Ball(this.ball.pos, this.ball.angle, this.ball.speed));
         if (this.prevBalls.length > 15) this.prevBalls.shift();
-        return this.ball.move(timeleft, this.walls());
+        if (!this.ball.move(timeleft, this.walls())) {
+          return game.state.ball.randomInit();
+        }
       }
     };
 
