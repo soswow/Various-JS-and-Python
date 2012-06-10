@@ -5,7 +5,8 @@ SIDE = INNER_SIDE + WALL_THICK * 2
 INIT_PLAYER_SIZE = 0.1 * INNER_SIDE
 HALF_WALL_THICK = WALL_THICK / 2
 BALL_SIZE = 10 #diameter
-SPEED_RANGE = [200, 400]
+SPEED_RANGE = [400, 600]
+FPS = 60
 
 TWOPI = Math.PI * 2
 
@@ -41,20 +42,10 @@ class Game
 
   startMainLoop: ->
 #    console.log "startMainLoop"
-    @shouldStop = false
-    requestAnimationFrame = window.requestAnimationFrame or window.mozRequestAnimationFrame or
-                            window.webkitRequestAnimationFrame or window.msRequestAnimationFrame
-    prevTimestamp = Date.now()
-    step = (timestamp) =>
-      unless @shouldStop
-        @updateAndRepaint timestamp - prevTimestamp
-        requestAnimationFrame step
-      prevTimestamp = timestamp
-    requestAnimationFrame step
+    @reqInterval = requestInterval (=> @updateAndRepaint(1000 / FPS)), 1000 / FPS
 
   stopMainLoop: ->
-    @shouldStop = true
-
+    clearRequestInterval @reqInterval
 
 class Canvas
   constructor: (game) ->
@@ -72,6 +63,7 @@ class Canvas
     @clearAll()
     @drawWalls()
     @drawBall()
+    @drawPrevBalls()
 
   clearAll: ->
     @el.attr 'width', SIDE
@@ -97,6 +89,20 @@ class Canvas
     @context.fill()
     @context.fillStyle = 'black'
 
+  drawPrevBalls: ->
+
+    for ball, i in @state.prevBalls
+      [x,y] = [ball.pos.x, ball.pos.y]
+      portion = i / @state.prevBalls.length
+      @context.fillStyle = "rgba(255,0,0,#{portion})"
+      size = BALL_SIZE * portion
+      @context.beginPath()
+      @context.moveTo x + size, y
+      @context.arc x, y, size, 0, TWOPI, true
+      @context.closePath()
+      @context.fill()
+      @context.fillStyle = 'black'
+
 
 class Ball
   constructor: (@pos, @angle, @speed) ->
@@ -120,13 +126,13 @@ class Ball
         intPoint = lineIntersections(@pos, newPos, wall[0], wall[1])
         if intPoint
           anglBet = radToDeg angleBetweenLines @pos, newPos, wall[0], wall[1]
-          console.log @angle, " + 2 x #{anglBet} -> ", @angle + anglBet * 2
+#          console.log @angle, " + 2 x #{anglBet} -> ", @angle + anglBet * 2
           @angle += anglBet * 2
     unless intPoint
       @pos = newPos
 
   findNextPoint: (time) ->
-    distance = Math.round(@speed * time)
+    distance = @speed * time
     radians = degToRad(@angle)
     deltaY = Math.sin(radians) * distance
     deltaX = Math.cos(radians) * distance
@@ -140,6 +146,7 @@ class State
 
   constructor: ->
     @ball = new Ball()
+    @prevBalls = []
     @players = (null for a in [1..4])
 
   walls: ->
@@ -172,6 +179,9 @@ class State
     if clientX
       @players[0].move clientX
     if timeleft
+      @prevBalls.push new Ball(@ball.pos, @ball.angle, @ball.speed)
+      if @prevBalls.length > 15
+        @prevBalls.shift()
       @ball.move timeleft, @walls()
 
 

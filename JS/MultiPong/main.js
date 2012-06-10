@@ -1,5 +1,5 @@
 (function() {
-  var BALL_SIZE, Ball, Canvas, Game, HALF_WALL_THICK, INIT_PLAYER_SIZE, INNER_SIDE, Player, Point, SIDE, SPEED_RANGE, State, TWOPI, WALL_THICK, angleBetweenLines, degToRad, distance, game, lineIntersections, radToDeg, randomInRange, xy;
+  var BALL_SIZE, Ball, Canvas, FPS, Game, HALF_WALL_THICK, INIT_PLAYER_SIZE, INNER_SIDE, Player, Point, SIDE, SPEED_RANGE, State, TWOPI, WALL_THICK, angleBetweenLines, degToRad, distance, game, lineIntersections, radToDeg, randomInRange, xy;
 
   INNER_SIDE = 500;
 
@@ -13,7 +13,9 @@
 
   BALL_SIZE = 10;
 
-  SPEED_RANGE = [200, 400];
+  SPEED_RANGE = [400, 600];
+
+  FPS = 60;
 
   TWOPI = Math.PI * 2;
 
@@ -57,23 +59,14 @@
     };
 
     Game.prototype.startMainLoop = function() {
-      var prevTimestamp, requestAnimationFrame, step,
-        _this = this;
-      this.shouldStop = false;
-      requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
-      prevTimestamp = Date.now();
-      step = function(timestamp) {
-        if (!_this.shouldStop) {
-          _this.updateAndRepaint(timestamp - prevTimestamp);
-          requestAnimationFrame(step);
-        }
-        return prevTimestamp = timestamp;
-      };
-      return requestAnimationFrame(step);
+      var _this = this;
+      return this.reqInterval = requestInterval((function() {
+        return _this.updateAndRepaint(1000 / FPS);
+      }), 1000 / FPS);
     };
 
     Game.prototype.stopMainLoop = function() {
-      return this.shouldStop = true;
+      return clearRequestInterval(this.reqInterval);
     };
 
     return Game;
@@ -99,7 +92,8 @@
     Canvas.prototype.repaint = function() {
       this.clearAll();
       this.drawWalls();
-      return this.drawBall();
+      this.drawBall();
+      return this.drawPrevBalls();
     };
 
     Canvas.prototype.clearAll = function() {
@@ -135,6 +129,26 @@
       return this.context.fillStyle = 'black';
     };
 
+    Canvas.prototype.drawPrevBalls = function() {
+      var ball, i, portion, size, x, y, _len, _ref, _ref2, _results;
+      _ref = this.state.prevBalls;
+      _results = [];
+      for (i = 0, _len = _ref.length; i < _len; i++) {
+        ball = _ref[i];
+        _ref2 = [ball.pos.x, ball.pos.y], x = _ref2[0], y = _ref2[1];
+        portion = i / this.state.prevBalls.length;
+        this.context.fillStyle = "rgba(255,0,0," + portion + ")";
+        size = BALL_SIZE * portion;
+        this.context.beginPath();
+        this.context.moveTo(x + size, y);
+        this.context.arc(x, y, size, 0, TWOPI, true);
+        this.context.closePath();
+        this.context.fill();
+        _results.push(this.context.fillStyle = 'black');
+      }
+      return _results;
+    };
+
     return Canvas;
 
   })();
@@ -167,7 +181,6 @@
           intPoint = lineIntersections(this.pos, newPos, wall[0], wall[1]);
           if (intPoint) {
             anglBet = radToDeg(angleBetweenLines(this.pos, newPos, wall[0], wall[1]));
-            console.log(this.angle, " + 2 x " + anglBet + " -> ", this.angle + anglBet * 2);
             this.angle += anglBet * 2;
           }
         }
@@ -177,7 +190,7 @@
 
     Ball.prototype.findNextPoint = function(time) {
       var deltaX, deltaY, distance, radians, x, y;
-      distance = Math.round(this.speed * time);
+      distance = this.speed * time;
       radians = degToRad(this.angle);
       deltaY = Math.sin(radians) * distance;
       deltaX = Math.cos(radians) * distance;
@@ -197,6 +210,7 @@
     function State() {
       var a;
       this.ball = new Ball();
+      this.prevBalls = [];
       this.players = (function() {
         var _results;
         _results = [];
@@ -249,7 +263,11 @@
 
     State.prototype.update = function(timeleft, clientX) {
       if (clientX) this.players[0].move(clientX);
-      if (timeleft) return this.ball.move(timeleft, this.walls());
+      if (timeleft) {
+        this.prevBalls.push(new Ball(this.ball.pos, this.ball.angle, this.ball.speed));
+        if (this.prevBalls.length > 15) this.prevBalls.shift();
+        return this.ball.move(timeleft, this.walls());
+      }
     };
 
     return State;
