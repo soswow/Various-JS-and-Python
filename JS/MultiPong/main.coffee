@@ -23,6 +23,7 @@ $ ->
       game.stopMainLoop()
       @innerHTML = 'Start'
 
+
 class Game
   constructor: ->
     console.log "constructor"
@@ -46,6 +47,7 @@ class Game
 
   stopMainLoop: ->
     clearRequestInterval @reqInterval
+
 
 class Canvas
   constructor: (game) ->
@@ -93,8 +95,8 @@ class Canvas
     for ball, i in @state.prevBalls
       [x,y] = [ball.pos.x, ball.pos.y]
       portion = i / @state.prevBalls.length
-      @context.fillStyle = "rgba(255,0,0,#{Math.pow(portion, 4)})"
       size = BALL_SIZE * portion
+      @context.fillStyle = "rgba(255, 0, 0, #{Math.pow(portion, 4)})"
       @context.beginPath()
       @context.moveTo x + size, y
       @context.arc x, y, size, 0, TWOPI, true
@@ -110,21 +112,18 @@ class Ball
 
   randomInit: ->
     @pos = xy SIDE/2, SIDE/2
-    @angle = randomInRange 0, 360
-    @speed = randomInRange SPEED_RANGE[0], SPEED_RANGE[1]
-    console.log 'Ball setup', @pos, @angle, @speed
-
-  getBoundingBox: ->
-    #TODO if needed
+    @angle = utils.randomInRange 0, 360
+    @speed = utils.randomInRange SPEED_RANGE[0], SPEED_RANGE[1]
+#    console.log 'Ball setup', @pos, @angle, @speed
 
   move: (time, walls) ->
     newPos = @findNextPoint time
     intPoint = null
     for wall in walls
       unless intPoint
-        intPoint = lineIntersections(@pos, newPos, wall[0], wall[1])
+        intPoint = utils.lineIntersections(@pos, newPos, wall[0], wall[1])
         if intPoint
-          anglBet = radToDeg angleBetweenLines @pos, newPos, wall[0], wall[1]
+          anglBet = utils.radToDeg utils.angleBetweenLines @pos, newPos, wall[0], wall[1]
           @angle += anglBet * 2
     unless intPoint
       @pos = newPos
@@ -133,7 +132,7 @@ class Ball
 
   findNextPoint: (time) ->
     distance = @speed * time
-    radians = degToRad(@angle)
+    radians = utils.degToRad(@angle)
     deltaY = Math.sin(radians) * distance
     deltaX = Math.cos(radians) * distance
     x = @pos.x + deltaX
@@ -154,18 +153,18 @@ class State
     # - active Player platforms
     # - walls on place of inactive players
     #TODO Identify what is wall and what is player
-#    console.log "walls"
-    for side, i in State.playerIndexSideMap
-      [wallStart, wallEnd] =
-        if @players[i]
-          @players[i].getWallPosition()
-        else
-          switch side
-            when 'bottom' then [xy(0, SIDE-HALF_WALL_THICK), xy(SIDE, SIDE-HALF_WALL_THICK)]
-            when 'top'    then [xy(0, HALF_WALL_THICK), xy(SIDE, HALF_WALL_THICK)]
-            when 'right'  then [xy(SIDE-HALF_WALL_THICK, 0), xy(SIDE-HALF_WALL_THICK, SIDE)]
-            when 'left'   then [xy(HALF_WALL_THICK, 0), xy(HALF_WALL_THICK, SIDE)]
-            else [xy(0,0), xy(0,0)]
+    #console.log "walls"
+
+#    for side, i in State.playerIndexSideMap
+#      [wallStart, wallEnd] =
+#        if @players[i]
+#          @players[i].getWallPosition()
+#        else
+#          switch side
+#            when 'bottom' then [xy(0, SIDE-HALF_WALL_THICK), xy(SIDE, SIDE-HALF_WALL_THICK)]
+#            when 'top'    then [xy(0, HALF_WALL_THICK), xy(SIDE, HALF_WALL_THICK)]
+#            when 'right'  then [xy(SIDE-HALF_WALL_THICK, 0), xy(SIDE-HALF_WALL_THICK, SIDE)]
+#            when 'left'   then [xy(HALF_WALL_THICK, 0), xy(HALF_WALL_THICK, SIDE)]
 
   addPlayer: (newPlayer) ->
     #Find slot in array and put into first free
@@ -192,16 +191,16 @@ class Player
     @size = INIT_PLAYER_SIZE
     @pos = 0.5 #center point position in percents
 
-  getWallPosition: ->
-    #Return pair of points: start & end of the wall
-    wallCenter = (INNER_SIDE - @size) * @pos
-    [from, to] = [wallCenter+WALL_THICK, wallCenter + @size + WALL_THICK]
-#    console.log this, wallCenter, from, to
-    switch @side
-      when 'bottom' then [xy(from, SIDE-HALF_WALL_THICK), xy(to, SIDE-HALF_WALL_THICK)]
-      when 'top'    then [xy(from, HALF_WALL_THICK), xy(to, HALF_WALL_THICK)]
-      when 'right'  then [xy(SIDE-HALF_WALL_THICK, from), xy(SIDE-HALF_WALL_THICK, to)]
-      when 'left'   then [xy(HALF_WALL_THICK, from), xy(HALF_WALL_THICK, to)]
+#  getWallPosition: ->
+#    #Return pair of points: start & end of the wall
+#    wallCenter = (INNER_SIDE - @size) * @pos
+#    [from, to] = [wallCenter+WALL_THICK, wallCenter + @size + WALL_THICK]
+#    #console.log this, wallCenter, from, to
+#    switch @side
+#      when 'bottom' then [xy(from, SIDE-HALF_WALL_THICK), xy(to, SIDE-HALF_WALL_THICK)]
+#      when 'top'    then [xy(from, HALF_WALL_THICK), xy(to, HALF_WALL_THICK)]
+#      when 'right'  then [xy(SIDE-HALF_WALL_THICK, from), xy(SIDE-HALF_WALL_THICK, to)]
+#      when 'left'   then [xy(HALF_WALL_THICK, from), xy(HALF_WALL_THICK, to)]
 
   move: (clientX) ->
     clientX -= @size / 2
@@ -209,31 +208,4 @@ class Player
     @pos = 1 if @pos > 1
     @pos = 0 if @pos < 0
 
-randomInRange = (from, to) -> Math.random() * (to - from) + from;
-degToRad = (deg) -> deg * (Math.PI / 180)
-radToDeg = (rad) -> rad * (180 / Math.PI)
-
-xy = (x, y) -> new Point(x, y)
-class Point
-  constructor: (@x, @y) ->
-#  shifted: ->
-#    new Point(@x + W)
-  toString: -> "(#{@x}, #{@y})"
-
-distance = (from, to) ->
-  Math.sqrt (Math.pow((from.x - to.x), 2) + Math.pow((from.y - to.y), 2))
-
-angleBetweenLines = (p1, p2, p3, p4) ->
-  [x1,x2,x3,x4] = [p1.x,p2.x,p3.x,p4.x]
-  [y1,y2,y3,y4] = [p1.y,p2.y,p3.y,p4.y]
-  angle1 = Math.atan2  y1 - y2, x1 - x2
-  angle2 = Math.atan2  y3 - y4, x3 - x4
-  angle1 - angle2
-
-lineIntersections = (p1, p2, p3, p4) ->
-  [x1,x2,x3,x4] = [p1.x,p2.x,p3.x,p4.x]
-  [y1,y2,y3,y4] = [p1.y,p2.y,p3.y,p4.y]
-  ua = ((x4-x3)*(y1-y3)-(y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1))
-  ub = ((x2-x1)*(y1-y3)-(y2-y1)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1))
-  if 0 <= ua <= 1 and 0 <= ub <= 1
-    xy x1 + ua * (x2 - x1), y1 + ua * (y2 - y1)
+xy = utils.xy

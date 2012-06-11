@@ -13,14 +13,15 @@ $ ->
 
   clearCanvas el
   portions = [
-    {start: 0.1, end:0.9},
-    {start: 0.2, end:0.8},
-    {start: 0.3, end:0.5},
-    {start: 0, end:1},
-    {start: 0, end:0.5},
-    {start: 0, end:0.8},
+    {from: 0.1, to:0.9},
+    {from: 0.2, to:0.8},
+    {from: 0.3, to:0.5},
+    {from: 0, to:1},
+    {from: 0, to:0.5},
+    {from: 0, to:0.8},
   ]
-  walls = makeWalls findCorners(), portions
+  arena = new Arena(RADIUS)
+  walls = arena.makeWalls portions
   drawWalls context, walls
 
 clearCanvas = (el) ->
@@ -37,24 +38,31 @@ drawWalls = (context, walls) ->
     context.stroke()
   context.lineWidth = 1
 
-makeWalls = (corners, portions) ->
-  console.log corners
-  for corner, i in corners
-    {start: startPortion, end: endPortion} = portions[i]
-    [start, end] = [corners[i-1..i-1][0], corner]
-    xd = end.x - start.x
-    yd = end.y - start.y
-    start = xy start.x + xd * startPortion, start.y + yd * startPortion
-    end = xy end.x - xd * (1-endPortion), end.y - yd * (1-endPortion)
-    [start, end]
+class Arena
+  constructor: (@radius) ->
+    defaultPortions = {from:0, to:1} for i in [1..4]
+    @walls = @makeWalls defaultPortions
 
-findCorners = ->
-  center = xy RADIUS, RADIUS
-  sectorAngle = 360 / SIDES
-  angle = 270 - sectorAngle / 2
-  for sideIndex in [0..SIDES-1]
-    angle += sectorAngle
-    radialMove center, RADIUS, angle
+  makeWalls: (@portions) ->
+    corners = @findCorners()
+    @walls =
+      for corner, i in corners
+        {from: startPortion, to: endPortion} = portions[i]
+        [start, end] = [corners[i-1..i-1][0], corner]
+        xd = end.x - start.x
+        yd = end.y - start.y
+        start = xy start.x + xd * startPortion, start.y + yd * startPortion
+        end = xy end.x - xd * (1-endPortion), end.y - yd * (1-endPortion)
+        [start, end]
+
+  findCorners: ->
+    sidesNum = @portions.length
+    center = xy @radius, @radius
+    sectorAngle = 360 / sidesNum
+    angle = 270 - sectorAngle / 2
+    for sideIndex in [0..sidesNum-1]
+      angle += sectorAngle
+      radialMove center, @radius, angle
 
 radialMove = (start, distance, angle) ->
   radians = utils.degToRad(angle)

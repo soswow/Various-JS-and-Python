@@ -9,14 +9,11 @@ exp = Math.exp
 cos = Math.cos
 sin = Math.sin
 
-xy = (x, y) -> new Point(x, y)
-
 class Point
   constructor: (@x, @y) ->
   toString: -> "(#{@x}, #{@y})"
 
-exports ?= window
-exports.utils =
+class Utils
   randomGauss: (mu, sigma) ->
     #Box–Muller transform implemtation. 2nd variant
     #http://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
@@ -31,25 +28,26 @@ exports.utils =
 
   gauss: (mu, sigma, x) ->
     # calculates the probability of x for 1-dim Gaussian with mean mu and var. sigma
-    exp(-(pow((mu - x), 2) / pow(sigma, 2) / 2.0) / sqrt TWOPI * pow(sigma, 2))
+    exp(-(pow((mu - x), 2) / pow(sigma, 2) / 2.0) / sqrt(TWOPI * pow(sigma, 2)))
 
   distance: (from, to) ->
-    Math.sqrt (Math.pow((from.x - to.x), 2) + Math.pow((from.y - to.y), 2))
+    Math.sqrt(Math.pow((from.x - to.x), 2) + Math.pow((from.y - to.y), 2))
+
+  _unfoldPoints: (points...) ->
+    _.flatten([p.x, p.y] for p in points)
 
   angleBetweenLines: (p1, p2, p3, p4) ->
-    [x1,x2,x3,x4] = [p1.x,p2.x,p3.x,p4.x]
-    [y1,y2,y3,y4] = [p1.y,p2.y,p3.y,p4.y]
+    [x1,y1,x2,y2,x3,y3,x4,y4] = @_unfoldPoints  p1, p2, p3, p4
     angle1 = Math.atan2  y1 - y2, x1 - x2
     angle2 = Math.atan2  y3 - y4, x3 - x4
     return angle1 - angle2
 
   lineIntersections: (p1, p2, p3, p4) ->
-    [x1,x2,x3,x4] = [p1.x,p2.x,p3.x,p4.x]
-    [y1,y2,y3,y4] = [p1.y,p2.y,p3.y,p4.y]
+    [x1,y1,x2,y2,x3,y3,x4,y4] = @_unfoldPoints  p1, p2, p3, p4
     ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1))
     ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1))
     if 0 <= ua <= 1 and 0 <= ub <= 1
-      xy x1 + ua * (x2 - x1), y1 + ua * (y2 - y1)
+      @xy  x1 + ua * (x2 - x1), y1 + ua * (y2 - y1)
 
   randomInRange: (from, to) -> Math.random() * (to - from) + from;
 
@@ -57,7 +55,16 @@ exports.utils =
 
   radToDeg: (rad) -> rad * (180 / Math.PI)
 
-  xy: xy
+  xy: (x, y) -> new Point(x, y)
+
+  radialMove: (start, distance, angle) ->
+    radians = @degToRad  angle
+    deltaY = Math.sin(radians) * distance
+    deltaX = Math.cos(radians) * distance
+    @xy  start.x + deltaX, start.y - deltaY
+
+exports ?= window
+exports.utils = new Utils()
 
 
 
