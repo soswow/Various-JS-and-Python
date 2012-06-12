@@ -1,5 +1,9 @@
 (function() {
-  var BALL_SIZE, Ball, Canvas, FPS, Game, HALF_WALL_THICK, INIT_PLAYER_SIZE, INNER_SIDE, Player, SIDE, SPEED_RANGE, State, TWOPI, WALL_THICK, game, xy;
+  var BALL_SIZE, Ball, Canvas, DIAMETER, FPS, Game, HALF_WALL_THICK, INIT_PLAYER_SIZE, INNER_SIDE, Player, RADIUS, SIDE, SIDES, SPEED_RANGE, State, TWOPI, WALL_THICK, game, xy;
+
+  DIAMETER = 500;
+
+  RADIUS = DIAMETER / 2;
 
   INNER_SIDE = 500;
 
@@ -16,6 +20,8 @@
   SPEED_RANGE = [400, 600];
 
   FPS = 60;
+
+  SIDES = 6;
 
   TWOPI = Math.PI * 2;
 
@@ -83,8 +89,8 @@
     Canvas.prototype.prepare = function() {
       var _ref;
       this.el = $('#canvas');
-      this.el.attr('width', SIDE);
-      this.el.attr('height', SIDE);
+      this.el.attr('width', DIAMETER);
+      this.el.attr('height', DIAMETER);
       this.context = (_ref = this.el[0]) != null ? typeof _ref.getContext === "function" ? _ref.getContext('2d') : void 0 : void 0;
       return console.log(this.context);
     };
@@ -97,7 +103,7 @@
     };
 
     Canvas.prototype.clearAll = function() {
-      return this.el.attr('width', SIDE);
+      return this.el.attr('width', DIAMETER);
     };
 
     Canvas.prototype.drawWalls = function() {
@@ -163,27 +169,39 @@
     }
 
     Ball.prototype.randomInit = function() {
-      this.pos = xy(SIDE / 2, SIDE / 2);
+      this.pos = xy(DIAMETER / 2, DIAMETER / 2);
       this.angle = utils.randomInRange(0, 360);
       return this.speed = utils.randomInRange(SPEED_RANGE[0], SPEED_RANGE[1]);
     };
 
-    Ball.prototype.move = function(time, walls) {
-      var anglBet, intPoint, newPos, wall, _i, _len, _ref, _ref2;
+    Ball.prototype.move = function(time, solidWalls, areaWalls) {
+      var anglBet, intPoint, newPos, wall, x, x0, x1, y, y0, y1, _i, _len;
       newPos = this.findNextPoint(time);
       intPoint = null;
-      for (_i = 0, _len = walls.length; _i < _len; _i++) {
-        wall = walls[_i];
-        if (!intPoint) {
-          intPoint = utils.lineIntersections(this.pos, newPos, wall[0], wall[1]);
-          if (intPoint) {
-            anglBet = utils.radToDeg(utils.angleBetweenLines(this.pos, newPos, wall[0], wall[1]));
-            this.angle += anglBet * 2;
-          }
+      for (_i = 0, _len = solidWalls.length; _i < _len; _i++) {
+        wall = solidWalls[_i];
+        intPoint = utils.lineIntersections(this.pos, newPos, wall[0], wall[1]);
+        if (intPoint) {
+          anglBet = utils.radToDeg(utils.angleBetweenLines(this.pos, newPos, wall[0], wall[1]));
+          this.angle += anglBet * 2;
+          break;
         }
       }
-      if (!intPoint) this.pos = newPos;
-      return (0 < (_ref = this.pos.x) && _ref < SIDE) && (0 < (_ref2 = this.pos.y) && _ref2 < SIDE);
+      if (!intPoint) {
+        this.pos = newPos;
+      } else {
+        this.pos = intPoint;
+      }
+      return _.all((function() {
+        var _j, _len2, _ref, _results;
+        _results = [];
+        for (_j = 0, _len2 = areaWalls.length; _j < _len2; _j++) {
+          wall = areaWalls[_j];
+          _ref = this.unfoldPoints(wall[0], wall[1], this.pos), x0 = _ref[0], y0 = _ref[1], x1 = _ref[2], y1 = _ref[3], x = _ref[4], y = _ref[5];
+          _results.push((y - y0)((x1 - x0) - (x - x0)((y1 - y0) < 0)));
+        }
+        return _results;
+      }).call(this));
     };
 
     Ball.prototype.findNextPoint = function(time) {
@@ -209,6 +227,7 @@
       var a;
       this.ball = new Ball();
       this.prevBalls = [];
+      this.arena = new Arena(RADIUS);
       this.players = (function() {
         var _results;
         _results = [];

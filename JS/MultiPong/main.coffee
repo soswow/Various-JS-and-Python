@@ -1,4 +1,6 @@
 #Ask for those constants from the server
+DIAMETER = 500
+RADIUS = DIAMETER / 2
 INNER_SIDE = 500
 WALL_THICK = 5
 SIDE = INNER_SIDE + WALL_THICK * 2
@@ -7,6 +9,7 @@ HALF_WALL_THICK = WALL_THICK / 2
 BALL_SIZE = 10 #diameter
 SPEED_RANGE = [400, 600]
 FPS = 60
+SIDES = 6
 
 TWOPI = Math.PI * 2
 
@@ -56,8 +59,8 @@ class Canvas
 
   prepare: ->
     @el = $('#canvas')
-    @el.attr 'width', SIDE
-    @el.attr 'height', SIDE
+    @el.attr 'width', DIAMETER
+    @el.attr 'height', DIAMETER
     @context = @el[0]?.getContext? '2d'
     console.log @context
 
@@ -68,7 +71,7 @@ class Canvas
     @drawPrevBalls()
 
   clearAll: ->
-    @el.attr 'width', SIDE
+    @el.attr 'width', DIAMETER
 
   drawWalls: ->
     for [from, to] in @state.walls()
@@ -111,24 +114,32 @@ class Ball
       @randomInit()
 
   randomInit: ->
-    @pos = xy SIDE/2, SIDE/2
+    @pos = xy DIAMETER/2, DIAMETER/2
     @angle = utils.randomInRange 0, 360
     @speed = utils.randomInRange SPEED_RANGE[0], SPEED_RANGE[1]
 #    console.log 'Ball setup', @pos, @angle, @speed
 
-  move: (time, walls) ->
+  move: (time, solidWalls, areaWalls) ->
     newPos = @findNextPoint time
+
     intPoint = null
-    for wall in walls
-      unless intPoint
-        intPoint = utils.lineIntersections(@pos, newPos, wall[0], wall[1])
-        if intPoint
-          anglBet = utils.radToDeg utils.angleBetweenLines @pos, newPos, wall[0], wall[1]
-          @angle += anglBet * 2
+    for wall in solidWalls
+      intPoint = utils.lineIntersections  @pos, newPos, wall[0], wall[1]
+      if intPoint
+        anglBet = utils.radToDeg  utils.angleBetweenLines  @pos, newPos, wall[0], wall[1]
+        @angle += anglBet * 2
+        break
+
     unless intPoint
       @pos = newPos
+    else
+      @pos = intPoint
 
-    return 0 < @pos.x < SIDE and 0 < @pos.y < SIDE
+    return _.all(
+      for wall in areaWalls
+        [x0,y0,x1,y1,x,y] = @unfoldPoints  wall[0], wall[1], @pos
+        (y - y0) (x1 - x0) - (x - x0) (y1 - y0) < 0
+    )
 
   findNextPoint: (time) ->
     distance = @speed * time
@@ -146,9 +157,12 @@ class State
   constructor: ->
     @ball = new Ball()
     @prevBalls = []
+
+    @arena = new Arena(RADIUS)
     @players = (null for a in [1..4])
 
   walls: ->
+
     #Return all walls from current state:
     # - active Player platforms
     # - walls on place of inactive players
