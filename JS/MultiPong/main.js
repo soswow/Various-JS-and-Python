@@ -1,17 +1,14 @@
 (function() {
-  var BALL_SIZE, Ball, Canvas, DIAMETER, FPS, Game, HALF_WALL_THICK, INIT_PLAYER_SIZE, INNER_SIDE, Player, RADIUS, SIDE, SIDES, SPEED_RANGE, State, TWOPI, WALL_THICK, game, xy;
+  var Arena, BALL_SIZE, Ball, Canvas, DIAMETER, FPS, Game, HALF_WALL_THICK, INIT_PLAYER_SIZE_PORTION, Player, RADIUS, SIDES, SPEED_RANGE, Segment, State, TWOPI, WALL_THICK, game, seg, xy,
+    __slice = Array.prototype.slice;
 
   DIAMETER = 500;
 
   RADIUS = DIAMETER / 2;
 
-  INNER_SIDE = 500;
-
   WALL_THICK = 5;
 
-  SIDE = INNER_SIDE + WALL_THICK * 2;
-
-  INIT_PLAYER_SIZE = 0.2 * INNER_SIDE;
+  INIT_PLAYER_SIZE_PORTION = 0.2;
 
   HALF_WALL_THICK = WALL_THICK / 2;
 
@@ -47,7 +44,7 @@
       console.log("constructor");
       this.state = new State();
       this.canvas = new Canvas(this);
-      this.state.addPlayer(new Player());
+      this.state.addPlayer(new Player("somename", this.state));
       this.initHandlers();
       this.canvas.repaint();
     }
@@ -87,72 +84,50 @@
     }
 
     Canvas.prototype.prepare = function() {
-      var _ref;
+      var context, thickness, _ref;
       this.el = $('#canvas');
       this.el.attr('width', DIAMETER);
       this.el.attr('height', DIAMETER);
-      this.context = (_ref = this.el[0]) != null ? typeof _ref.getContext === "function" ? _ref.getContext('2d') : void 0 : void 0;
-      return console.log(this.context);
+      context = this.context = (_ref = this.el[0]) != null ? typeof _ref.getContext === "function" ? _ref.getContext('2d') : void 0 : void 0;
+      thickness = WALL_THICK;
+      State.prototype.draw = function() {
+        this.arena.draw();
+        return this.ball.draw();
+      };
+      Arena.prototype.draw = function() {
+        var end, i, start, _len, _ref2, _ref3;
+        _ref2 = this.solidWalls;
+        for (i = 0, _len = _ref2.length; i < _len; i++) {
+          _ref3 = _ref2[i], start = _ref3[0], end = _ref3[1];
+          context.lineWidth = thickness;
+          context.beginPath();
+          context.moveTo(start.x, start.y);
+          context.lineTo(end.x, end.y);
+          context.closePath();
+          context.stroke();
+        }
+        return context.lineWidth = 1;
+      };
+      return Ball.prototype.draw = function() {
+        var x, y, _ref2;
+        context.fillStyle = 'red';
+        context.beginPath();
+        _ref2 = [this.pos.x, this.pos.y], x = _ref2[0], y = _ref2[1];
+        context.moveTo(x, y);
+        context.arc(x, y, BALL_SIZE, 0, TWOPI, true);
+        context.closePath();
+        context.fill();
+        return context.fillStyle = 'black';
+      };
     };
 
     Canvas.prototype.repaint = function() {
       this.clearAll();
-      this.drawWalls();
-      this.drawBall();
-      return this.drawPrevBalls();
+      return this.state.draw();
     };
 
     Canvas.prototype.clearAll = function() {
       return this.el.attr('width', DIAMETER);
-    };
-
-    Canvas.prototype.drawWalls = function() {
-      var from, to, _i, _len, _ref, _ref2, _results;
-      _ref = this.state.walls();
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        _ref2 = _ref[_i], from = _ref2[0], to = _ref2[1];
-        this.context.lineWidth = WALL_THICK;
-        this.context.beginPath();
-        this.context.moveTo(from.x, from.y);
-        this.context.lineTo(to.x, to.y);
-        this.context.closePath();
-        this.context.stroke();
-        _results.push(this.context.lineWidth = 1);
-      }
-      return _results;
-    };
-
-    Canvas.prototype.drawBall = function() {
-      var x, y, _ref;
-      _ref = [this.state.ball.pos.x, this.state.ball.pos.y], x = _ref[0], y = _ref[1];
-      this.context.fillStyle = 'red';
-      this.context.beginPath();
-      this.context.moveTo(x, y);
-      this.context.arc(x, y, BALL_SIZE, 0, TWOPI, true);
-      this.context.closePath();
-      this.context.fill();
-      return this.context.fillStyle = 'black';
-    };
-
-    Canvas.prototype.drawPrevBalls = function() {
-      var ball, i, portion, size, x, y, _len, _ref, _ref2, _results;
-      _ref = this.state.prevBalls;
-      _results = [];
-      for (i = 0, _len = _ref.length; i < _len; i++) {
-        ball = _ref[i];
-        _ref2 = [ball.pos.x, ball.pos.y], x = _ref2[0], y = _ref2[1];
-        portion = i / this.state.prevBalls.length;
-        size = BALL_SIZE * portion;
-        this.context.fillStyle = "rgba(255, 0, 0, " + (Math.pow(portion, 4)) + ")";
-        this.context.beginPath();
-        this.context.moveTo(x + size, y);
-        this.context.arc(x, y, size, 0, TWOPI, true);
-        this.context.closePath();
-        this.context.fill();
-        _results.push(this.context.fillStyle = 'black');
-      }
-      return _results;
     };
 
     return Canvas;
@@ -161,7 +136,8 @@
 
   Ball = (function() {
 
-    function Ball(pos, angle, speed) {
+    function Ball(state, pos, angle, speed) {
+      this.state = state;
       this.pos = pos;
       this.angle = angle;
       this.speed = speed;
@@ -171,19 +147,22 @@
     Ball.prototype.randomInit = function() {
       this.pos = xy(DIAMETER / 2, DIAMETER / 2);
       this.angle = utils.randomInRange(0, 360);
-      return this.speed = utils.randomInRange(SPEED_RANGE[0], SPEED_RANGE[1]);
+      return this.speed = utils.randomInRange.apply(utils, SPEED_RANGE);
     };
 
-    Ball.prototype.move = function(time, solidWalls, areaWalls) {
-      var anglBet, intPoint, newPos, wall, x, x0, x1, y, y0, y1, _i, _len;
+    Ball.prototype.move = function(time) {
+      var anglBet, intPoint, isInside, newPos, oldAngle, wall, x, x0, x1, y, y0, y1, _i, _len, _ref;
       newPos = this.findNextPoint(time);
+      oldAngle = this.angle;
       intPoint = null;
-      for (_i = 0, _len = solidWalls.length; _i < _len; _i++) {
-        wall = solidWalls[_i];
-        intPoint = utils.lineIntersections(this.pos, newPos, wall[0], wall[1]);
+      _ref = this.state.arena.solidWalls;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        wall = _ref[_i];
+        intPoint = utils.lineIntersections.apply(utils, [this.pos, newPos].concat(__slice.call(wall)));
         if (intPoint) {
-          anglBet = utils.radToDeg(utils.angleBetweenLines(this.pos, newPos, wall[0], wall[1]));
+          anglBet = utils.radToDeg(utils.angleBetweenLines.apply(utils, [this.pos, newPos].concat(__slice.call(wall))));
           this.angle += anglBet * 2;
+          this.angle %= 360;
           break;
         }
       }
@@ -191,17 +170,20 @@
         this.pos = newPos;
       } else {
         this.pos = intPoint;
+        this.pos = this.findNextPoint(time);
       }
-      return _.all((function() {
-        var _j, _len2, _ref, _results;
+      isInside = _.all((function() {
+        var _j, _len2, _ref2, _ref3, _results;
+        _ref2 = this.state.arena.areaWalls;
         _results = [];
-        for (_j = 0, _len2 = areaWalls.length; _j < _len2; _j++) {
-          wall = areaWalls[_j];
-          _ref = this.unfoldPoints(wall[0], wall[1], this.pos), x0 = _ref[0], y0 = _ref[1], x1 = _ref[2], y1 = _ref[3], x = _ref[4], y = _ref[5];
-          _results.push((y - y0)((x1 - x0) - (x - x0)((y1 - y0) < 0)));
+        for (_j = 0, _len2 = _ref2.length; _j < _len2; _j++) {
+          wall = _ref2[_j];
+          _ref3 = utils.unfoldPoints(wall[0], wall[1], this.pos), x0 = _ref3[0], y0 = _ref3[1], x1 = _ref3[2], y1 = _ref3[3], x = _ref3[4], y = _ref3[5];
+          _results.push((y - y0) * (x1 - x0) - (x - x0) * (y1 - y0) < 0);
         }
         return _results;
-      }).call(this));
+      }).call(this), _.identity);
+      return intPoint || isInside;
     };
 
     Ball.prototype.findNextPoint = function(time) {
@@ -221,45 +203,44 @@
 
   State = (function() {
 
-    State.playerIndexSideMap = ['bottom', 'top', 'right', 'left'];
-
     function State() {
-      var a;
-      this.ball = new Ball();
-      this.prevBalls = [];
-      this.arena = new Arena(RADIUS);
+      var i;
+      this.ball = new Ball(this);
       this.players = (function() {
         var _results;
         _results = [];
-        for (a = 1; a <= 4; a++) {
+        for (i = 1; 1 <= SIDES ? i <= SIDES : i >= SIDES; 1 <= SIDES ? i++ : i--) {
           _results.push(null);
         }
         return _results;
       })();
+      this.arena = new Arena(RADIUS, this);
     }
 
-    State.prototype.walls = function() {};
-
     State.prototype.addPlayer = function(newPlayer) {
-      var i, player, _len, _ref;
+      var i, newIndex, player, _len, _ref;
+      newIndex = this.players.length;
       _ref = this.players;
       for (i = 0, _len = _ref.length; i < _len; i++) {
         player = _ref[i];
         if (!player) {
-          newPlayer.side = State.playerIndexSideMap[i];
-          return this.players[i] = newPlayer;
+          newIndex = i;
+          break;
         }
       }
+      newPlayer.side = newIndex;
+      this.players[i] = newPlayer;
+      this.arena.updateSolidWalls();
+      return newPlayer;
     };
 
     State.prototype.update = function(timeleft, clientX) {
-      if (clientX) this.players[0].move(clientX);
+      if (clientX) {
+        this.players[0].move(clientX);
+        this.arena.updateSolidWalls();
+      }
       if (timeleft) {
-        this.prevBalls.push(new Ball(this.ball.pos, this.ball.angle, this.ball.speed));
-        if (this.prevBalls.length > 15) this.prevBalls.shift();
-        if (!this.ball.move(timeleft, this.walls())) {
-          return game.state.ball.randomInit();
-        }
+        if (!this.ball.move(timeleft)) return game.state.ball.randomInit();
       }
     };
 
@@ -269,24 +250,146 @@
 
   Player = (function() {
 
-    function Player(name) {
+    function Player(name, state) {
       this.name = name;
-      this.side = State.playerIndexSideMap[0];
-      this.size = INIT_PLAYER_SIZE;
-      this.pos = 0.5;
+      this.state = state;
+      this.side = 0;
+      this.sideLength = this.state.arena.getFullWallLength();
+      this.size = INIT_PLAYER_SIZE_PORTION * this.sideLength;
+      this.centerPos = 0.5;
+      this.updateSegment();
     }
 
     Player.prototype.move = function(clientX) {
-      clientX -= this.size / 2;
-      this.pos = clientX / (INNER_SIDE - this.size);
-      if (this.pos > 1) this.pos = 1;
-      if (this.pos < 0) return this.pos = 0;
+      this.updateCenterPosition(clientX);
+      return this.updateSegment();
+    };
+
+    Player.prototype.updateCenterPosition = function(clientX) {
+      clientX -= this.state.arena.areaWalls[0][0].x + this.size / 2;
+      this.centerPos = clientX / (this.sideLength - this.size);
+      if (this.centerPos > 1) this.centerPos = 1;
+      if (this.centerPos < 0) return this.centerPos = 0;
+    };
+
+    Player.prototype.updateSegment = function() {
+      var centerPx, halfSize, segmentEnd, segmentStart;
+      centerPx = this.centerPos * this.sideLength;
+      halfSize = this.size / 2;
+      segmentStart = (centerPx - halfSize) / this.sideLength;
+      segmentEnd = (centerPx + halfSize) / this.sideLength;
+      return this.segment = seg(segmentStart, segmentEnd);
     };
 
     return Player;
 
   })();
 
+  Arena = (function() {
+
+    function Arena(radius, state) {
+      this.radius = radius;
+      this.state = state;
+      this.players = this.state.players;
+      this.solidWalls = this.areaWalls = this.updateAreaWalls();
+    }
+
+    Arena.prototype.updateSolidWalls = function() {
+      var end, endPortion, i, start, startPortion, xd, yd;
+      if (this.players.length !== this.portions.length) {
+        this.updateAreaWalls();
+      } else {
+        this.updatePortions();
+      }
+      return this.solidWalls = (function() {
+        var _len, _ref, _ref2, _ref3, _results;
+        _ref = this.areaWalls;
+        _results = [];
+        for (i = 0, _len = _ref.length; i < _len; i++) {
+          _ref2 = _ref[i], start = _ref2[0], end = _ref2[1];
+          _ref3 = this.portions[i], startPortion = _ref3.start, endPortion = _ref3.end;
+          xd = end.x - start.x;
+          yd = end.y - start.y;
+          start = xy(start.x + xd * startPortion, start.y + yd * startPortion);
+          end = xy(end.x - xd * (1 - endPortion), end.y - yd * (1 - endPortion));
+          _results.push([start, end]);
+        }
+        return _results;
+      }).call(this);
+    };
+
+    Arena.prototype.updateAreaWalls = function() {
+      var corner, i;
+      this.updatePortions();
+      this.updateCorners();
+      return this.areaWalls = (function() {
+        var _len, _ref, _results;
+        _ref = this.corners;
+        _results = [];
+        for (i = 0, _len = _ref.length; i < _len; i++) {
+          corner = _ref[i];
+          _results.push([this.corners.slice(i - 1, (i - 1) + 1 || 9e9)[0], corner]);
+        }
+        return _results;
+      }).call(this);
+    };
+
+    Arena.prototype.updatePortions = function() {
+      return this.portions = _.map(this.players, function(p) {
+        if (p) {
+          return p.segment;
+        } else {
+          return seg(0, 1);
+        }
+      });
+    };
+
+    Arena.prototype.getFullWallLength = function() {
+      return utils.distance.apply(utils, this.areaWalls[0]);
+    };
+
+    Arena.prototype.updateCorners = function() {
+      var angle, center, sectorAngle, sideIndex, sidesNum;
+      sidesNum = this.portions.length;
+      center = xy(this.radius, this.radius);
+      sectorAngle = 360 / sidesNum;
+      angle = 270 - sectorAngle / 2;
+      return this.corners = (function() {
+        var _ref, _results;
+        _results = [];
+        for (sideIndex = 0, _ref = sidesNum - 1; 0 <= _ref ? sideIndex <= _ref : sideIndex >= _ref; 0 <= _ref ? sideIndex++ : sideIndex--) {
+          angle += sectorAngle;
+          _results.push(utils.radialMove(center, this.radius, angle));
+        }
+        return _results;
+      }).call(this);
+    };
+
+    return Arena;
+
+  })();
+
+  Segment = (function() {
+
+    function Segment(start, end) {
+      this.start = start;
+      this.end = end;
+    }
+
+    return Segment;
+
+  })();
+
   xy = utils.xy;
+
+  seg = function() {
+    var vars;
+    vars = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    return (function(func, args, ctor) {
+      ctor.prototype = func.prototype;
+      var child = new ctor, result = func.apply(child, args);
+      return typeof result === "object" ? result : child;
+    })(Segment, vars, function() {});
+  };
 
 }).call(this);

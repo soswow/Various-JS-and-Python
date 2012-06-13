@@ -1,10 +1,9 @@
 #Ask for those constants from the server
 DIAMETER = 500
 RADIUS = DIAMETER / 2
-INNER_SIDE = 500
+
 WALL_THICK = 5
-SIDE = INNER_SIDE + WALL_THICK * 2
-INIT_PLAYER_SIZE = 0.2 * INNER_SIDE
+INIT_PLAYER_SIZE_PORTION = 0.2 #percent
 HALF_WALL_THICK = WALL_THICK / 2
 BALL_SIZE = 10 #diameter
 SPEED_RANGE = [400, 600]
@@ -32,7 +31,7 @@ class Game
     console.log "constructor"
     @state = new State()
     @canvas = new Canvas(this)
-    @state.addPlayer(new Player())
+    @state.addPlayer  new Player("somename", @state)
     @initHandlers()
     @canvas.repaint()
 
@@ -45,7 +44,6 @@ class Game
     @canvas.repaint()
 
   startMainLoop: ->
-#    console.log "startMainLoop"
     @reqInterval = requestInterval (=> @updateAndRepaint(1000 / FPS)), 1000 / FPS
 
   stopMainLoop: ->
@@ -61,85 +59,80 @@ class Canvas
     @el = $('#canvas')
     @el.attr 'width', DIAMETER
     @el.attr 'height', DIAMETER
-    @context = @el[0]?.getContext? '2d'
-    console.log @context
+    context = @context = @el[0]?.getContext? '2d'
+
+    thickness = WALL_THICK
+    State::draw = ->
+      @arena.draw()
+      @ball.draw()
+
+    Arena::draw = ->
+      for [start, end], i in @solidWalls
+        context.lineWidth = thickness
+        context.beginPath()
+        context.moveTo start.x, start.y
+        context.lineTo end.x, end.y
+        context.closePath()
+        context.stroke()
+      context.lineWidth = 1
+
+    Ball::draw = ->
+      context.fillStyle = 'red'
+      context.beginPath()
+      [x,y] = [@pos.x, @pos.y]
+      context.moveTo x, y
+      context.arc x, y, BALL_SIZE, 0, TWOPI, true
+      context.closePath()
+      context.fill()
+      context.fillStyle = 'black'
 
   repaint: ->
     @clearAll()
-    @drawWalls()
-    @drawBall()
-    @drawPrevBalls()
+    @state.draw()
 
   clearAll: ->
     @el.attr 'width', DIAMETER
 
-  drawWalls: ->
-    for [from, to] in @state.walls()
-#      console.log from+"", to+""
-      @context.lineWidth = WALL_THICK
-      @context.beginPath()
-      @context.moveTo from.x, from.y
-      @context.lineTo to.x, to.y
-      @context.closePath()
-      @context.stroke()
-      @context.lineWidth = 1
-
-  drawBall: ->
-    [x,y] = [@state.ball.pos.x, @state.ball.pos.y]
-    @context.fillStyle = 'red'
-    @context.beginPath()
-    @context.moveTo x, y
-    @context.arc x, y, BALL_SIZE, 0, TWOPI, true
-    @context.closePath()
-    @context.fill()
-    @context.fillStyle = 'black'
-
-  drawPrevBalls: ->
-    for ball, i in @state.prevBalls
-      [x,y] = [ball.pos.x, ball.pos.y]
-      portion = i / @state.prevBalls.length
-      size = BALL_SIZE * portion
-      @context.fillStyle = "rgba(255, 0, 0, #{Math.pow(portion, 4)})"
-      @context.beginPath()
-      @context.moveTo x + size, y
-      @context.arc x, y, size, 0, TWOPI, true
-      @context.closePath()
-      @context.fill()
-      @context.fillStyle = 'black'
-
 
 class Ball
-  constructor: (@pos, @angle, @speed) ->
+  constructor: (@state, @pos, @angle, @speed) ->
     unless @pos and @angle and @speed
       @randomInit()
 
   randomInit: ->
-    @pos = xy DIAMETER/2, DIAMETER/2
-    @angle = utils.randomInRange 0, 360
-    @speed = utils.randomInRange SPEED_RANGE[0], SPEED_RANGE[1]
+    @pos = xy  DIAMETER/2, DIAMETER/2
+    @angle = utils.randomInRange  0, 360
+    @speed = utils.randomInRange  SPEED_RANGE...
 #    console.log 'Ball setup', @pos, @angle, @speed
 
-  move: (time, solidWalls, areaWalls) ->
-    newPos = @findNextPoint time
+  move: (time) ->
+    newPos = @findNextPoint  time
 
+    oldAngle = @angle
     intPoint = null
-    for wall in solidWalls
-      intPoint = utils.lineIntersections  @pos, newPos, wall[0], wall[1]
+    for wall in @state.arena.solidWalls
+      intPoint = utils.lineIntersections  @pos, newPos, wall...
       if intPoint
-        anglBet = utils.radToDeg  utils.angleBetweenLines  @pos, newPos, wall[0], wall[1]
+        anglBet = utils.radToDeg  utils.angleBetweenLines  @pos, newPos, wall...
         @angle += anglBet * 2
+        @angle %= 360
         break
 
     unless intPoint
       @pos = newPos
+#      console.log "No problem, new pos: #{@pos.x} - #{@pos.y}"
     else
       @pos = intPoint
+      @pos = @findNextPoint  time
+#      console.log "Intersection. New point pos: #{@pos.x} - #{@pos.y} angles #{oldAngle} -> #{@angle}"
+#      @move  time
 
-    return _.all(
-      for wall in areaWalls
-        [x0,y0,x1,y1,x,y] = @unfoldPoints  wall[0], wall[1], @pos
-        (y - y0) (x1 - x0) - (x - x0) (y1 - y0) < 0
-    )
+    isInside = _.all(
+      for wall in @state.arena.areaWalls
+        [x0,y0,x1,y1,x,y] = utils.unfoldPoints  wall[0], wall[1], @pos
+        (y - y0) * (x1 - x0) - (x - x0) * (y1 - y0) < 0
+      , _.identity)
+    return intPoint or isInside
 
   findNextPoint: (time) ->
     distance = @speed * time
@@ -152,74 +145,110 @@ class Ball
 
 
 class State
-  @playerIndexSideMap: ['bottom', 'top', 'right', 'left']
-
   constructor: ->
-    @ball = new Ball()
-    @prevBalls = []
-
-    @arena = new Arena(RADIUS)
-    @players = (null for a in [1..4])
-
-  walls: ->
-
-    #Return all walls from current state:
-    # - active Player platforms
-    # - walls on place of inactive players
-    #TODO Identify what is wall and what is player
-    #console.log "walls"
-
-#    for side, i in State.playerIndexSideMap
-#      [wallStart, wallEnd] =
-#        if @players[i]
-#          @players[i].getWallPosition()
-#        else
-#          switch side
-#            when 'bottom' then [xy(0, SIDE-HALF_WALL_THICK), xy(SIDE, SIDE-HALF_WALL_THICK)]
-#            when 'top'    then [xy(0, HALF_WALL_THICK), xy(SIDE, HALF_WALL_THICK)]
-#            when 'right'  then [xy(SIDE-HALF_WALL_THICK, 0), xy(SIDE-HALF_WALL_THICK, SIDE)]
-#            when 'left'   then [xy(HALF_WALL_THICK, 0), xy(HALF_WALL_THICK, SIDE)]
+    @ball = new Ball(this)
+    @players = (null for i in [1..SIDES])
+    @arena = new Arena(RADIUS, this)
+#    @prevBalls = []
 
   addPlayer: (newPlayer) ->
     #Find slot in array and put into first free
     #Assign it's side accordint to slot
+    newIndex = @players.length #push new one if not found slot
     for player, i in @players
       unless player
-        newPlayer.side = State.playerIndexSideMap[i]
-        return @players[i] = newPlayer
+        newIndex = i
+        break
+
+    newPlayer.side = newIndex
+    @players[i] = newPlayer
+    @arena.updateSolidWalls()
+
+    return newPlayer
 
   update: (timeleft, clientX) ->
     if clientX
-      @players[0].move clientX
+      @players[0].move  clientX
+      @arena.updateSolidWalls()
     if timeleft
-      @prevBalls.push new Ball(@ball.pos, @ball.angle, @ball.speed)
-      if @prevBalls.length > 15
-        @prevBalls.shift()
-      unless @ball.move timeleft, @walls()
+#      @prevBalls.push  new Ball(@ball.pos, @ball.angle, @ball.speed)
+#      if @prevBalls.length > 15
+#        @prevBalls.shift()
+      unless @ball.move  timeleft
         game.state.ball.randomInit()
 
 
 class Player
-  constructor: (@name) ->
-    @side = State.playerIndexSideMap[0]
-    @size = INIT_PLAYER_SIZE
-    @pos = 0.5 #center point position in percents
-
-#  getWallPosition: ->
-#    #Return pair of points: start & end of the wall
-#    wallCenter = (INNER_SIDE - @size) * @pos
-#    [from, to] = [wallCenter+WALL_THICK, wallCenter + @size + WALL_THICK]
-#    #console.log this, wallCenter, from, to
-#    switch @side
-#      when 'bottom' then [xy(from, SIDE-HALF_WALL_THICK), xy(to, SIDE-HALF_WALL_THICK)]
-#      when 'top'    then [xy(from, HALF_WALL_THICK), xy(to, HALF_WALL_THICK)]
-#      when 'right'  then [xy(SIDE-HALF_WALL_THICK, from), xy(SIDE-HALF_WALL_THICK, to)]
-#      when 'left'   then [xy(HALF_WALL_THICK, from), xy(HALF_WALL_THICK, to)]
+  constructor: (@name, @state) ->
+    @side = 0
+    @sideLength = @state.arena.getFullWallLength()
+    @size = INIT_PLAYER_SIZE_PORTION * @sideLength
+    @centerPos = 0.5 #center point position in percents
+    @updateSegment()
 
   move: (clientX) ->
-    clientX -= @size / 2
-    @pos = clientX / (INNER_SIDE - @size)
-    @pos = 1 if @pos > 1
-    @pos = 0 if @pos < 0
+    @updateCenterPosition  clientX
+    @updateSegment()
+
+  updateCenterPosition: (clientX) ->
+    clientX -= @state.arena.areaWalls[0][0].x + @size / 2
+    @centerPos = clientX / (@sideLength - @size)
+    @centerPos = 1 if @centerPos > 1
+    @centerPos = 0 if @centerPos < 0
+
+  updateSegment: ->
+    centerPx = @centerPos * @sideLength
+    halfSize = @size / 2
+    segmentStart = (centerPx - halfSize) / @sideLength
+    segmentEnd = (centerPx + halfSize) / @sideLength
+    @segment = seg  segmentStart, segmentEnd
+
+
+class Arena
+  constructor: (@radius, @state) ->
+    @players = @state.players
+    @solidWalls = @areaWalls = @updateAreaWalls()
+
+  updateSolidWalls: ->
+    unless @players.length is @portions.length
+      @updateAreaWalls()
+    else
+      @updatePortions()
+
+    @solidWalls =
+      for [start, end], i in @areaWalls
+        {start: startPortion, end: endPortion} = @portions[i]
+        xd = end.x - start.x
+        yd = end.y - start.y
+        start = xy  start.x + xd * startPortion, start.y + yd * startPortion
+        end = xy  end.x - xd * (1-endPortion), end.y - yd * (1-endPortion)
+        [start, end]
+
+  updateAreaWalls: ->
+    @updatePortions()
+    @updateCorners()
+    @areaWalls = ([@corners[i-1..i-1][0], corner] for corner, i in @corners)
+
+  updatePortions: ->
+    @portions = _.map  @players, (p) -> if p then p.segment else seg(0, 1)
+
+  getFullWallLength: -> utils.distance  @areaWalls[0]...
+
+  updateCorners: ->
+    sidesNum = @portions.length
+    center = xy  @radius, @radius
+    sectorAngle = 360 / sidesNum
+    angle = 270 - sectorAngle / 2
+    @corners =
+      for sideIndex in [0..sidesNum-1]
+        angle += sectorAngle
+        utils.radialMove  center, @radius, angle
+
+
+#TODO Better name is range
+class Segment
+  constructor: (@start, @end) ->
+
 
 xy = utils.xy
+seg = (vars...) -> new Segment(vars...)

@@ -40,7 +40,7 @@ class Utils
     [x1,y1,x2,y2,x3,y3,x4,y4] = @unfoldPoints  p1, p2, p3, p4
     angle1 = Math.atan2  y1 - y2, x1 - x2
     angle2 = Math.atan2  y3 - y4, x3 - x4
-    return angle1 - angle2
+    return (angle1 - angle2) % 360
 
   lineIntersections: (p1, p2, p3, p4) ->
     [x1,y1,x2,y2,x3,y3,x4,y4] = @unfoldPoints  p1, p2, p3, p4

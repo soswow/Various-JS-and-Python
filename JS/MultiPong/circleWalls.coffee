@@ -22,7 +22,7 @@ $ ->
   ]
 
   arena = new Arena(RADIUS)
-  arena.makeWalls  portions
+  arena.updateSolidWalls  portions
   arena.draw  context, WALL_THICK
 
 clearCanvas = (el) ->
@@ -31,14 +31,14 @@ clearCanvas = (el) ->
 class Arena
   constructor: (@radius) ->
     defaultPortions = {from:0, to:1} for i in [1..4]
-    @walls = @makeWalls  defaultPortions
+    @solidWalls = @updateSolidWalls  defaultPortions
 
-  getFullWalls: ->
+  areaWalls: ->
     [corners[i-1..i-1][0], corner] for corner, i in corners
 
-  makeWalls: (@portions) ->
+  updateSolidWalls: (@portions) ->
     corners = @findCorners()
-    @walls =
+    @solidWalls =
       for corner, i in corners
         {from: startPortion, to: endPortion} = portions[i]
         [start, end] = [corners[i-1..i-1][0], corner]
@@ -58,7 +58,7 @@ class Arena
       utils.radialMove  center, @radius, angle
 
   draw: (context, thickness) ->
-    for [start, end], i in @walls
+    for [start, end], i in @solidWalls
       context.lineWidth = thickness
       context.beginPath()
       context.moveTo start.x, start.y
