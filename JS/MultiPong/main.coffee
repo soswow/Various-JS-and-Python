@@ -89,9 +89,28 @@ class Ball
   randomInit: ->
     @pos = xy  DIAMETER/2, DIAMETER/2
     @angle = utils.randomInRange  0, 360
-    @speed = utils.randomInRange  SPEED_RANGE...
+    @acceleration = 2 #pixels per sec ** 2
+
+    @normalSpeed = utils.randomInRange  SPEED_RANGE...
+    @speed = @normalSpeed
+    @kickSpeed = @normalSpeed * 0.4
+    @maxSpeed = @normalSpeed * 4
 
   move: (time) ->
+    if @speed >= @maxSpeed
+      @acceleration = -2
+
+    if @speed < @normalSpeed and @acceleration < 0
+      @acceleration = -0.05
+
+    @speed += @acceleration * (time * 1000)
+
+    $("#info").html """
+      max sp: #{@maxSpeed}<br/>
+      nor sp: #{@normalSpeed}<br/>
+      speed : #{@speed}<br/>
+      accel : #{@acceleration}
+      """
     newPos = @findNextPoint  time
 
     oldAngle = @angle
@@ -100,6 +119,9 @@ class Ball
     unless intPoint
       @pos = newPos
     else
+      @speed += utils.randomGauss  @kickSpeed, 30
+      @acceleration = -1
+
       @pos = @findNextPoint  time
       isInside = @isPointInside()
 
@@ -244,16 +266,16 @@ class Canvas
       context.fill()
       context.fillStyle = 'black'
 
-      if @prevPosArr
-        for prevPos, i in @prevPosArr
-          if i > 0
-            context.moveTo prevPos.x, prevPos.y
-            context.lineTo @prevPosArr[i-1].x, @prevPosArr[i-1].y
-            context.stroke()
-      else
-        @prevPosArr = []
-      @prevPosArr.shift() if @prevPosArr.length > 30
-      @prevPosArr.push @pos
+#      if @prevPosArr
+#        for prevPos, i in @prevPosArr
+#          if i > 0
+#            context.moveTo prevPos.x, prevPos.y
+#            context.lineTo @prevPosArr[i-1].x, @prevPosArr[i-1].y
+#            context.stroke()
+#      else
+#        @prevPosArr = []
+#      @prevPosArr.shift() if @prevPosArr.length > 30
+#      @prevPosArr.push @pos
 
   repaint: ->
     @clearAll()

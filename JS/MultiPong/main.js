@@ -134,17 +134,29 @@
     Ball.prototype.randomInit = function() {
       this.pos = xy(DIAMETER / 2, DIAMETER / 2);
       this.angle = utils.randomInRange(0, 360);
-      return this.speed = utils.randomInRange.apply(utils, SPEED_RANGE);
+      this.acceleration = 2;
+      this.normalSpeed = utils.randomInRange.apply(utils, SPEED_RANGE);
+      this.speed = this.normalSpeed;
+      this.kickSpeed = this.normalSpeed * 0.4;
+      return this.maxSpeed = this.normalSpeed * 4;
     };
 
     Ball.prototype.move = function(time) {
       var intPoint, isInside, k, newPos, oldAngle, _ref;
+      if (this.speed >= this.maxSpeed) this.acceleration = -2;
+      if (this.speed < this.normalSpeed && this.acceleration < 0) {
+        this.acceleration = -0.05;
+      }
+      this.speed += this.acceleration * (time * 1000);
+      $("#info").html("max sp: " + this.maxSpeed + "<br/>\nnor sp: " + this.normalSpeed + "<br/>\nspeed : " + this.speed + "<br/>\naccel : " + this.acceleration);
       newPos = this.findNextPoint(time);
       oldAngle = this.angle;
       _ref = this.findIntersectionPoint(newPos), intPoint = _ref[0], this.angle = _ref[1];
       if (!intPoint) {
         this.pos = newPos;
       } else {
+        this.speed += utils.randomGauss(this.kickSpeed, 30);
+        this.acceleration = -1;
         this.pos = this.findNextPoint(time);
         isInside = this.isPointInside();
         k = 0;
@@ -361,7 +373,7 @@
         return context.lineWidth = 1;
       };
       return Ball.prototype.draw = function() {
-        var i, prevPos, x, y, _len, _ref2, _ref3;
+        var x, y, _ref2;
         context.fillStyle = 'red';
         context.beginPath();
         _ref2 = [this.pos.x, this.pos.y], x = _ref2[0], y = _ref2[1];
@@ -369,22 +381,7 @@
         context.arc(x, y, BALL_SIZE, 0, TWOPI, true);
         context.closePath();
         context.fill();
-        context.fillStyle = 'black';
-        if (this.prevPosArr) {
-          _ref3 = this.prevPosArr;
-          for (i = 0, _len = _ref3.length; i < _len; i++) {
-            prevPos = _ref3[i];
-            if (i > 0) {
-              context.moveTo(prevPos.x, prevPos.y);
-              context.lineTo(this.prevPosArr[i - 1].x, this.prevPosArr[i - 1].y);
-              context.stroke();
-            }
-          }
-        } else {
-          this.prevPosArr = [];
-        }
-        if (this.prevPosArr.length > 30) this.prevPosArr.shift();
-        return this.prevPosArr.push(this.pos);
+        return context.fillStyle = 'black';
       };
     };
 
