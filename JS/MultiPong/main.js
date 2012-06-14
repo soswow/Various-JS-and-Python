@@ -273,11 +273,10 @@
     };
 
     Player.prototype.updateSegment = function() {
-      var centerPx, halfSize, segmentEnd, segmentStart;
-      centerPx = this.centerPos * this.sideLength;
-      halfSize = this.size / 2;
-      segmentStart = (centerPx - halfSize) / this.sideLength;
-      segmentEnd = (centerPx + halfSize) / this.sideLength;
+      var centerPx, segmentEnd, segmentStart;
+      centerPx = this.centerPos * (this.sideLength - this.size);
+      segmentStart = centerPx / this.sideLength;
+      segmentEnd = (centerPx + this.size) / this.sideLength;
       return this.segment = seg(segmentStart, segmentEnd);
     };
 

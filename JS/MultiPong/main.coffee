@@ -197,10 +197,9 @@ class Player
     @centerPos = 0 if @centerPos < 0
 
   updateSegment: ->
-    centerPx = @centerPos * @sideLength
-    halfSize = @size / 2
-    segmentStart = (centerPx - halfSize) / @sideLength
-    segmentEnd = (centerPx + halfSize) / @sideLength
+    centerPx = @centerPos * (@sideLength - @size)
+    segmentStart = centerPx / @sideLength
+    segmentEnd = (centerPx+@size) / @sideLength
     @segment = seg  segmentStart, segmentEnd
 
 
