@@ -31,7 +31,7 @@ class Game
     console.log "constructor"
     @state = new State()
     @canvas = new Canvas(this)
-    @state.addPlayer  new Player("somename", @state)
+#    @state.addPlayer  new Player("somename", @state)
     @initHandlers()
     @canvas.repaint()
 
@@ -86,6 +86,17 @@ class Canvas
       context.fill()
       context.fillStyle = 'black'
 
+      if @prevPosArr
+        for prevPos, i in @prevPosArr
+          if i > 0
+            context.moveTo prevPos.x, prevPos.y
+            context.lineTo @prevPosArr[i-1].x, @prevPosArr[i-1].y
+            context.stroke()
+      else
+        @prevPosArr = []
+      @prevPosArr.shift() if @prevPosArr.length > 30
+      @prevPosArr.push @pos
+
   repaint: ->
     @clearAll()
     @state.draw()
@@ -105,77 +116,61 @@ class Ball
     @speed = utils.randomInRange  SPEED_RANGE...
 #    console.log 'Ball setup', @pos, @angle, @speed
 
-  move: (time) ->
+  move: (time, noRandom=false) ->
     newPos = @findNextPoint  time
 
     oldAngle = @angle
-    intPoint = null
-    for wall in @state.arena.solidWalls
-      intPoint = utils.lineIntersections  @pos, newPos, wall...
-      if intPoint
-        anglBet = utils.radToDeg  utils.angleBetweenLines  @pos, newPos, wall...
-        @angle += anglBet * 2
-        @angle %= 360
-        break
+    [intPoint, @angle] = @findIntersectionPoint newPos
 
     unless intPoint
       @pos = newPos
 #      console.log "No problem, new pos: #{@pos.x} - #{@pos.y}"
     else
-      @pos = intPoint
+#      console.log "Intersection. #{@pos+""} -> #{newPos} (#{utils.distance(@pos,newPos)}) break in #{intPoint} (#{utils.distance(@pos,intPoint)})"
       @pos = @findNextPoint  time
-#      console.log "Intersection. New point pos: #{@pos.x} - #{@pos.y} angles #{oldAngle} -> #{@angle}"
-#      @move  time
+      isInside = @isPointInside()
 
-    isInside = _.all(
+      k = 0
+      loop
+        break if isInside or k++ > 100
+        @pos = intPoint
+        @angle = utils.randomInRange  0, 360
+        @pos = @findNextPoint  time
+        isInside = @isPointInside()
+
+    return @isPointInside()
+
+  isPointInside: (point=@pos) ->
+    _.all(
       for wall in @state.arena.areaWalls
-        [x0,y0,x1,y1,x,y] = utils.unfoldPoints  wall[0], wall[1], @pos
-        (y - y0) * (x1 - x0) - (x - x0) * (y1 - y0) < 0
+        [x0,y0,x1,y1,x,y] = utils.unfoldPoints  wall[0], wall[1], point
+        (y - y0) * (x1 - x0) - (x - x0) * (y1 - y0) <= 0
       , _.identity)
-    return intPoint or isInside
 
-  findNextPoint: (time) ->
-    distance = @speed * time
-    radians = utils.degToRad(@angle)
-    deltaY = Math.sin(radians) * distance
-    deltaX = Math.cos(radians) * distance
-    x = @pos.x + deltaX
-    y = @pos.y - deltaY
-    return xy x, y
+  findIntersectionPoint: (nextPoint) ->
+    intPoint = null
+    newAngle = @angle
+    for wall in @state.arena.solidWalls
+      intPoint = utils.lineIntersections  @pos, nextPoint, wall...
+      if intPoint
+        anglBet = utils.radToDeg  utils.angleBetweenLines  @pos, nextPoint, wall...
+        anglBet = utils.mod  anglBet, 360
+        newAngle += anglBet * 2
+#        unless noRandom
+        randomness = utils.randomGauss 0, anglBet * 0.1
+#        console.log anglBet, anglBet * 0.1, randomness
+        newAngle += randomness
 
-
-class State
-  constructor: ->
-    @ball = new Ball(this)
-    @players = (null for i in [1..SIDES])
-    @arena = new Arena(RADIUS, this)
-#    @prevBalls = []
-
-  addPlayer: (newPlayer) ->
-    #Find slot in array and put into first free
-    #Assign it's side accordint to slot
-    newIndex = @players.length #push new one if not found slot
-    for player, i in @players
-      unless player
-        newIndex = i
+        newAngle = utils.mod  newAngle, 360
         break
+    return [intPoint, newAngle]
 
-    newPlayer.side = newIndex
-    @players[i] = newPlayer
-    @arena.updateSolidWalls()
 
-    return newPlayer
+  findNextPoint: (time, angle=@angle, pos=@pos) ->
+    utils.radialMove pos, @speed * time, angle
 
-  update: (timeleft, clientX) ->
-    if clientX
-      @players[0].move  clientX
-      @arena.updateSolidWalls()
-    if timeleft
-#      @prevBalls.push  new Ball(@ball.pos, @ball.angle, @ball.speed)
-#      if @prevBalls.length > 15
-#        @prevBalls.shift()
-      unless @ball.move  timeleft
-        game.state.ball.randomInit()
+
+
 
 
 class Player

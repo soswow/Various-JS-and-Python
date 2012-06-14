@@ -78,7 +78,7 @@
       _ref = this.unfoldPoints(p1, p2, p3, p4), x1 = _ref[0], y1 = _ref[1], x2 = _ref[2], y2 = _ref[3], x3 = _ref[4], y3 = _ref[5], x4 = _ref[6], y4 = _ref[7];
       angle1 = Math.atan2(y1 - y2, x1 - x2);
       angle2 = Math.atan2(y3 - y4, x3 - x4);
-      return (angle1 - angle2) % 360;
+      return angle1 - angle2;
     };
 
     Utils.prototype.lineIntersections = function(p1, p2, p3, p4) {
@@ -113,6 +113,10 @@
       deltaY = Math.sin(radians) * distance;
       deltaX = Math.cos(radians) * distance;
       return this.xy(start.x + deltaX, start.y - deltaY);
+    };
+
+    Utils.prototype.mod = function(a, b) {
+      return a % b + (a < 0 ? b : 0);
     };
 
     return Utils;
