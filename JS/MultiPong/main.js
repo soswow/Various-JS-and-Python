@@ -1,5 +1,5 @@
 (function() {
-  var Arena, BALL_SIZE, Ball, Canvas, DIAMETER, FPS, Game, HALF_WALL_THICK, INIT_PLAYER_SIZE_PORTION, Player, RADIUS, SIDES, SPEED_RANGE, Segment, TWOPI, WALL_THICK, game, seg, xy,
+  var Arena, BALL_SIZE, Ball, Canvas, DIAMETER, FPS, Game, HALF_WALL_THICK, INIT_PLAYER_SIZE_PORTION, Player, RADIUS, SIDES, SPEED_RANGE, Segment, State, TWOPI, WALL_THICK, game, seg, xy,
     __slice = Array.prototype.slice;
 
   DIAMETER = 500;
@@ -41,7 +41,6 @@
   Game = (function() {
 
     function Game() {
-      console.log("constructor");
       this.state = new State();
       this.canvas = new Canvas(this);
       this.initHandlers();
@@ -75,76 +74,50 @@
 
   })();
 
-  Canvas = (function() {
+  State = (function() {
 
-    function Canvas(game) {
-      this.state = game.state;
-      this.prepare();
+    function State() {
+      var i;
+      this.ball = new Ball(this);
+      this.players = (function() {
+        var _results;
+        _results = [];
+        for (i = 1; 1 <= SIDES ? i <= SIDES : i >= SIDES; 1 <= SIDES ? i++ : i--) {
+          _results.push(null);
+        }
+        return _results;
+      })();
+      this.arena = new Arena(RADIUS, this);
     }
 
-    Canvas.prototype.prepare = function() {
-      var context, thickness, _ref;
-      this.el = $('#canvas');
-      this.el.attr('width', DIAMETER);
-      this.el.attr('height', DIAMETER);
-      context = this.context = (_ref = this.el[0]) != null ? typeof _ref.getContext === "function" ? _ref.getContext('2d') : void 0 : void 0;
-      thickness = WALL_THICK;
-      State.prototype.draw = function() {
-        this.arena.draw();
-        return this.ball.draw();
-      };
-      Arena.prototype.draw = function() {
-        var end, i, start, _len, _ref2, _ref3;
-        _ref2 = this.solidWalls;
-        for (i = 0, _len = _ref2.length; i < _len; i++) {
-          _ref3 = _ref2[i], start = _ref3[0], end = _ref3[1];
-          context.lineWidth = thickness;
-          context.beginPath();
-          context.moveTo(start.x, start.y);
-          context.lineTo(end.x, end.y);
-          context.closePath();
-          context.stroke();
+    State.prototype.addPlayer = function(newPlayer) {
+      var i, newIndex, player, _len, _ref;
+      newIndex = this.players.length;
+      _ref = this.players;
+      for (i = 0, _len = _ref.length; i < _len; i++) {
+        player = _ref[i];
+        if (!player) {
+          newIndex = i;
+          break;
         }
-        return context.lineWidth = 1;
-      };
-      return Ball.prototype.draw = function() {
-        var i, prevPos, x, y, _len, _ref2, _ref3;
-        context.fillStyle = 'red';
-        context.beginPath();
-        _ref2 = [this.pos.x, this.pos.y], x = _ref2[0], y = _ref2[1];
-        context.moveTo(x, y);
-        context.arc(x, y, BALL_SIZE, 0, TWOPI, true);
-        context.closePath();
-        context.fill();
-        context.fillStyle = 'black';
-        if (this.prevPosArr) {
-          _ref3 = this.prevPosArr;
-          for (i = 0, _len = _ref3.length; i < _len; i++) {
-            prevPos = _ref3[i];
-            if (i > 0) {
-              context.moveTo(prevPos.x, prevPos.y);
-              context.lineTo(this.prevPosArr[i - 1].x, this.prevPosArr[i - 1].y);
-              context.stroke();
-            }
-          }
-        } else {
-          this.prevPosArr = [];
-        }
-        if (this.prevPosArr.length > 30) this.prevPosArr.shift();
-        return this.prevPosArr.push(this.pos);
-      };
+      }
+      newPlayer.side = newIndex;
+      this.players[i] = newPlayer;
+      this.arena.updateSolidWalls();
+      return newPlayer;
     };
 
-    Canvas.prototype.repaint = function() {
-      this.clearAll();
-      return this.state.draw();
+    State.prototype.update = function(timeleft, clientX) {
+      if (clientX && this.players[0]) {
+        this.players[0].move(clientX);
+        this.arena.updateSolidWalls();
+      }
+      if (timeleft) {
+        if (!this.ball.move(timeleft)) return game.state.ball.randomInit();
+      }
     };
 
-    Canvas.prototype.clearAll = function() {
-      return this.el.attr('width', DIAMETER);
-    };
-
-    return Canvas;
+    return State;
 
   })();
 
@@ -164,9 +137,8 @@
       return this.speed = utils.randomInRange.apply(utils, SPEED_RANGE);
     };
 
-    Ball.prototype.move = function(time, noRandom) {
+    Ball.prototype.move = function(time) {
       var intPoint, isInside, k, newPos, oldAngle, _ref;
-      if (noRandom == null) noRandom = false;
       newPos = this.findNextPoint(time);
       oldAngle = this.angle;
       _ref = this.findIntersectionPoint(newPos), intPoint = _ref[0], this.angle = _ref[1];
@@ -188,16 +160,20 @@
     };
 
     Ball.prototype.isPointInside = function(point) {
-      var wall, x, x0, x1, y, y0, y1;
+      var pointOnTheLeftOfLine, wall;
       if (point == null) point = this.pos;
+      pointOnTheLeftOfLine = function(line) {
+        var x, x0, x1, y, y0, y1, _ref;
+        _ref = utils.unfoldPoints(line[0], line[1], point), x0 = _ref[0], y0 = _ref[1], x1 = _ref[2], y1 = _ref[3], x = _ref[4], y = _ref[5];
+        return (y - y0) * (x1 - x0) - (x - x0) * (y1 - y0) <= 0;
+      };
       return _.all((function() {
-        var _i, _len, _ref, _ref2, _results;
+        var _i, _len, _ref, _results;
         _ref = this.state.arena.areaWalls;
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           wall = _ref[_i];
-          _ref2 = utils.unfoldPoints(wall[0], wall[1], point), x0 = _ref2[0], y0 = _ref2[1], x1 = _ref2[2], y1 = _ref2[3], x = _ref2[4], y = _ref2[5];
-          _results.push((y - y0) * (x1 - x0) - (x - x0) * (y1 - y0) <= 0);
+          _results.push(pointOnTheLeftOfLine(wall));
         }
         return _results;
       }).call(this), _.identity);
@@ -213,11 +189,9 @@
         intPoint = utils.lineIntersections.apply(utils, [this.pos, nextPoint].concat(__slice.call(wall)));
         if (intPoint) {
           anglBet = utils.radToDeg(utils.angleBetweenLines.apply(utils, [this.pos, nextPoint].concat(__slice.call(wall))));
-          anglBet = utils.mod(anglBet, 360);
           newAngle += anglBet * 2;
           randomness = utils.randomGauss(0, anglBet * 0.1);
           newAngle += randomness;
-          newAngle = utils.mod(newAngle, 360);
           break;
         }
       }
@@ -351,6 +325,79 @@
     };
 
     return Arena;
+
+  })();
+
+  Canvas = (function() {
+
+    function Canvas(game) {
+      this.state = game.state;
+      this.prepare();
+    }
+
+    Canvas.prototype.prepare = function() {
+      var context, thickness, _ref;
+      this.el = $('#canvas');
+      this.el.attr('width', DIAMETER);
+      this.el.attr('height', DIAMETER);
+      context = this.context = (_ref = this.el[0]) != null ? typeof _ref.getContext === "function" ? _ref.getContext('2d') : void 0 : void 0;
+      thickness = WALL_THICK;
+      State.prototype.draw = function() {
+        this.arena.draw();
+        return this.ball.draw();
+      };
+      Arena.prototype.draw = function() {
+        var end, i, start, _len, _ref2, _ref3;
+        _ref2 = this.solidWalls;
+        for (i = 0, _len = _ref2.length; i < _len; i++) {
+          _ref3 = _ref2[i], start = _ref3[0], end = _ref3[1];
+          context.lineWidth = thickness;
+          context.beginPath();
+          context.moveTo(start.x, start.y);
+          context.lineTo(end.x, end.y);
+          context.closePath();
+          context.stroke();
+        }
+        return context.lineWidth = 1;
+      };
+      return Ball.prototype.draw = function() {
+        var i, prevPos, x, y, _len, _ref2, _ref3;
+        context.fillStyle = 'red';
+        context.beginPath();
+        _ref2 = [this.pos.x, this.pos.y], x = _ref2[0], y = _ref2[1];
+        context.moveTo(x, y);
+        context.arc(x, y, BALL_SIZE, 0, TWOPI, true);
+        context.closePath();
+        context.fill();
+        context.fillStyle = 'black';
+        if (this.prevPosArr) {
+          _ref3 = this.prevPosArr;
+          for (i = 0, _len = _ref3.length; i < _len; i++) {
+            prevPos = _ref3[i];
+            if (i > 0) {
+              context.moveTo(prevPos.x, prevPos.y);
+              context.lineTo(this.prevPosArr[i - 1].x, this.prevPosArr[i - 1].y);
+              context.stroke();
+            }
+          }
+        } else {
+          this.prevPosArr = [];
+        }
+        if (this.prevPosArr.length > 30) this.prevPosArr.shift();
+        return this.prevPosArr.push(this.pos);
+      };
+    };
+
+    Canvas.prototype.repaint = function() {
+      this.clearAll();
+      return this.state.draw();
+    };
+
+    Canvas.prototype.clearAll = function() {
+      return this.el.attr('width', DIAMETER);
+    };
+
+    return Canvas;
 
   })();
 

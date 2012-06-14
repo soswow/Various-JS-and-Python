@@ -26,9 +26,9 @@ $ ->
       @innerHTML = 'Start'
 
 
+
 class Game
   constructor: ->
-    console.log "constructor"
     @state = new State()
     @canvas = new Canvas(this)
 #    @state.addPlayer  new Player("somename", @state)
@@ -50,59 +50,35 @@ class Game
     clearRequestInterval @reqInterval
 
 
-class Canvas
-  constructor: (game) ->
-    @state = game.state
-    @prepare()
+class State
+  constructor: ->
+    @ball = new Ball(this)
+    @players = (null for i in [1..SIDES])
+    @arena = new Arena(RADIUS, this)
 
-  prepare: ->
-    @el = $('#canvas')
-    @el.attr 'width', DIAMETER
-    @el.attr 'height', DIAMETER
-    context = @context = @el[0]?.getContext? '2d'
+  addPlayer: (newPlayer) ->
+    #Find slot in array and put into first free
+    #Assign it's side accordint to slot
+    newIndex = @players.length #push new one if not found slot
+    for player, i in @players
+      unless player
+        newIndex = i
+        break
 
-    thickness = WALL_THICK
-    State::draw = ->
-      @arena.draw()
-      @ball.draw()
+    newPlayer.side = newIndex
+    @players[i] = newPlayer
+    @arena.updateSolidWalls()
 
-    Arena::draw = ->
-      for [start, end], i in @solidWalls
-        context.lineWidth = thickness
-        context.beginPath()
-        context.moveTo start.x, start.y
-        context.lineTo end.x, end.y
-        context.closePath()
-        context.stroke()
-      context.lineWidth = 1
+    return newPlayer
 
-    Ball::draw = ->
-      context.fillStyle = 'red'
-      context.beginPath()
-      [x,y] = [@pos.x, @pos.y]
-      context.moveTo x, y
-      context.arc x, y, BALL_SIZE, 0, TWOPI, true
-      context.closePath()
-      context.fill()
-      context.fillStyle = 'black'
+  update: (timeleft, clientX) ->
+    if clientX and @players[0]
+      @players[0].move  clientX
+      @arena.updateSolidWalls()
 
-      if @prevPosArr
-        for prevPos, i in @prevPosArr
-          if i > 0
-            context.moveTo prevPos.x, prevPos.y
-            context.lineTo @prevPosArr[i-1].x, @prevPosArr[i-1].y
-            context.stroke()
-      else
-        @prevPosArr = []
-      @prevPosArr.shift() if @prevPosArr.length > 30
-      @prevPosArr.push @pos
-
-  repaint: ->
-    @clearAll()
-    @state.draw()
-
-  clearAll: ->
-    @el.attr 'width', DIAMETER
+    if timeleft
+      unless @ball.move  timeleft
+        game.state.ball.randomInit()
 
 
 class Ball
@@ -114,9 +90,8 @@ class Ball
     @pos = xy  DIAMETER/2, DIAMETER/2
     @angle = utils.randomInRange  0, 360
     @speed = utils.randomInRange  SPEED_RANGE...
-#    console.log 'Ball setup', @pos, @angle, @speed
 
-  move: (time, noRandom=false) ->
+  move: (time) ->
     newPos = @findNextPoint  time
 
     oldAngle = @angle
@@ -124,9 +99,7 @@ class Ball
 
     unless intPoint
       @pos = newPos
-#      console.log "No problem, new pos: #{@pos.x} - #{@pos.y}"
     else
-#      console.log "Intersection. #{@pos+""} -> #{newPos} (#{utils.distance(@pos,newPos)}) break in #{intPoint} (#{utils.distance(@pos,intPoint)})"
       @pos = @findNextPoint  time
       isInside = @isPointInside()
 
@@ -141,10 +114,12 @@ class Ball
     return @isPointInside()
 
   isPointInside: (point=@pos) ->
+    pointOnTheLeftOfLine = (line) ->
+      [x0,y0,x1,y1,x,y] = utils.unfoldPoints  line[0], line[1], point
+      (y - y0) * (x1 - x0) - (x - x0) * (y1 - y0) <= 0
+
     _.all(
-      for wall in @state.arena.areaWalls
-        [x0,y0,x1,y1,x,y] = utils.unfoldPoints  wall[0], wall[1], point
-        (y - y0) * (x1 - x0) - (x - x0) * (y1 - y0) <= 0
+      pointOnTheLeftOfLine(wall) for wall in @state.arena.areaWalls
       , _.identity)
 
   findIntersectionPoint: (nextPoint) ->
@@ -154,23 +129,16 @@ class Ball
       intPoint = utils.lineIntersections  @pos, nextPoint, wall...
       if intPoint
         anglBet = utils.radToDeg  utils.angleBetweenLines  @pos, nextPoint, wall...
-        anglBet = utils.mod  anglBet, 360
         newAngle += anglBet * 2
-#        unless noRandom
-        randomness = utils.randomGauss 0, anglBet * 0.1
-#        console.log anglBet, anglBet * 0.1, randomness
+
+        randomness = utils.randomGauss  0, anglBet * 0.1
         newAngle += randomness
 
-        newAngle = utils.mod  newAngle, 360
         break
     return [intPoint, newAngle]
 
-
   findNextPoint: (time, angle=@angle, pos=@pos) ->
     utils.radialMove pos, @speed * time, angle
-
-
-
 
 
 class Player
@@ -194,7 +162,7 @@ class Player
   updateSegment: ->
     centerPx = @centerPos * (@sideLength - @size)
     segmentStart = centerPx / @sideLength
-    segmentEnd = (centerPx+@size) / @sideLength
+    segmentEnd = (centerPx + @size) / @sideLength
     @segment = seg  segmentStart, segmentEnd
 
 
@@ -237,6 +205,62 @@ class Arena
       for sideIndex in [0..sidesNum-1]
         angle += sectorAngle
         utils.radialMove  center, @radius, angle
+
+
+class Canvas
+  constructor: (game) ->
+    @state = game.state
+    @prepare()
+
+  prepare: ->
+    @el = $('#canvas')
+    @el.attr 'width', DIAMETER
+    @el.attr 'height', DIAMETER
+    context = @context = @el[0]?.getContext? '2d'
+
+    thickness = WALL_THICK
+
+    State::draw = ->
+      @arena.draw()
+      @ball.draw()
+
+    Arena::draw = ->
+      for [start, end], i in @solidWalls
+        context.lineWidth = thickness
+        context.beginPath()
+        context.moveTo start.x, start.y
+        context.lineTo end.x, end.y
+        context.closePath()
+        context.stroke()
+      context.lineWidth = 1
+
+    Ball::draw = ->
+      context.fillStyle = 'red'
+      context.beginPath()
+      [x,y] = [@pos.x, @pos.y]
+      context.moveTo x, y
+      context.arc x, y, BALL_SIZE, 0, TWOPI, true
+      context.closePath()
+      context.fill()
+      context.fillStyle = 'black'
+
+      if @prevPosArr
+        for prevPos, i in @prevPosArr
+          if i > 0
+            context.moveTo prevPos.x, prevPos.y
+            context.lineTo @prevPosArr[i-1].x, @prevPosArr[i-1].y
+            context.stroke()
+      else
+        @prevPosArr = []
+      @prevPosArr.shift() if @prevPosArr.length > 30
+      @prevPosArr.push @pos
+
+  repaint: ->
+    @clearAll()
+    @state.draw()
+
+  clearAll: ->
+    @el.attr 'width', DIAMETER
 
 
 #TODO Better name is range
