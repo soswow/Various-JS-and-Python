@@ -8,7 +8,7 @@
 
   WALL_THICK = 5;
 
-  INIT_PLAYER_SIZE_PORTION = 0.2;
+  INIT_PLAYER_SIZE_PORTION = 0.3;
 
   HALF_WALL_THICK = WALL_THICK / 2;
 
@@ -43,6 +43,7 @@
     function Game() {
       this.state = new State();
       this.canvas = new Canvas(this);
+      this.state.addPlayer(new Player("somename", this.state));
       this.initHandlers();
       this.canvas.repaint();
     }

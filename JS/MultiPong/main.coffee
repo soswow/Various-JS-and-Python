@@ -3,7 +3,7 @@ DIAMETER = 500
 RADIUS = DIAMETER / 2
 
 WALL_THICK = 5
-INIT_PLAYER_SIZE_PORTION = 0.2 #percent
+INIT_PLAYER_SIZE_PORTION = 0.3 #percent
 HALF_WALL_THICK = WALL_THICK / 2
 BALL_SIZE = 10 #diameter
 SPEED_RANGE = [400, 600]
@@ -31,7 +31,7 @@ class Game
   constructor: ->
     @state = new State()
     @canvas = new Canvas(this)
-#    @state.addPlayer  new Player("somename", @state)
+    @state.addPlayer  new Player("somename", @state)
     @initHandlers()
     @canvas.repaint()
 
