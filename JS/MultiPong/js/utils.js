@@ -1,6 +1,8 @@
 (function() {
-  var Point, TWOPI, Utils, cos, exp, log, pi, pow, random, sin, sqrt,
+  var Point, TWOPI, Utils, cos, exp, log, pi, pow, random, sin, sqrt, _,
     __slice = Array.prototype.slice;
+
+  _ = require('underscore')._;
 
   random = Math.random;
 
@@ -123,7 +125,9 @@
 
   })();
 
-  if (typeof exports === "undefined" || exports === null) exports = window;
+  if (typeof exports === "undefined" || exports === null) {
+    exports = typeof window !== "undefined" && window !== null ? window : {};
+  }
 
   exports.utils = new Utils();
 

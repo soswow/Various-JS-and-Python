@@ -1,3 +1,4 @@
+_ = require('underscore')._
 #Math function extraction
 random = Math.random
 pow = Math.pow
@@ -65,7 +66,7 @@ class Utils
 
   mod: (a, b) -> a % b + (if a < 0 then b else 0)
 
-exports ?= window
+exports ?= window ? {}
 exports.utils = new Utils()
 
 

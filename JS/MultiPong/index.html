@@ -14,7 +14,7 @@
       /*width: 600px;*/
       /*height: 600px;*/
     }
-    .buttons{
+    #name{
       text-align: center;
     }
     #info{
@@ -25,17 +25,14 @@
     }
   </style>
 
-  <script type="text/javascript" src="libs/underscore.js"></script>
   <script type="text/javascript" src="libs/iquip.min.js"></script>
   <script type="text/javascript" src="libs/requestAnimFrame.js"></script>
-  <script type="text/javascript" src="js/utils.js"></script>
+  <script type="text/javascript" src="node_modules/socket.io/node_modules/socket.io-client/dist/socket.io.js"></script>
   <script type="text/javascript" src="js/main.js"></script>
 </head>
 <body>
 <span id="info"></span>
 <canvas id="canvas"></canvas>
-<div class="buttons">
-  <button id="button">Start</button>
-</div>
+<div id="name"></div>
 </body>
 </html>
