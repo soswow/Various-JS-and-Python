@@ -1,5 +1,6 @@
 io = require  'socket.io'
 express = require  'express'
+
 _ = require('underscore')._
 utils = require('./utils').utils
 xy = utils.xy
@@ -37,16 +38,18 @@ class Game
 
       socket.on  'addNewUser', (name, cb) ->
         console.log  "User with ID:#{ID} got name -> #{name}"
-        socket.set  'name', name, -> cb("#{name} (#{ID})")
-        new Player(name, ID, state)
+        player = new Player(name, ID, state)
+        socket.set  'name', name, -> cb name:"#{name} (#{ID})", side:player.side
 
       socket.on  'userMoves', (clientX) =>
-        state.update  0, clientX
+        state.update 0, clientX, ID
 
-      socket.on  'disconnect', ->
+      disconnectUser = ->
         socket.get  'name', (err, name) ->
           state.removePlayer ID
           console.log "#{name} (#{ID}) disconnected"
+      socket.on  'disconnect', disconnectUser
+      socket.on  'user disconnect', disconnectUser
 
   updateAndSend: (timeLeft, clientX) ->
     @state.update timeLeft / 1000, clientX
@@ -88,19 +91,21 @@ class State
     delete @playersIdMap[id]
     @arena.updateSolidWalls()
 
-  update: (timeleft, clientX) ->
-    if clientX and @players[0]
-      @players[0].move  clientX
+  update: (timeleft, clientX, ID) ->
+    player = @players[@playersIdMap[ID]]
+    if clientX and player
+      player.move  clientX
       @arena.updateSolidWalls()
 
     if timeleft
       unless @ball.move  timeleft
         game.state.ball.randomInit()
 
-  serialize: ->
+  serialize: (perspectivePlayerId) ->
     ball: @ball?.serialize()
     arena: @arena?.serialize()
     players: _.map(@players, (p) -> p?.serialize())
+
 
 class Ball
   constructor: (@state, @pos, @angle, @speed) ->
@@ -211,6 +216,7 @@ class Player
     id: @id
     name: @name
     size: @size
+    side: @side
 
 
 class Arena

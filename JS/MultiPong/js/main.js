@@ -1,41 +1,62 @@
 (function() {
-  var Canvas, Game, TWOPI, game, socket;
+  var Canvas, Game, TWOPI, game, socket, xy;
 
   TWOPI = Math.PI * 2;
 
   game = null;
 
-  socket = io.connect('http://localhost:8080');
+  socket = io.connect('http://192.168.2.103:8080');
+
+  xy = utils.xy;
 
   $(function() {
-    return game = new Game();
+    var joinObj, nameObj, quiteObj;
+    game = new Game();
+    joinObj = $("#join");
+    quiteObj = $("#quite");
+    nameObj = $("#name");
+    joinObj.bind("click", function() {
+      var name,
+        _this = this;
+      name = prompt("Specify your name or leave blank to not participate.");
+      if (name) {
+        socket.emit('addNewUser', name, function(_arg) {
+          var name, side;
+          name = _arg.name, side = _arg.side;
+          nameObj.text("" + name + " side=" + side);
+          game.name = name;
+          return game.side = side;
+        });
+        game.canvas.el.bind("mousemove", function(e) {
+          return socket.emit('userMoves', e.offsetX);
+        });
+      }
+      $(this).attr('disabled', 'disable');
+      return quiteObj.removeAttr('disabled');
+    });
+    return quiteObj.bind('click', function() {
+      socket.emit('user disconnect');
+      $(this).attr('disabled', 'disable');
+      joinObj.removeAttr('disabled');
+      return nameObj.text("");
+    });
   });
 
   Game = (function() {
 
     function Game() {
       var _this = this;
+      this.side = 0;
       socket.on('connect', function() {
-        console.log('connection event');
         socket.on('constants', function(_const) {
-          var key, name, value, _ref;
+          var key, value, _ref;
           _this["const"] = _const;
-          console.log('constants event');
           _ref = _this["const"];
           for (key in _ref) {
             value = _ref[key];
             Game[key] = value;
           }
-          _this.canvas = new Canvas(_this);
-          name = prompt("Specify your name or leave blank to not participate.");
-          if (name) {
-            socket.emit('addNewUser', name, function(name) {
-              return $("#name").text(name);
-            });
-            return _this.canvas.el.bind("mousemove", function(e) {
-              return socket.emit('userMoves', e.offsetX);
-            });
-          }
+          return _this.canvas = new Canvas(_this);
         });
         return socket.on('stateUpdate', function(state) {
           _this.state = state;
@@ -51,9 +72,22 @@
   Canvas = (function() {
 
     function Canvas(game) {
+      var done;
       this.game = game;
       this.prepare();
+      done = false;
     }
+
+    Canvas.prototype.rotate = function(point) {
+      var angle, centerPoint, ownSide, radius, segmentAngle, totalSides;
+      ownSide = this.game.side;
+      totalSides = this.game.state.players.length;
+      radius = Game.DIAMETER / 2;
+      centerPoint = xy(radius, radius);
+      segmentAngle = 360 / totalSides;
+      angle = -1 * ownSide * segmentAngle;
+      return utils.radialOriginMove(centerPoint, point, angle, this.done);
+    };
 
     Canvas.prototype.prepare = function() {
       var _ref;
@@ -86,6 +120,8 @@
       _ref = this.state.arena.solidWalls;
       for (i = 0, _len = _ref.length; i < _len; i++) {
         _ref2 = _ref[i], start = _ref2[0], end = _ref2[1];
+        start = this.rotate(start);
+        end = this.rotate(end);
         this.context.lineWidth = Game.WALL_THICK;
         this.context.beginPath();
         this.context.moveTo(start.x, start.y);
@@ -93,14 +129,16 @@
         this.context.closePath();
         this.context.stroke();
       }
+      this.done = true;
       return this.context.lineWidth = 1;
     };
 
     Canvas.prototype.drawBall = function() {
-      var x, y, _ref;
+      var pos, x, y, _ref;
       this.context.fillStyle = 'red';
       this.context.beginPath();
-      _ref = [this.state.ball.pos.x, this.state.ball.pos.y], x = _ref[0], y = _ref[1];
+      pos = this.rotate(this.state.ball.pos);
+      _ref = [pos.x, pos.y], x = _ref[0], y = _ref[1];
       this.context.moveTo(x, y);
       this.context.arc(x, y, Game.BALL_SIZE, 0, TWOPI, true);
       this.context.closePath();

@@ -25,13 +25,18 @@
     }
   </style>
 
-  <script type="text/javascript" src="libs/iquip.min.js"></script>
+  <script type="text/javascript" src="libs/underscore.js"></script>
+  <script type="text/javascript" src="libs/jquip.min.js"></script>
   <script type="text/javascript" src="libs/requestAnimFrame.js"></script>
   <script type="text/javascript" src="node_modules/socket.io/node_modules/socket.io-client/dist/socket.io.js"></script>
+  <script type="text/javascript" src="js/utils.js"></script>
   <script type="text/javascript" src="js/main.js"></script>
 </head>
 <body>
-<span id="info"></span>
+<span id="info">
+  <button id="join">Join the fun</button><br/>
+  <button id="quite" disabled>Quite the fun</button>
+</span>
 <canvas id="canvas"></canvas>
 <div id="name"></div>
 </body>

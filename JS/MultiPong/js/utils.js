@@ -1,8 +1,8 @@
 (function() {
-  var Point, TWOPI, Utils, cos, exp, log, pi, pow, random, sin, sqrt, _,
+  var Point, TWOPI, Utils, cos, exp, log, pi, pow, random, sin, sqrt,
     __slice = Array.prototype.slice;
 
-  _ = require('underscore')._;
+  if (typeof _ === "undefined" || _ === null) _ = require('underscore')._;
 
   random = Math.random;
 
@@ -107,6 +107,17 @@
 
     Utils.prototype.xy = function(x, y) {
       return new Point(x, y);
+    };
+
+    Utils.prototype.radialOriginMove = function(origin, point, deltaAngle, print) {
+      var alpha, beta, r, xAxis;
+      xAxis = origin;
+      alpha = this.radToDeg(this.angleBetweenLines(point, origin, origin, xAxis));
+      alpha = 360 - alpha;
+      r = this.distance(origin, point);
+      beta = alpha + deltaAngle;
+      if (!print) console.log(deltaAngle, alpha, beta);
+      return this.radialMove(origin, r, beta);
     };
 
     Utils.prototype.radialMove = function(start, distance, angle) {

@@ -1,4 +1,5 @@
-_ = require('underscore')._
+_ ?= require('underscore')._
+
 #Math function extraction
 random = Math.random
 pow = Math.pow
@@ -57,6 +58,19 @@ class Utils
   radToDeg: (rad) -> rad * (180 / Math.PI)
 
   xy: (x, y) -> new Point(x, y)
+
+  radialOriginMove: (origin, point, deltaAngle, print) ->
+    xAxis = origin
+#    xAxis.x += 1
+    alpha =  @radToDeg  @angleBetweenLines  point, origin, origin, xAxis
+    alpha = 360 - alpha
+#    if point.y > origin.y
+    r = @distance  origin, point #radius
+    beta = alpha + deltaAngle
+
+    unless print
+      console.log deltaAngle, alpha, beta
+    return @radialMove  origin, r, beta
 
   radialMove: (start, distance, angle) ->
     radians = @degToRad  angle

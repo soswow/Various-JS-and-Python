@@ -39,7 +39,7 @@
       this.state = state = new State();
       this.startMainLoop();
       io.sockets.on('connection', function(socket) {
-        var ID,
+        var ID, disconnectUser,
           _this = this;
         ID = Math.round(Math.random() * 10000000);
         console.log("Connection recieved. ID: " + ID);
@@ -50,21 +50,27 @@
           BALL_SIZE: BALL_SIZE
         });
         socket.on('addNewUser', function(name, cb) {
+          var player;
           console.log("User with ID:" + ID + " got name -> " + name);
-          socket.set('name', name, function() {
-            return cb("" + name + " (" + ID + ")");
+          player = new Player(name, ID, state);
+          return socket.set('name', name, function() {
+            return cb({
+              name: "" + name + " (" + ID + ")",
+              side: player.side
+            });
           });
-          return new Player(name, ID, state);
         });
         socket.on('userMoves', function(clientX) {
-          return state.update(0, clientX);
+          return state.update(0, clientX, ID);
         });
-        return socket.on('disconnect', function() {
+        disconnectUser = function() {
           return socket.get('name', function(err, name) {
             state.removePlayer(ID);
             return console.log("" + name + " (" + ID + ") disconnected");
           });
-        });
+        };
+        socket.on('disconnect', disconnectUser);
+        return socket.on('user disconnect', disconnectUser);
       });
     }
 
@@ -127,9 +133,11 @@
       return this.arena.updateSolidWalls();
     };
 
-    State.prototype.update = function(timeleft, clientX) {
-      if (clientX && this.players[0]) {
-        this.players[0].move(clientX);
+    State.prototype.update = function(timeleft, clientX, ID) {
+      var player;
+      player = this.players[this.playersIdMap[ID]];
+      if (clientX && player) {
+        player.move(clientX);
         this.arena.updateSolidWalls();
       }
       if (timeleft) {
@@ -137,7 +145,7 @@
       }
     };
 
-    State.prototype.serialize = function() {
+    State.prototype.serialize = function(perspectivePlayerId) {
       var _ref, _ref2;
       return {
         ball: (_ref = this.ball) != null ? _ref.serialize() : void 0,
@@ -296,7 +304,8 @@
       return {
         id: this.id,
         name: this.name,
-        size: this.size
+        size: this.size,
+        side: this.side
       };
     };
 
