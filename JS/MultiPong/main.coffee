@@ -44,20 +44,24 @@ class Game
       socket.on  'stateUpdate', (@state) =>
         @canvas.repaint() if @canvas
 
-      playingAudio = 0
-      soundsObj = $("#sounds")
-      audioObj = $("audio")
-      socket.on  'kick!', ->
-        if soundsObj.attr "checked"
-          if playingAudio + 1 > audioObj.length
-            playingAudio = 0
-          audioObj.get(playingAudio).play()
-          playingAudio += 1
+      @initSounds()
+
+  initSounds: ->
+    playingAudio = 0
+    soundsObj = $("#sounds")
+    audioObj = $("audio")
+    socket.on  'kick!', ->
+      if soundsObj.attr "checked"
+        if playingAudio + 1 > audioObj.length
+          playingAudio = 0
+        audioObj.get(playingAudio).play()
+        playingAudio += 1
 
 
 class Canvas
   constructor: (@game) ->
     @prepare()
+    @prevIsFinished = true
     done = false
 
   rotate: (point) ->
@@ -67,8 +71,7 @@ class Canvas
     centerPoint = xy  radius, radius
     segmentAngle = 360 / totalSides
     angle = -1 * ownSide * segmentAngle
-#    unless @done
-#      console.log  angle
+
     return utils.radialOriginMove  centerPoint, point, angle, @done
 
   prepare: ->
@@ -78,10 +81,13 @@ class Canvas
     @context = @el[0]?.getContext? '2d'
 
   repaint: ->
-    requestAnimFrame =>
-      @state = @game.state
-      @clearAll()
-      @drawState()
+    if @prevIsFinished
+      @prevIsFinished = false
+      requestAnimFrame =>
+        @state = @game.state
+        @clearAll()
+        @drawState()
+        @prevIsFinished = true
 
   clearAll: ->
     @el.attr 'width', Game.DIAMETER
@@ -106,7 +112,6 @@ class Canvas
   drawBall: ->
     @context.fillStyle = 'red'
     @context.beginPath()
-#    pos = @state.ball.pos
     pos = @rotate  @state.ball.pos
     [x,y] = [pos.x, pos.y]
     @context.moveTo x, y

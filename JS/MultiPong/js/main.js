@@ -48,7 +48,6 @@
       var _this = this;
       this.side = 0;
       socket.on('connect', function() {
-        var audioObj, playingAudio, soundsObj;
         socket.on('constants', function(_const) {
           var key, value, _ref;
           _this["const"] = _const;
@@ -63,18 +62,23 @@
           _this.state = state;
           if (_this.canvas) return _this.canvas.repaint();
         });
-        playingAudio = 0;
-        soundsObj = $("#sounds");
-        audioObj = $("audio");
-        return socket.on('kick!', function() {
-          if (soundsObj.attr("checked")) {
-            if (playingAudio + 1 > audioObj.length) playingAudio = 0;
-            audioObj.get(playingAudio).play();
-            return playingAudio += 1;
-          }
-        });
+        return _this.initSounds();
       });
     }
+
+    Game.prototype.initSounds = function() {
+      var audioObj, playingAudio, soundsObj;
+      playingAudio = 0;
+      soundsObj = $("#sounds");
+      audioObj = $("audio");
+      return socket.on('kick!', function() {
+        if (soundsObj.attr("checked")) {
+          if (playingAudio + 1 > audioObj.length) playingAudio = 0;
+          audioObj.get(playingAudio).play();
+          return playingAudio += 1;
+        }
+      });
+    };
 
     return Game;
 
@@ -86,6 +90,7 @@
       var done;
       this.game = game;
       this.prepare();
+      this.prevIsFinished = true;
       done = false;
     }
 
@@ -110,11 +115,15 @@
 
     Canvas.prototype.repaint = function() {
       var _this = this;
-      return requestAnimFrame(function() {
-        _this.state = _this.game.state;
-        _this.clearAll();
-        return _this.drawState();
-      });
+      if (this.prevIsFinished) {
+        this.prevIsFinished = false;
+        return requestAnimFrame(function() {
+          _this.state = _this.game.state;
+          _this.clearAll();
+          _this.drawState();
+          return _this.prevIsFinished = true;
+        });
+      }
     };
 
     Canvas.prototype.clearAll = function() {

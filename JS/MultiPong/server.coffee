@@ -48,6 +48,7 @@ class Game
         socket.get  'name', (err, name) ->
           state.removePlayer ID
           console.log "#{name} (#{ID}) disconnected"
+
       socket.on  'disconnect', disconnectUser
       socket.on  'user disconnect', disconnectUser
 
@@ -129,6 +130,9 @@ class Ball
     if @speed < @normalSpeed and @acceleration < 0
       @acceleration = -0.05
 
+    if @speed < SPEED_RANGE[0]
+      @acceleration = 0
+
     @speed += @acceleration * (time * 1000)
     newPos = @findNextPoint  time
 
@@ -183,9 +187,7 @@ class Ball
     utils.radialMove pos, @speed * time, angle
 
   serialize: ->
-    pos: @pos
-    speed: @speed
-    angle: @angle
+    pos: @pos.round()
 
 
 class Player
@@ -216,7 +218,6 @@ class Player
   serialize: ->
     id: @id
     name: @name
-    size: @size
     side: @side
 
 
@@ -261,8 +262,7 @@ class Arena
         utils.radialMove  center, @radius, angle
 
   serialize: ->
-    solidWalls: @solidWalls
-    areaWalls: @areaWalls
+    solidWalls: ([start.round(), end.round()] for [start, end] in @solidWalls)
 
 
 
@@ -273,13 +273,30 @@ class Segment
 
 seg = (vars...) -> new Segment(vars...)
 
-
-
 app = express.createServer()
 io = io.listen  app
 
-dir = __dirname.replace /\/js$/, ''
+io.configure  'production', ->
+  io.enable  'browser client etag'
+  io.set  'log level', 1
+  io.set  'transports', [
+    'xhr-polling'
+    'websocket'
+#    'flashsocket'
+    'htmlfile'
+    'jsonp-polling'
+  ]
+  io.set  "polling duration", 5
 
+io.configure  'development', ->
+  io.set  'transports', ['websocket', 'xhr-polling']
+
+
+port = process.env.PORT or 8080
+app.listen  port
+console.log  "Started listening on port #{port}"
+
+dir = __dirname.replace /\/js$/, ''
 app.get  '/', (req, res) ->
   console.log dir + '/index.html'
   res.sendfile  dir + '/index.html'
@@ -290,8 +307,4 @@ app.configure  ->
   app.use  "/libs", express.static  dir + '/libs'
   app.use  "/sounds", express.static  dir + '/sounds'
 
-app.listen  8080
-
 game = new Game()
-
-

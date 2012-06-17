@@ -14,6 +14,10 @@ sin = Math.sin
 class Point
   constructor: (@x, @y) ->
   toString: -> "(#{@x}, #{@y})"
+  round: ->
+    @x = Math.round(@x * 100) / 100
+    @y = Math.round(@y * 100) / 100
+    return this
 
 class Utils
   randomGauss: (mu, sigma) ->

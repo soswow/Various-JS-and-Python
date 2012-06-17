@@ -33,6 +33,12 @@
       return "(" + this.x + ", " + this.y + ")";
     };
 
+    Point.prototype.round = function() {
+      this.x = Math.round(this.x * 100) / 100;
+      this.y = Math.round(this.y * 100) / 100;
+      return this;
+    };
+
     return Point;
 
   })();

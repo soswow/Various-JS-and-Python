@@ -1,5 +1,5 @@
 (function() {
-  var Arena, BALL_SIZE, Ball, DIAMETER, FPS, Game, HALF_WALL_THICK, INIT_PLAYER_SIZE_PORTION, Player, RADIUS, SIDES, SPEED_RANGE, Segment, State, TWOPI, WALL_THICK, app, dir, express, game, io, seg, utils, xy, _,
+  var Arena, BALL_SIZE, Ball, DIAMETER, FPS, Game, HALF_WALL_THICK, INIT_PLAYER_SIZE_PORTION, Player, RADIUS, SIDES, SPEED_RANGE, Segment, State, TWOPI, WALL_THICK, app, dir, express, game, io, port, seg, utils, xy, _,
     __slice = Array.prototype.slice;
 
   io = require('socket.io');
@@ -186,6 +186,7 @@
       if (this.speed < this.normalSpeed && this.acceleration < 0) {
         this.acceleration = -0.05;
       }
+      if (this.speed < SPEED_RANGE[0]) this.acceleration = 0;
       this.speed += this.acceleration * (time * 1000);
       newPos = this.findNextPoint(time);
       oldAngle = this.angle;
@@ -257,9 +258,7 @@
 
     Ball.prototype.serialize = function() {
       return {
-        pos: this.pos,
-        speed: this.speed,
-        angle: this.angle
+        pos: this.pos.round()
       };
     };
 
@@ -305,7 +304,6 @@
       return {
         id: this.id,
         name: this.name,
-        size: this.size,
         side: this.side
       };
     };
@@ -395,9 +393,18 @@
     };
 
     Arena.prototype.serialize = function() {
+      var end, start;
       return {
-        solidWalls: this.solidWalls,
-        areaWalls: this.areaWalls
+        solidWalls: (function() {
+          var _i, _len, _ref, _ref2, _results;
+          _ref = this.solidWalls;
+          _results = [];
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            _ref2 = _ref[_i], start = _ref2[0], end = _ref2[1];
+            _results.push([start.round(), end.round()]);
+          }
+          return _results;
+        }).call(this)
       };
     };
 
@@ -430,6 +437,23 @@
 
   io = io.listen(app);
 
+  io.configure('production', function() {
+    io.enable('browser client etag');
+    io.set('log level', 1);
+    io.set('transports', ['xhr-polling', 'websocket', 'htmlfile', 'jsonp-polling']);
+    return io.set("polling duration", 5);
+  });
+
+  io.configure('development', function() {
+    return io.set('transports', ['websocket', 'xhr-polling']);
+  });
+
+  port = process.env.PORT || 8080;
+
+  app.listen(port);
+
+  console.log("Started listening on port " + port);
+
   dir = __dirname.replace(/\/js$/, '');
 
   app.get('/', function(req, res) {
@@ -443,8 +467,6 @@
     app.use("/libs", express.static(dir + '/libs'));
     return app.use("/sounds", express.static(dir + '/sounds'));
   });
-
-  app.listen(8080);
 
   game = new Game();
 
