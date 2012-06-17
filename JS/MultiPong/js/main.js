@@ -5,7 +5,7 @@
 
   game = null;
 
-  socket = io.connect('http://192.168.2.103:8080');
+  socket = io.connect();
 
   xy = utils.xy;
 
@@ -48,6 +48,7 @@
       var _this = this;
       this.side = 0;
       socket.on('connect', function() {
+        var audioObj, playingAudio, soundsObj;
         socket.on('constants', function(_const) {
           var key, value, _ref;
           _this["const"] = _const;
@@ -58,9 +59,19 @@
           }
           return _this.canvas = new Canvas(_this);
         });
-        return socket.on('stateUpdate', function(state) {
+        socket.on('stateUpdate', function(state) {
           _this.state = state;
           if (_this.canvas) return _this.canvas.repaint();
+        });
+        playingAudio = 0;
+        soundsObj = $("#sounds");
+        audioObj = $("audio");
+        return socket.on('kick!', function() {
+          if (soundsObj.attr("checked")) {
+            if (playingAudio + 1 > audioObj.length) playingAudio = 0;
+            audioObj.get(playingAudio).play();
+            return playingAudio += 1;
+          }
         });
       });
     }

@@ -12,7 +12,7 @@ WALL_THICK = 5
 INIT_PLAYER_SIZE_PORTION = 0.3 #percent
 HALF_WALL_THICK = WALL_THICK / 2
 BALL_SIZE = 10 #diameter
-SPEED_RANGE = [400, 600]
+SPEED_RANGE = [200, 400]
 FPS = 60
 SIDES = 6
 
@@ -138,6 +138,7 @@ class Ball
     unless intPoint
       @pos = newPos
     else
+      io.sockets.volatile.emit  'kick!'
       @speed += utils.randomGauss  @kickSpeed, 30
       @acceleration = -1
 
@@ -287,6 +288,7 @@ app.configure  ->
   app.use  "/node_modules", express.static  dir + '/node_modules'
   app.use  "/js", express.static  dir + '/js'
   app.use  "/libs", express.static  dir + '/libs'
+  app.use  "/sounds", express.static  dir + '/sounds'
 
 app.listen  8080
 

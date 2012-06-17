@@ -2,7 +2,7 @@ TWOPI = Math.PI * 2
 
 game = null
 
-socket = io.connect  'http://192.168.2.103:8080'
+socket = io.connect()
 
 xy = utils.xy
 
@@ -43,6 +43,16 @@ class Game
 
       socket.on  'stateUpdate', (@state) =>
         @canvas.repaint() if @canvas
+
+      playingAudio = 0
+      soundsObj = $("#sounds")
+      audioObj = $("audio")
+      socket.on  'kick!', ->
+        if soundsObj.attr "checked"
+          if playingAudio + 1 > audioObj.length
+            playingAudio = 0
+          audioObj.get(playingAudio).play()
+          playingAudio += 1
 
 
 class Canvas

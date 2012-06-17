@@ -24,7 +24,7 @@
 
   BALL_SIZE = 10;
 
-  SPEED_RANGE = [400, 600];
+  SPEED_RANGE = [200, 400];
 
   FPS = 60;
 
@@ -193,6 +193,7 @@
       if (!intPoint) {
         this.pos = newPos;
       } else {
+        io.sockets.volatile.emit('kick!');
         this.speed += utils.randomGauss(this.kickSpeed, 30);
         this.acceleration = -1;
         this.pos = this.findNextPoint(time);
@@ -439,7 +440,8 @@
   app.configure(function() {
     app.use("/node_modules", express.static(dir + '/node_modules'));
     app.use("/js", express.static(dir + '/js'));
-    return app.use("/libs", express.static(dir + '/libs'));
+    app.use("/libs", express.static(dir + '/libs'));
+    return app.use("/sounds", express.static(dir + '/sounds'));
   });
 
   app.listen(8080);
