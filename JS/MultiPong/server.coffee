@@ -282,7 +282,6 @@ io.configure  'production', ->
   io.set  'transports', [
     'xhr-polling'
     'websocket'
-#    'flashsocket'
     'htmlfile'
     'jsonp-polling'
   ]
