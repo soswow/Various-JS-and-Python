@@ -8,6 +8,9 @@ xy = utils.xy
 
 $ ->
   game = new Game()
+  $("#sides").bind  'change', ->
+    SIDES = parseInt  @value, 10
+    game = new Game()
 
 
 class Game
