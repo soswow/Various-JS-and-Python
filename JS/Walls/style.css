@@ -1,0 +1,14 @@
+html, body {
+    width: 100%;
+    height: 100%;
+}
+
+#canvas {
+    display: block;
+    margin: 0 auto;
+    border: 1px dotted gray;
+}
+
+.buttons {
+    text-align: center;
+}
