@@ -61,9 +61,21 @@ class Ball
   randomInit: ->
     @pos = xy  DIAMETER/2, DIAMETER/2
     @angle = utils.randomInRange  0, 360
-    @speed = utils.randomInRange  SPEED_RANGE...
+    @acceleration = 2 #pixels per sec ** 2
+
+    @normalSpeed = utils.randomInRange  SPEED_RANGE...
+    @speed = @normalSpeed
+    @kickSpeed = @normalSpeed * 0.5
+    @maxSpeed = @normalSpeed * 2
+    @minSpeed = @normalSpeed / 2
 
   move: (time) ->
+    @acceleration = -2 if @speed >= @maxSpeed
+    @acceleration = -0.05 if @speed < @normalSpeed and @acceleration < 0
+    @acceleration = 0 if @speed < @minSpeed
+
+    @speed += @acceleration * (time * 1000)
+
     newPos = @findNextPoint  time
 
     oldAngle = @angle
@@ -72,6 +84,9 @@ class Ball
     unless intPoint
       @pos = newPos
     else
+      @speed += utils.randomGauss  @kickSpeed, 30
+      @acceleration = -1.3
+
       @pos = @findNextPoint  time
       isInside = @isPointInside()
 
