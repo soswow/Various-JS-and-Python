@@ -6,9 +6,11 @@ SIDES = 4
 FPS = 60
 SPEED_RANGE = [400, 600]
 TWOPI = Math.PI * 2
+INIT_PLAYER_SIZE_PORTION = 0.4 #percent
 
 xy = utils.xy
 
+game = null
 $ ->
   game = new Game()
 
@@ -29,10 +31,16 @@ class Game
   constructor: ->
     @state = new State()
     @canvas = new Canvas(this)
+    @state.addPlayer  new Player("somename", @state)
+    @initHandlers()
     @canvas.repaint()
 
-  updateAndRepaint: (timeLeft) ->
-    @state.update timeLeft / 1000
+  initHandlers: ->
+    @canvas.el.bind "mousemove", (e) =>
+      @updateAndRepaint 0, e.offsetX
+
+  updateAndRepaint: (timeLeft, clientX) ->
+    @state.update timeLeft / 1000, clientX
     @canvas.repaint()
 
   startMainLoop: ->
@@ -45,9 +53,20 @@ class Game
 class State
   constructor: ->
     @ball = new Ball(this)
+    @player = null
     @arena = new Arena(RADIUS, this)
 
-  update: (timeleft) ->
+  addPlayer: (newPlayer) ->
+    @player = newPlayer
+    @arena.player = newPlayer
+    @arena.updateSolidWalls()
+    return newPlayer
+
+  update: (timeleft, clientX) ->
+    if clientX and @player
+      @player.move  clientX
+      @arena.updateSolidWalls()
+
     if timeleft
       unless @ball.move  timeleft
         game.state.ball.randomInit()
@@ -61,12 +80,12 @@ class Ball
   randomInit: ->
     @pos = xy  DIAMETER/2, DIAMETER/2
     @angle = utils.randomInRange  0, 360
-    @acceleration = 2 #pixels per sec ** 2
+    @acceleration = 1.5 #pixels per sec ** 2
 
     @normalSpeed = utils.randomInRange  SPEED_RANGE...
     @speed = @normalSpeed
     @kickSpeed = @normalSpeed * 0.5
-    @maxSpeed = @normalSpeed * 2
+    @maxSpeed = @normalSpeed * 1.5
     @minSpeed = @normalSpeed / 2
 
   move: (time) ->
@@ -128,13 +147,60 @@ class Ball
     utils.radialMove pos, @speed * time, angle
 
 
+class Player
+  constructor: (@name, @state) ->
+    @sideLength = @state.arena.getFullWallLength()
+    @size = INIT_PLAYER_SIZE_PORTION * @sideLength
+    @centerPos = 0.5 #center point position in percents
+    @updateSegment()
+
+  move: (clientX) ->
+    @updateCenterPosition  clientX
+    @updateSegment()
+
+  updateCenterPosition: (clientX) ->
+    clientX -= @state.arena.areaWalls[0][0].x + @size / 2
+    @centerPos = clientX / (@sideLength - @size)
+    @centerPos = 1 if @centerPos > 1
+    @centerPos = 0 if @centerPos < 0
+
+  updateSegment: ->
+    centerPx = @centerPos * (@sideLength - @size)
+    segmentStart = centerPx / @sideLength
+    segmentEnd = (centerPx + @size) / @sideLength
+    @segment = seg  segmentStart, segmentEnd
+
+
 class Arena
   constructor: (@radius, @state) ->
+    @player = @state.player
     @solidWalls = @areaWalls = @updateAreaWalls()
 
+  updateSolidWalls: ->
+    @updateAreaWalls()
+
+    @solidWalls =
+      for [start, end], i in @areaWalls
+        {start: startPortion, end: endPortion} = @portions[i]
+        xd = end.x - start.x
+        yd = end.y - start.y
+        start = xy  start.x + xd * startPortion, start.y + yd * startPortion
+        end = xy  end.x - xd * (1-endPortion), end.y - yd * (1-endPortion)
+        [start, end]
+
   updateAreaWalls: ->
+    @updatePortions()
     @updateCorners()
-    @solidWalls = @areaWalls = ([@corners[i-1..i-1][0], corner] for corner, i in @corners)
+    @areaWalls = ([@corners[i-1..i-1][0], corner] for corner, i in @corners)
+
+  updatePortions: ->
+    @portions = _.map  [0..SIDES-1], (i) =>
+      if i is 0 and @player?
+        @player.segment
+      else
+        seg(0, 1)
+
+  getFullWallLength: -> utils.distance  @areaWalls[0]...
 
   updateCorners: ->
     sidesNum = SIDES
@@ -161,8 +227,8 @@ class Canvas
     thickness = WALL_THICK
 
     State::draw = ->
-      @ball.draw()
       @arena.draw()
+      @ball.draw()
 
     Arena::draw = ->
       for [start, end], i in @solidWalls
@@ -191,3 +257,7 @@ class Canvas
   clearAll: ->
     @el.attr 'width', DIAMETER
 
+class Segment
+  constructor: (@start, @end) ->
+
+seg = (vars...) -> new Segment(vars...)
