@@ -1,5 +1,30 @@
+#Math function extraction
+random = Math.random
+pow = Math.pow
+sqrt = Math.sqrt
+log = Math.log
+pi = Math.PI
+TWOPI = pi * 2
+exp = Math.exp
+cos = Math.cos
+sin = Math.sin
 
 class Utils
+  randomGauss: (mu, sigma) ->
+    #Box–Muller transform implemtation. 2nd variant
+    #http://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
+    loop
+      x = 2 * random() - 1 # Random value from -1 to 1
+      y = 2 * random() - 1
+      s = pow(x,2) + pow(y, 2)
+      break unless s >= 1 || s == 0
+
+    z = x * sqrt(-2 * log(s) / s)
+    return mu + sigma * z
+
+  gauss: (mu, sigma, x) ->
+    # calculates the probability of x for 1-dim Gaussian with mean mu and var. sigma
+    exp(-(pow((mu - x), 2) / pow(sigma, 2) / 2.0) / sqrt(TWOPI * pow(sigma, 2)))
 
   distance: (from, to) ->
     Math.sqrt(Math.pow((from.x - to.x), 2) + Math.pow((from.y - to.y), 2))

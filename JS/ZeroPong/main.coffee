@@ -102,6 +102,10 @@ class Ball
       if intPoint
         anglBet = utils.radToDeg  utils.angleBetweenLines  @pos, nextPoint, wall...
         newAngle += anglBet * 2
+
+        randomness = utils.randomGauss  0, anglBet * 0.1
+        newAngle += randomness
+
         break
     return [intPoint, newAngle]
 
