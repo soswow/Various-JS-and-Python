@@ -425,7 +425,6 @@ class GridWorld
     @drawValues()
     @drawPolicy()
 
-
 class SearchAlgos
   constructor: (@data, @init, @goal) ->
     @height = @data.length
