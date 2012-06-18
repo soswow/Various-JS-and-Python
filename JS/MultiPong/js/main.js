@@ -80,7 +80,6 @@
         if (soundsObj.attr("checked")) {
           if (playingAudio + 1 > len) playingAudio = 0;
           obj = event === 'kick!' ? kickAudioObj : wallSounds;
-          console.log(event);
           obj.get(playingAudio).play();
           return playingAudio += 1;
         }

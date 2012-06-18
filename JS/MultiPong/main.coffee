@@ -58,7 +58,6 @@ class Game
       if soundsObj.attr "checked"
         playingAudio = 0 if playingAudio + 1 > len
         obj = if event is 'kick!' then kickAudioObj else wallSounds
-        console.log event
         obj.get(playingAudio).play()
         playingAudio += 1
 
