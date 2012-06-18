@@ -57,6 +57,8 @@ class Utils
 
   randomInRange: (from, to) -> Math.random() * (to - from) + from;
 
+  randomFromArray: (array) -> array[Math.round  @randomInRange(0, array.length-1)];
+
   degToRad: (deg) -> deg * (Math.PI / 180)
 
   radToDeg: (rad) -> rad * (180 / Math.PI)

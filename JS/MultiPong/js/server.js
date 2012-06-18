@@ -108,19 +108,20 @@
     }
 
     State.prototype.addPlayer = function(newPlayer) {
-      var i, newIndex, player, _len, _ref;
-      newIndex = this.players.length;
-      _ref = this.players;
-      for (i = 0, _len = _ref.length; i < _len; i++) {
-        player = _ref[i];
-        if (!player) {
-          newIndex = i;
-          break;
-        }
-      }
-      newPlayer.side = newIndex;
-      this.players[i] = newPlayer;
-      this.playersIdMap[newPlayer.id] = i;
+      var emptySlots, nextIndex, _i, _ref, _results,
+        _this = this;
+      emptySlots = _.filter((function() {
+        _results = [];
+        for (var _i = 0, _ref = this.players.length - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; 0 <= _ref ? _i++ : _i--){ _results.push(_i); }
+        return _results;
+      }).apply(this), function(i) {
+        return !(_this.players[i] != null);
+      });
+      nextIndex = utils.randomFromArray(emptySlots);
+      console.log("Empty slots: ", emptySlots, nextIndex);
+      newPlayer.side = nextIndex;
+      this.players[nextIndex] = newPlayer;
+      this.playersIdMap[newPlayer.id] = nextIndex;
       this.arena.updateSolidWalls();
       return newPlayer;
     };
@@ -194,7 +195,7 @@
       if (!intPoint) {
         this.pos = newPos;
       } else {
-        io.sockets.volatile.emit('kick!');
+        io.sockets.emit('kick!');
         this.speed += utils.randomGauss(this.kickSpeed, 30);
         this.acceleration = -1;
         this.pos = this.findNextPoint(time);
@@ -445,6 +446,7 @@
   });
 
   io.configure('development', function() {
+    io.set('log level', 1);
     return io.set('transports', ['websocket', 'xhr-polling']);
   });
 

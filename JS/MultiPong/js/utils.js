@@ -103,6 +103,10 @@
       return Math.random() * (to - from) + from;
     };
 
+    Utils.prototype.randomFromArray = function(array) {
+      return array[Math.round(this.randomInRange(0, array.length - 1))];
+    };
+
     Utils.prototype.degToRad = function(deg) {
       return deg * (Math.PI / 180);
     };

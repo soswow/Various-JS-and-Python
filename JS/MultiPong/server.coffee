@@ -73,15 +73,13 @@ class State
   addPlayer: (newPlayer) ->
     #Find slot in array and put into first free
     #Assign it's side accordint to slot
-    newIndex = @players.length #push new one if not found slot
-    for player, i in @players
-      unless player
-        newIndex = i
-        break
+    emptySlots = _.filter [0..@players.length-1], (i) => not @players[i]?
+    nextIndex = utils.randomFromArray  emptySlots
+    console.log  "Empty slots: ", emptySlots, nextIndex
 
-    newPlayer.side = newIndex
-    @players[i] = newPlayer
-    @playersIdMap[newPlayer.id] = i
+    newPlayer.side = nextIndex
+    @players[nextIndex] = newPlayer
+    @playersIdMap[newPlayer.id] = nextIndex
     @arena.updateSolidWalls()
 
     return newPlayer
@@ -142,7 +140,7 @@ class Ball
     unless intPoint
       @pos = newPos
     else
-      io.sockets.volatile.emit  'kick!'
+      io.sockets.emit  'kick!'
       @speed += utils.randomGauss  @kickSpeed, 30
       @acceleration = -1
 
@@ -288,6 +286,7 @@ io.configure  'production', ->
   io.set  "polling duration", 5
 
 io.configure  'development', ->
+  io.set  'log level', 1
   io.set  'transports', ['websocket', 'xhr-polling']
 
 
