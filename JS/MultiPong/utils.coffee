@@ -86,6 +86,17 @@ class Utils
 
   mod: (a, b) -> a % b + (if a < 0 then b else 0)
 
+  findPos: (obj) ->
+    curleft = 0
+    curtop = 0
+    if obj.offsetParent
+      loop
+        curleft += obj.offsetLeft
+        curtop += obj.offsetTop
+        obj = obj.offsetParent
+        break unless obj
+      return @xy  curleft, curtop
+
 exports ?= window ? {}
 exports.utils = new Utils()
 

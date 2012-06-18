@@ -28,7 +28,9 @@
           return game.side = side;
         });
         game.canvas.el.bind("mousemove", function(e) {
-          return socket.emit('userMoves', e.offsetX);
+          var pos;
+          pos = e.offsetX || (e.pageX - utils.findPos(game.canvas.el[0]).x);
+          return socket.emit('userMoves', pos);
         });
       }
       $(this).attr('disabled', 'disable');

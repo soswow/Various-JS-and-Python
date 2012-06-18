@@ -21,7 +21,8 @@ $ ->
         game.side = side
 
       game.canvas.el.bind  "mousemove", (e) =>
-        socket.emit  'userMoves', e.offsetX
+        pos = e.offsetX or (e.pageX - utils.findPos(game.canvas.el[0]).x)
+        socket.emit  'userMoves', pos
     $(this).attr 'disabled', 'disable'
     quiteObj.removeAttr 'disabled'
 

@@ -142,6 +142,21 @@
       return a % b + (a < 0 ? b : 0);
     };
 
+    Utils.prototype.findPos = function(obj) {
+      var curleft, curtop;
+      curleft = 0;
+      curtop = 0;
+      if (obj.offsetParent) {
+        while (true) {
+          curleft += obj.offsetLeft;
+          curtop += obj.offsetTop;
+          obj = obj.offsetParent;
+          if (!obj) break;
+        }
+        return this.xy(curleft, curtop);
+      }
+    };
+
     return Utils;
 
   })();
