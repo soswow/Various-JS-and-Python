@@ -135,12 +135,12 @@ class Ball
     newPos = @findNextPoint  time
 
     oldAngle = @angle
-    [intPoint, @angle] = @findIntersectionPoint newPos
+    [intPoint, @angle, usersKick] = @findIntersectionPoint newPos
 
     unless intPoint
       @pos = newPos
     else
-      io.sockets.emit  'kick!'
+      io.sockets.emit if usersKick then 'kick!' else 'wall!'
       @speed += utils.randomGauss  @kickSpeed, 30
       @acceleration = -1
 
@@ -168,8 +168,9 @@ class Ball
 
   findIntersectionPoint: (nextPoint) ->
     intPoint = null
+    userIndex = null
     newAngle = @angle
-    for wall in @state.arena.solidWalls
+    for wall, i in @state.arena.solidWalls
       intPoint = utils.lineIntersections  @pos, nextPoint, wall...
       if intPoint
         anglBet = utils.radToDeg  utils.angleBetweenLines  @pos, nextPoint, wall...
@@ -177,9 +178,9 @@ class Ball
 
         randomness = utils.randomGauss  0, anglBet * 0.1
         newAngle += randomness
-
+        userIndex = i if @state.players[i]?
         break
-    return [intPoint, newAngle]
+    return [intPoint, newAngle, userIndex]
 
   findNextPoint: (time, angle=@angle, pos=@pos) ->
     utils.radialMove pos, @speed * time, angle

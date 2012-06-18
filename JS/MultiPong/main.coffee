@@ -50,13 +50,20 @@ class Game
   initSounds: ->
     playingAudio = 0
     soundsObj = $("#sounds")
-    audioObj = $("audio")
-    socket.on  'kick!', ->
+    kickAudioObj = $("#kickSounds audio")
+    wallSounds = $("#wallSounds audio")
+    len = kickAudioObj.length
+
+    playSound = (event) ->
       if soundsObj.attr "checked"
-        if playingAudio + 1 > audioObj.length
-          playingAudio = 0
-        audioObj.get(playingAudio).play()
+        playingAudio = 0 if playingAudio + 1 > len
+        obj = if event is 'kick!' then kickAudioObj else wallSounds
+        console.log event
+        obj.get(playingAudio).play()
         playingAudio += 1
+
+    socket.on  'kick!', -> playSound  'kick!'
+    socket.on  'wall!', -> playSound  'wall!'
 
 
 class Canvas

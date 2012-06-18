@@ -182,7 +182,7 @@
     };
 
     Ball.prototype.move = function(time) {
-      var intPoint, isInside, k, newPos, oldAngle, _ref;
+      var intPoint, isInside, k, newPos, oldAngle, usersKick, _ref;
       if (this.speed >= this.maxSpeed) this.acceleration = -2;
       if (this.speed < this.normalSpeed && this.acceleration < 0) {
         this.acceleration = -0.05;
@@ -191,11 +191,11 @@
       this.speed += this.acceleration * (time * 1000);
       newPos = this.findNextPoint(time);
       oldAngle = this.angle;
-      _ref = this.findIntersectionPoint(newPos), intPoint = _ref[0], this.angle = _ref[1];
+      _ref = this.findIntersectionPoint(newPos), intPoint = _ref[0], this.angle = _ref[1], usersKick = _ref[2];
       if (!intPoint) {
         this.pos = newPos;
       } else {
-        io.sockets.emit('kick!');
+        io.sockets.emit(usersKick ? 'kick!' : 'wall!');
         this.speed += utils.randomGauss(this.kickSpeed, 30);
         this.acceleration = -1;
         this.pos = this.findNextPoint(time);
@@ -233,22 +233,24 @@
     };
 
     Ball.prototype.findIntersectionPoint = function(nextPoint) {
-      var anglBet, intPoint, newAngle, randomness, wall, _i, _len, _ref;
+      var anglBet, i, intPoint, newAngle, randomness, userIndex, wall, _len, _ref;
       intPoint = null;
+      userIndex = null;
       newAngle = this.angle;
       _ref = this.state.arena.solidWalls;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        wall = _ref[_i];
+      for (i = 0, _len = _ref.length; i < _len; i++) {
+        wall = _ref[i];
         intPoint = utils.lineIntersections.apply(utils, [this.pos, nextPoint].concat(__slice.call(wall)));
         if (intPoint) {
           anglBet = utils.radToDeg(utils.angleBetweenLines.apply(utils, [this.pos, nextPoint].concat(__slice.call(wall))));
           newAngle += anglBet * 2;
           randomness = utils.randomGauss(0, anglBet * 0.1);
           newAngle += randomness;
+          if (this.state.players[i] != null) userIndex = i;
           break;
         }
       }
-      return [intPoint, newAngle];
+      return [intPoint, newAngle, userIndex];
     };
 
     Ball.prototype.findNextPoint = function(time, angle, pos) {

@@ -69,16 +69,27 @@
     }
 
     Game.prototype.initSounds = function() {
-      var audioObj, playingAudio, soundsObj;
+      var kickAudioObj, len, playSound, playingAudio, soundsObj, wallSounds;
       playingAudio = 0;
       soundsObj = $("#sounds");
-      audioObj = $("audio");
-      return socket.on('kick!', function() {
+      kickAudioObj = $("#kickSounds audio");
+      wallSounds = $("#wallSounds audio");
+      len = kickAudioObj.length;
+      playSound = function(event) {
+        var obj;
         if (soundsObj.attr("checked")) {
-          if (playingAudio + 1 > audioObj.length) playingAudio = 0;
-          audioObj.get(playingAudio).play();
+          if (playingAudio + 1 > len) playingAudio = 0;
+          obj = event === 'kick!' ? kickAudioObj : wallSounds;
+          console.log(event);
+          obj.get(playingAudio).play();
           return playingAudio += 1;
         }
+      };
+      socket.on('kick!', function() {
+        return playSound('kick!');
+      });
+      return socket.on('wall!', function() {
+        return playSound('wall!');
       });
     };
 
