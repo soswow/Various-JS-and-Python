@@ -28,7 +28,7 @@
 
   FPS = 60;
 
-  SIDES = 6;
+  SIDES = 4;
 
   TWOPI = Math.PI * 2;
 
@@ -118,6 +118,7 @@
         return !(_this.players[i] != null);
       });
       nextIndex = utils.randomFromArray(emptySlots);
+      if (emptySlots.length === 0) nextIndex = this.players.length;
       console.log("Empty slots: ", emptySlots, nextIndex);
       newPlayer.side = nextIndex;
       this.players[nextIndex] = newPlayer;
@@ -463,6 +464,12 @@
   app.get('/', function(req, res) {
     console.log(dir + '/index.html');
     return res.sendfile(dir + '/index.html');
+  });
+
+  app.get('/sides/:sides', function(req, res) {
+    SIDES = parseInt(req.params.sides, 10);
+    game.state = new State();
+    return res.send("OK");
   });
 
   app.configure(function() {

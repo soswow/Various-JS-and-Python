@@ -14,7 +14,7 @@ HALF_WALL_THICK = WALL_THICK / 2
 BALL_SIZE = 10 #diameter
 SPEED_RANGE = [200, 400]
 FPS = 60
-SIDES = 6
+SIDES = 4
 
 TWOPI = Math.PI * 2
 
@@ -75,6 +75,7 @@ class State
     #Assign it's side accordint to slot
     emptySlots = _.filter [0..@players.length-1], (i) => not @players[i]?
     nextIndex = utils.randomFromArray  emptySlots
+    nextIndex = @players.length if emptySlots.length is 0
     console.log  "Empty slots: ", emptySlots, nextIndex
 
     newPlayer.side = nextIndex
@@ -299,6 +300,11 @@ dir = __dirname.replace /\/js$/, ''
 app.get  '/', (req, res) ->
   console.log dir + '/index.html'
   res.sendfile  dir + '/index.html'
+
+app.get  '/sides/:sides', (req, res) ->
+  SIDES = parseInt  req.params.sides, 10
+  game.state = new State()
+  res.send("OK")
 
 app.configure  ->
   app.use  "/node_modules", express.static  dir + '/node_modules'
