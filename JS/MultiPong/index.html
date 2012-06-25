@@ -1,0 +1,62 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Multipong</title>
+  <style>
+    html, body{
+      width: 100%;
+      height: 100%;
+    }
+    #canvas{
+      display: block;
+      margin: 0 auto;
+      border: 1px dotted gray;
+      /*width: 600px;*/
+      /*height: 600px;*/
+    }
+    #name{
+      text-align: center;
+    }
+    #info{
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-family: monospace;
+    }
+  </style>
+
+  <script type="text/javascript" src="libs/underscore.js"></script>
+  <script type="text/javascript" src="libs/jquip.min.js"></script>
+  <script type="text/javascript" src="libs/requestAnimFrame.js"></script>
+  <script type="text/javascript" src="node_modules/socket.io/node_modules/socket.io-client/dist/socket.io.js"></script>
+  <script type="text/javascript" src="js/utils.js"></script>
+  <script type="text/javascript" src="js/main.js"></script>
+</head>
+<body>
+<span id="info">
+  <button id="join">Join the fun</button><br/>
+  <button id="quite" disabled>Quite the fun</button><br/>
+  Wanna some Sharapova? <input type="checkbox" id="sounds"/>
+</span>
+<canvas id="canvas"></canvas>
+<div id="name"></div>
+<div id="kickSounds">
+  <audio src="sounds/sound1.wav"></audio>
+  <audio src="sounds/sound2.wav"></audio>
+  <audio src="sounds/sound3.wav"></audio>
+  <audio src="sounds/sound4.wav"></audio>
+  <audio src="sounds/sound5.wav"></audio>
+  <audio src="sounds/sound6.wav"></audio>
+  <audio src="sounds/sound7.wav"></audio>
+</div>
+<div id="wallSounds">
+  <audio src="sounds/ball1.wav"></audio>
+  <audio src="sounds/ball1.wav"></audio>
+  <audio src="sounds/ball1.wav"></audio>
+  <audio src="sounds/ball1.wav"></audio>
+  <audio src="sounds/ball1.wav"></audio>
+  <audio src="sounds/ball1.wav"></audio>
+  <audio src="sounds/ball1.wav"></audio>
+</div>
+</body>
+</html>

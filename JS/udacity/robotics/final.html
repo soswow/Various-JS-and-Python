@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Final demo</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <style>
+    #canvasContainer {
+      border: 1px solid black;
+      float: left;
+      cursor: crosshair;
+      position: relative;
+    }
+
+    #canvasContainer.hovered {
+      cursor: pointer;
+    }
+
+    #canvasContainer canvas{
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    #canvasContainer #canvas_initgoal{
+      top:40px;
+      cursor: pointer;
+    }
+
+    #canvas_base {
+      position: relative !important;
+    }
+    #otherControls{
+      clear: both;
+      padding-top: 45px;
+    }
+  </style>
+</head>
+<body>
+<div id="canvasContainer">
+  <canvas id="canvas_initgoal"></canvas>
+  <canvas id="canvas_base"></canvas>
+  <canvas id="canvas_policy"></canvas>
+</div>
+<div id="otherControls">
+  <label for="predefinedRoads">Load road:</label>
+  <select id="predefinedRoads">
+    <option value="">-</option>
+    <option value="0">Fast left lane</option>
+    <option value="1">More realistic road</option>
+    <option value="2">Obstacles included</option>
+    <option value="3">Slalom</option>
+  </select>
+  <label for="shiftCost">Shift cost:</label><input id="shiftCost" value="1" />
+  Final path cost is <span id="pathCost"></span>
+</div>
+<textarea id="dataBox" rows="16" cols="80">
+100 100 100 200 300
+50  50  50  50  50
+1 1 1 1 1
+</textarea>
+<script src="final.js"></script>
+</body>
+</html>

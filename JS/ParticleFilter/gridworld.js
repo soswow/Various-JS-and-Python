@@ -1,5 +1,5 @@
 (function() {
-  var GridWorld, SearchAlgos, canvases, ctx, dp, equalPoints, gridColors, height, initWalls, make2DArray, megaValue, p, random, width, world;
+  var GridWorld, SearchAlgos, canvases, ctx, distance, dp, equalPoints, gridColors, height, initWalls, make2DArray, megaValue, mod, p, random, width, world;
 
   ctx = {};
 
@@ -66,7 +66,19 @@
       if (this.value.indexOf('value') === 0) {
         world[this.value] = this.checked;
       } else if (this.value.indexOf('policy') === 0) {
-        world.showPolicy = this.checked;
+        if (this.value === 'policyPath') {
+          world.showPathPolicy = this.checked;
+          if (this.checked) {
+            world.showDPPolicy = false;
+            $('#showDPPolicyId').removeAttr('checked');
+          }
+        } else if (this.value === 'policyDP') {
+          world.showDPPolicy = this.checked;
+          if (this.checked) {
+            world.showPathPolicy = false;
+            $('#showPathPolicyId').removeAttr('checked');
+          }
+        }
       }
       return world.updateValues();
     });
@@ -78,6 +90,24 @@
     });
     $("#makeBorderWallId").click(function() {
       world.makeBorderWall();
+      return world.updateValues();
+    });
+    $("#aStar").click(function() {
+      world.aStarEnabled = this.checked;
+      return world.updateValues();
+    });
+    $("[name=hFunc]").click(function() {
+      world.aStarHFunc = parseInt(this.value, 10);
+      return world.updateValues();
+    });
+    $("TABLE#probobilitiesId input").keyup(function() {
+      var val;
+      val = parseFloat(this.value);
+      world.probobilities[$(this).attr("id")[0]] = !isNaN(val) ? val : 0;
+      return world.updateValues();
+    });
+    $("#collitionCost").keyup(function() {
+      world.collitionCost = parseInt(this.value, 10);
       return world.updateValues();
     });
     return world = new GridWorld(50, width, height);
@@ -105,8 +135,18 @@
       this.clickAction = "wallsAdd";
       this.valueAsNumber = false;
       this.valueAsColor = true;
-      this.showPolicy = true;
+      this.showPathPolicy = true;
+      this.showDPPolicy = false;
       this.policyFails = true;
+      this.aStarEnabled = false;
+      this.aStarHFunc = 1;
+      this.probobilities = {
+        f: 1,
+        l: 0,
+        r: 0,
+        b: 0
+      };
+      this.collitionCost = 100;
       this.resetInitStructure();
       this.updatePolicy();
       this.makeBorderWall();
@@ -259,11 +299,13 @@
     };
 
     GridWorld.prototype.policyAt = function(xy) {
-      return this.cellDataAt(xy).policy;
+      var _ref;
+      return (_ref = this.cellDataAt(xy)) != null ? _ref.policy : void 0;
     };
 
     GridWorld.prototype.valueAt = function(xy) {
-      return this.cellDataAt(xy).value;
+      var _ref;
+      return (_ref = this.cellDataAt(xy)) != null ? _ref.value : void 0;
     };
 
     GridWorld.prototype.click = function(x, y) {
@@ -315,7 +357,7 @@
       });
       policy = this.getDataLayer('policy');
       algo = new SearchAlgos(policy, this.init, this.goal);
-      _ref = algo.search(), values = _ref[0], policy = _ref[1], this.policyFails = _ref[2];
+      _ref = this.showDPPolicy ? algo.optimum_policy(this.probobilities, this.collitionCost) : algo.search(this.aStarEnabled ? this.aStarHFunc : 0), values = _ref[0], policy = _ref[1], this.policyFails = _ref[2];
       this.iterateDataCells(function(x, y) {
         var policyItem;
         _this.data[y][x].value = values[y][x];
@@ -404,7 +446,7 @@
             return _this.drawCellAt(pos, 'policy', gridColors.goal);
           default:
             if (policy !== 'wall') {
-              if (_this.showPolicy && !_this.policyFails) {
+              if ((_this.showPathPolicy || _this.showDPPolicy) && !_this.policyFails) {
                 return _this.drawArrowAt(pos, policy);
               }
             }
@@ -512,11 +554,27 @@
       this.cost = 1;
     }
 
-    SearchAlgos.prototype.search = function() {
-      var act, action, closed, d, expand, fail, found, g, g2, i, next, open, policy, resign, step, x2, xy, y2, _len, _ref;
+    SearchAlgos.prototype.heuristicsFuncs = function(index, xy) {
+      var x, y, _ref;
+      _ref = [xy.x, xy.y], x = _ref[0], y = _ref[1];
+      switch (index) {
+        case 1:
+          return distance(xy, this.goal);
+        case 2:
+          return Math.abs(x - this.goal.x) + Math.abs(y - this.goal.y);
+        case 3:
+          return Math.abs(x - this.goal.x) * Math.abs(y - this.goal.y);
+        default:
+          return 0;
+      }
+    };
+
+    SearchAlgos.prototype.search = function(hIndex) {
+      var act, action, closed, d, expand, fail, found, g, g2, gh, h, i, next, open, policy, resign, step, x2, xy, xy2, y2, _len, _ref;
+      if (hIndex == null) hIndex = 0;
       closed = make2DArray(this.width, this.height, 0);
       closed[this.init.y][this.init.x] = 1;
-      open = [[0, this.init]];
+      open = [[0, this.init, distance(this.init, this.goal)]];
       found = false;
       resign = false;
       expand = make2DArray(this.width, this.height, megaValue);
@@ -533,7 +591,7 @@
           open.reverse();
           next = open.pop();
           xy = next[1];
-          g = next[0];
+          g = next[2];
           expand[xy.y][xy.x] = step;
           step += 1;
           if (equalPoints(xy, this.goal)) {
@@ -546,8 +604,11 @@
               y2 = xy.y + d[1];
               if (x2 >= 0 && x2 < this.width && y2 >= 0 && y2 < this.height && closed[y2][x2] === 0) {
                 if (this.data[y2][x2] !== 'wall') {
+                  xy2 = p(x2, y2);
+                  h = hIndex > 0 ? this.heuristicsFuncs(hIndex, xy2) : 0;
                   g2 = g + this.cost;
-                  open.push([g2, p(x2, y2)]);
+                  gh = g2 + h;
+                  open.push([gh, xy2, g2]);
                   closed[y2][x2] = 1;
                   action[y2][x2] = i;
                 }
@@ -574,11 +635,113 @@
       return [expand, policy, fail];
     };
 
+    SearchAlgos.prototype.optimum_policy = function(motionProbs, collision_cost) {
+      var back_cost, bx2, by2, cell, change, d, forward_cost, i, k, left_cost, lx2, ly2, policy, right_cost, row, rx2, ry2, sum, v, v2, value, x2, xi, xy, y2, yi, _len, _len2, _len3, _ref, _ref2;
+      if (motionProbs == null) {
+        motionProbs = {
+          f: 1,
+          l: 0,
+          r: 0,
+          b: 0
+        };
+      }
+      if (collision_cost == null) collision_cost = 100;
+      sum = 0;
+      for (k in motionProbs) {
+        v = motionProbs[k];
+        sum += v;
+      }
+      if (sum !== 0) {
+        for (k in motionProbs) {
+          v = motionProbs[k];
+          motionProbs[k] = v / sum;
+        }
+      } else {
+        motionProbs = {
+          f: 1,
+          l: 0,
+          r: 0,
+          b: 0
+        };
+      }
+      value = make2DArray(this.width, this.height, megaValue);
+      policy = make2DArray(this.width, this.height, '');
+      change = true;
+      while (change) {
+        change = false;
+        _ref = this.data;
+        for (yi = 0, _len = _ref.length; yi < _len; yi++) {
+          row = _ref[yi];
+          for (xi = 0, _len2 = row.length; xi < _len2; xi++) {
+            cell = row[xi];
+            xy = p(xi, yi);
+            if (equalPoints(xy, this.goal)) {
+              if (value[yi][xi] > 0) {
+                value[yi][xi] = 0;
+                change = true;
+              }
+            } else if (cell === '') {
+              _ref2 = this.delta;
+              for (i = 0, _len3 = _ref2.length; i < _len3; i++) {
+                d = _ref2[i];
+                x2 = xi + d[0];
+                y2 = yi + d[1];
+                if (x2 >= 0 && x2 < this.width && y2 >= 0 && y2 < this.height && !(this.data[y2][x2] === 'wall')) {
+                  forward_cost = value[y2][x2] * motionProbs.f;
+                  lx2 = xi + this.delta[mod(i + 1, 4)][0];
+                  ly2 = yi + this.delta[mod(i + 1, 4)][1];
+                  left_cost = 0;
+                  if (lx2 >= 0 && lx2 < this.width && ly2 >= 0 && ly2 < this.height && !(this.data[ly2][lx2] === 'wall')) {
+                    if (value[ly2][lx2] < megaValue) {
+                      left_cost = value[ly2][lx2] * motionProbs.l;
+                    }
+                  } else {
+                    left_cost = collision_cost * motionProbs.l;
+                  }
+                  rx2 = xi + this.delta[mod(i - 1, 4)][0];
+                  ry2 = yi + this.delta[mod(i - 1, 4)][1];
+                  right_cost = 0;
+                  if (rx2 >= 0 && rx2 < this.width && ry2 >= 0 && ry2 < this.height && !(this.data[ry2][rx2] === 'wall')) {
+                    if (value[ry2][rx2] < megaValue) {
+                      right_cost = value[ry2][rx2] * motionProbs.r;
+                    }
+                  } else {
+                    right_cost = collision_cost * motionProbs.r;
+                  }
+                  bx2 = xi + this.delta[mod(i + 2, 4)][0];
+                  by2 = yi + this.delta[mod(i + 2, 4)][1];
+                  back_cost = 0;
+                  if (bx2 >= 0 && bx2 < this.width && by2 >= 0 && by2 < this.height && !(this.data[by2][bx2] === 'wall')) {
+                    if (value[by2][bx2] < megaValue) {
+                      back_cost = value[by2][bx2] * motionProbs.b;
+                    }
+                  } else {
+                    back_cost = collision_cost * motionProbs.b;
+                  }
+                  v2 = forward_cost + right_cost + left_cost + back_cost + this.cost;
+                  if (v2 < value[yi][xi]) {
+                    change = true;
+                    policy[yi][xi] = this.deltaName[i];
+                    value[yi][xi] = v2;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      return [value, policy, false];
+    };
+
     return SearchAlgos;
 
   })();
 
   random = Math.random;
+
+  distance = function(from, to) {
+    return Math.sqrt(Math.pow(from.x - to.x, 2) + Math.pow(from.y - to.y, 2));
+  };
 
   dp = function(policy, value) {
     if (policy == null) policy = '';
@@ -614,6 +777,10 @@
       })());
     }
     return _results;
+  };
+
+  mod = function(a, b) {
+    return a % b + (a < 0 ? b : 0);
   };
 
 }).call(this);

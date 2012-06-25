@@ -5,7 +5,7 @@
   <link rel="stylesheet" href="jquery-ui-1.8.18.custom.css" type="text/css" media="all" />
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
-  <script src="gridworld.js"></script>
+
   <style>
     .ui-button-text {
        font-size:13px;
@@ -43,7 +43,7 @@
     <br/>
     <div id="cellSizeSlider" style="width:170px;"></div><br/>
     <br/>
-    <label>Action of click / drag:</label><br/>
+    <label>Action on click / drag:</label><br/>
     <!--<div id="actionsSet">-->
       <input type="radio" id="makeWallsId" name="actionType" value="wallsAdd" checked="checked" /><label for="makeWallsId">Making walls</label><br/>
       <input type="radio" id="deleteWallsId" name="actionType" value="wallsRemove" /><label for="deleteWallsId">Remove walls</label><br/>
@@ -55,8 +55,31 @@
     <!--<div id="visibilitySet">-->
       <input type="checkbox" id="showValuesAsNumbersId" name="visibility" value="valueAsNumber" /><label for="showValuesAsNumbersId">Value as a number</label><br/>
       <input type="checkbox" id="showValuesAsColorId" name="visibility" value="valueAsColor" checked="checked"/><label for="showValuesAsColorId">Value as a color</label><br/>
-      <input type="checkbox" id="showPolicyId" name="visibility" value="policy" checked="checked"/><label for="showPolicyId">Show policy</label><br/>
-    <!--</div>-->
+      <input type="checkbox" id="showPathPolicyId" name="visibility" value="policyPath" checked="checked"/><label for="showPathPolicyId">Show path policy</label><br/>
+      <input type="checkbox" id="showDPPolicyId" name="visibility" value="policyDP"/><label for="showDPPolicyId">Show Dyn. Progr. policy</label><br/>
+      Stochastic Motion probabilities:<br/>
+      <table id="probobilitiesId">
+        <tr>
+          <td style="text-align: right"><label for="forwardProb">Forward:</label></td>
+          <td><input type="text" id="forwardProb" value='1.0' maxlength="5" size="5"/></td>
+          <td style="text-align: right"><label for="backProb">Back:</label></td>
+          <td><input type="text" id="backProb" value='0.0' maxlength="5" size="5"/></td>
+        </tr>
+        <tr>
+          <td style="text-align: right"><label for="rightProb">Right:</label></td>
+          <td><input type="text" id="rightProb" value='0.0' maxlength="5" size="5"/></td>
+          <td style="text-align: right"><label for="leftProb">Left:</label></td>
+          <td><input type="text" id="leftProb" value='0.0' maxlength="5" size="5"/></td>
+        </tr>
+      </table>
+      <label for="collitionCost">Collition cost:</label>
+      <input type="text" id="collitionCost" value='50' maxlength="5" size="5"/><br/>
+
+    <br/>
+    <label for="aStar">A* enabled</label> <input type="checkbox" id="aStar" name="actionType" value="astar" /> with H function:<br/>
+    <input type="radio" id="hFunc1Id" name="hFunc" value="1" checked="checked" /><label for="hFunc1Id">Distance</label><br/>
+    <input type="radio" id="hFunc2Id" name="hFunc" value="2"  /><label for="hFunc2Id">abs (x - goal_x) + abs(y - goal_y)</label><br/>
+    <input type="radio" id="hFunc3Id" name="hFunc" value="3"  /><label for="hFunc3Id">abs (x - goal_x) * abs(y - goal_y)</label><br/>
     <br/>
     <button id="clearEverythingId">Clear everything</button>
     <button id="makeBorderWallId">Make a border wall</button>
@@ -77,5 +100,6 @@
   })();
 
 </script>
+<script src="gridworld.js"></script>
 </body>
 </html>
