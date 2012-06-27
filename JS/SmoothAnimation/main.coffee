@@ -5,11 +5,22 @@ $ ->
   cEl.attr 'width': W, 'height': H
   c = cEl.get(0).getContext('2d')
 
-  space = new Space(c)
+  $(window).keypress  (event) ->
+    console.log event.keyCode
+    switch event.keyCode
+      when 37 then ball.vel.x -= 0.02 #left
+      when 39 then ball.vel.x += 0.02 #right
+      when 38 then ball.vel.y -= 0.02 #up
+      when 40 then ball.vel.y += 0.02 #down
+
+  space = new Space(c, 0.99)
   ball = new Ball(10)
-  space.objects.push  ball
+  ball.vel = vector  0,0
+  space.addObject  ball
   space.draw()
   mainLoop  space
+
+  
 
 quite = false
 output = []
@@ -27,17 +38,17 @@ mainLoop = (space) ->
     space.move  t
 
     dis = distance initPos, space.objects[0].pos
-    console.log t
+    # console.log t
     space.draw()
-    quite = true if dis >  maxDis
-    requestAnimFrame runOnce if not quite
+    # quite = true if dis >  maxDis
+    requestAnimFrame runOnce # if not quite
 
   runOnce prevT
     
 
 
 class RigObject
-  constructor: (@pos, @vel, @acl, @rot=[0, 0], @mass=1) ->
+  constructor: (@pos, @vel, @acl, @rot=[0, 0]) ->
     @pos or= vector  W/2, H/2 #Position
     @vel or= vector  0.1, 0.02 #Velocity in x and y directions
     @acl or= vector  0, 0 #Acceleration in x and y directions
@@ -48,11 +59,30 @@ class RigObject
   # angle: (newAngle) -> 
     # randomInRange  0, TWOPI
 
-  move: (dt) ->
+  move: (dt, force=[0,0]) ->
     initPos = @pos.copy()
     for axis in ['x','y']
       @pos[axis] += @vel[axis] * dt
       @vel[axis] += @acl[axis] * dt
+      if Math.abs(@acl[axis]) > 0.001
+        @acl[axis] *= @fric
+      else
+        @acl[axis] = 0
+
+      if @acl[axis] is 0
+        if Math.abs(@vel[axis]) > 0.001
+          @vel[axis] *= @fric
+        else
+          @vel[axis] = 0
+      # @acl[axis] -= @fric
+      # if @vel[axis] > 0.0001
+
+      # if 
+      #    *= 
+      # else
+      #   @vel[axis] = @acl[axis] = 0
+
+
     # output.push  distance initPos, @pos
     # console.log distance initPos, @pos
 
@@ -74,6 +104,10 @@ class Ball extends RigObject
 class Space
   constructor: (@canvas, @fric=1) ->
     @objects = []
+
+  addObject: (obj) ->
+    obj.fric = @fric
+    @objects.push  obj
 
   move: (dt) ->
     obj.move(dt) for obj in @objects
