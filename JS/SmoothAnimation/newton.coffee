@@ -21,7 +21,7 @@ class Utils
 
 
 class P
-  constructor: (@x, @y) ->
+  constructor: (@x=0, @y=0) ->
   distance: (toPoint) -> Utils.distance  this, toPoint
 
 point = (x,y) -> new Point(x,y)
@@ -61,6 +61,7 @@ class Force extends Vector
     new Force(-@x, -@y).setAmount(amount)
 
 
+
 forces = [
   new Force(0, 10)
   new Force(20, 0)
@@ -72,3 +73,17 @@ console.log  netF
 console.log  netF+""
 # console.log new Force(10, 20)+ ""
 # console.log new MotionState(-2, -50) + ""
+
+
+class RigObject
+  constructor: (@pos, @mass) ->
+    @motion = new MotionState()
+    @forces = []
+
+  netForce: -> Force.sum  @forces
+
+
+
+
+
+
