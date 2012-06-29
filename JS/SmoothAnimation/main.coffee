@@ -1,24 +1,42 @@
 W = 600
 H = 400
 $ ->
-  cEl = $ "#canvas"
-  cEl.attr 'width': W, 'height': H
-  c = cEl.get(0).getContext('2d')
+  # cEl = $ "#canvas"
+  # cEl.attr 'width': W, 'height': H
+  # c = cEl.get(0).getContext('2d')
 
-  $(window).keypress  (event) ->
-    console.log event.keyCode
-    switch event.keyCode
-      when 37 then ball.vel.x -= 0.02 #left
-      when 39 then ball.vel.x += 0.02 #right
-      when 38 then ball.vel.y -= 0.02 #up
-      when 40 then ball.vel.y += 0.02 #down
-
-  space = new Space(c, 0.99)
-  ball = new Ball(10)
-  ball.vel = vector  0,0
-  space.addObject  ball
-  space.draw()
-  mainLoop  space
+  keysState = 
+    left: false
+    right: false
+    up: false
+    down: false
+    
+  keysMap = 
+    37: 'left'
+    39: 'right'
+    38: 'up'
+    40: 'down'
+    
+  $(window).keydown  (event) ->
+    key = keysMap[event.keyCode]
+    keysState[key] = true if key
+    
+	$(window).keyup  (event) ->
+    key = keysMap[event.keyCode]
+    keysState[key] = false if key
+    
+  debug = $("#debug")
+  keepWatching = ->
+    debug.text(keysState)
+    requestAnimFrame keepWatching
+  keepWatching()
+    
+  # space = new Space(c, 0.99)
+  # ball = new Ball(10)
+  # ball.vel = vector  0,0
+  # space.addObject  ball
+  # space.draw()
+  # mainLoop  space
 
   
 

@@ -28,8 +28,7 @@ point = (x,y) -> new Point(x,y)
 
 
 class Vector extends P
-  @sum= (vectors, Constructor) -> 
-    new (Constructor or Vector)(vectors.mapKeys('x').sum(), vectors.mapKeys('y').sum())
+  @sum= (vectors) -> vectors.reduce (prev, next) -> prev.plus(next)
 
   constructor: (args...) ->
     super(args...)
@@ -40,50 +39,63 @@ class Vector extends P
 
   getAmount: -> Utils.distance  new P(0,0), this
 
-  setAmount: (@amount=@amount) ->  
+  addAmount: (deltaAmount=0) -> @setAmount  @amount + deltaAmount
+  
+  setAmount: (@amount=@amount) ->
     @x = Math.cos(angle) * @amount
     @y = Math.sin(angle) * @amount
     return this
+
+  plus: (otherVector) -> new @constructor(@x + otherVector.x, @y + otherVector.y)
 
   toString: -> 
     "#{@constructor.name} is #{@amount.roundTo(3)} (#{@constructor.unit}) pointing @ #{Utils.radToDeg(@angle).roundTo(3)} deg."
 
 
 class MotionState extends Vector
-  @unit = "Px/Ms"
+  @unit = "Px/ms"
+  
+  accelerate: (accel, dt) -> @addAmount  accel * dt
 
-
+  
 class Force extends Vector
   @unit = "N"
-  @sum = (vectors) -> Vector.sum(vectors, Force)
 
   oposite: (amount) ->
     new Force(-@x, -@y).setAmount(amount)
 
 
-
-forces = [
-  new Force(0, 10)
-  new Force(20, 0)
-  new Force(-5, 0)
-  new Force(0, -5)
-]
-netF = Force.sum  forces
-console.log  netF
-console.log  netF+""
-# console.log new Force(10, 20)+ ""
-# console.log new MotionState(-2, -50) + ""
-
+class Environment
+  constructor: ->
+    @gravity = new Force()
+    @airResist = 0 # in Newton, no directiob specified
+    @friction = 0
+    @objects = []
+  
+  addObject: (obj) ->
+    obj.env = this
+    @objects.push  obj
+    
+  nextTick: ->
+    #TODO All object should be moved simultaneously
+    #Collition detection also should be hangled here
+    @objects.map (o) -> o.nextTick()
+    
 
 class RigObject
-  constructor: (@pos, @mass) ->
-    @motion = new MotionState()
+  constructor: (@pos, @mass, @motion) ->
+    @motion or= new MotionState()
     @forces = []
 
-  netForce: -> Force.sum  @forces
-
-
-
-
-
+  netForce: -> 
+    applied = Force.sum  @forces
+    @forces = [] #clearing the applied forces
+    force = applied.plus  @env.gravity
+    airResist = force.oposite  @env.airResist
+    friction = force.oposite  @env.friction
+    netForce = Force.sum [force, airResist, friction]
+    
+  nextTick: (dt) -> #assumes forces are filled before.
+    @motion.accelerate  @netForce() / @mass, dt
+    @pos.move  @motion, dt
 
