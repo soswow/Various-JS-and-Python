@@ -23,12 +23,19 @@ class Utils
 class P
   constructor: (@x=0, @y=0) ->
   distance: (toPoint) -> Utils.distance  this, toPoint
+  moveByDelta: (dPos, dt) ->
+    @x += dPos.x * dt
+    @y += dPos.y * dt
 
 point = (x,y) -> new Point(x,y)
 
 
 class Vector extends P
-  @sum= (vectors) -> vectors.reduce (prev, next) -> prev.plus(next)
+  @sum= (vectors) -> 
+    if vectors?.length > 0
+      vectors.reduce (prev, next) -> prev.plus(next)
+    else
+      new this()
 
   constructor: (args...) ->
     super(args...)
@@ -42,8 +49,8 @@ class Vector extends P
   addAmount: (deltaAmount=0) -> @setAmount  @amount + deltaAmount
   
   setAmount: (@amount=@amount) ->
-    @x = Math.cos(angle) * @amount
-    @y = Math.sin(angle) * @amount
+    @x = Math.cos(@angle) * @amount
+    @y = Math.sin(@angle) * @amount
     return this
 
   plus: (otherVector) -> new @constructor(@x + otherVector.x, @y + otherVector.y)
@@ -51,35 +58,39 @@ class Vector extends P
   toString: -> 
     "#{@constructor.name} is #{@amount.roundTo(3)} (#{@constructor.unit}) pointing @ #{Utils.radToDeg(@angle).roundTo(3)} deg."
 
+  oposite: (amount) ->  
+    new Vector(-@x, -@y).setAmount(amount)
+
 
 class MotionState extends Vector
   @unit = "Px/ms"
   
-  accelerate: (accel, dt) -> @addAmount  accel * dt
+  accelerate: (force, mass, dt) ->
+    value = (accel=force).amount / mass
+    accel.setAmount  value
+    @moveByDelta  accel, dt
 
   
 class Force extends Vector
   @unit = "N"
 
-  oposite: (amount) ->
-    new Force(-@x, -@y).setAmount(amount)
-
 
 class Environment
-  constructor: ->
+  constructor: () ->
     @gravity = new Force()
     @airResist = 0 # in Newton, no directiob specified
     @friction = 0
     @objects = []
   
-  addObject: (obj) ->
+  addObject: (obj, controllable=false) ->
     obj.env = this
     @objects.push  obj
+    @controllable = obj if controllable
     
-  nextTick: ->
+  nextTick: (dt) ->
     #TODO All object should be moved simultaneously
     #Collition detection also should be hangled here
-    @objects.map (o) -> o.nextTick()
+    @objects.map (o) -> o.nextTick  dt
     
 
 class RigObject
@@ -91,11 +102,31 @@ class RigObject
     applied = Force.sum  @forces
     @forces = [] #clearing the applied forces
     force = applied.plus  @env.gravity
-    airResist = force.oposite  @env.airResist
-    friction = force.oposite  @env.friction
+    airResist = @motion.oposite  @env.airResist
+    friction = @motion.oposite  @env.friction
     netForce = Force.sum [force, airResist, friction]
     
   nextTick: (dt) -> #assumes forces are filled before.
-    @motion.accelerate  @netForce() / @mass, dt
-    @pos.move  @motion, dt
+    # if @friction > @motion.amount
+    #   @motion.setAmount  0
+    # else  
+    @motion.accelerate  @netForce(), @mass, dt
+    @pos.moveByDelta  @motion, dt
+
+  kick: (up=0, down=0, left=0, right=0) ->
+    @forces.push  new Force(0, -up) if up
+    @forces.push  new Force(0, down) if down
+    @forces.push  new Force(-left, 0) if left
+    @forces.push  new Force(right, 0) if right
+
+exports = window unless exports
+exports.P = P
+exports.Vector = Vector
+exports.Force = Force
+exports.RigObject = RigObject
+exports.Environment = Environment
+
+
+
+
 
