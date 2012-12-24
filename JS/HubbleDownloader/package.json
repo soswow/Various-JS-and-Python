@@ -1,0 +1,16 @@
+{
+  "name": "hubble-images-downloader",
+  "version": "0.0.1",
+  "author": "Aleksandr Motsjonov <soswow@gmail.com>",
+  "description": "Downloads all HiRes images from http://www.spacetelescope.org",
+  "dependencies" : {
+    "scrape"    :  "*",
+    "underscore":  "*",
+    "async"     :  "*",
+    "http-get"  :  "*"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=0.6"
+  }
+}
