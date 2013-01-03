@@ -1,12 +1,12 @@
 $ ->
   class Utils
     @distance = (from, to) -> Math.sqrt(Math.pow((from.x - to.x), 2) + Math.pow((from.y - to.y), 2))
-    @getAngle = (x, y) -> @mod (Math.atan2  y, x), @TWOPI
-    @degToRad= (deg) -> deg * (Math.PI / 180)
-    @radToDeg= (rad) -> rad * (180 / Math.PI)
-    @mod= (a, b) -> a % b + (if a < 0 then b else 0)
+    @getAngle = (x, y) -> @mod (Math.atan2 y, x), @TWOPI
+    @degToRad = (deg) -> deg * (Math.PI / 180)
+    @radToDeg = (rad) -> rad * (180 / Math.PI)
+    @mod = (a, b) -> a % b + (if a < 0 then b else 0)
     @TWOPI = Math.PI * 2
-  
+
   state =
     x: -1
     y: -1
@@ -68,9 +68,9 @@ $ ->
     newState = state[stateKey] + dt * state[speedKey]
     if newState < -1
       newState = arendSize - 1
-    
+
     if newState > arendSize - objectSize and state[speedKey] > 0
-      newState = - 1
+      newState = -1
 
     state[stateKey] = newState
 
@@ -80,7 +80,7 @@ $ ->
 
   uiLoop = ->
     angle = Utils.radToDeg Utils.getAngle state.sx, state.sy
-    object.css 
+    object.css
       'left': state.x
       'top': state.y
       '-webkit-transform': "rotate(#{angle}deg)"
@@ -89,7 +89,7 @@ $ ->
   makeLooper = (loopFunc) ->
     looper = (frameTime) ->
       t = frameTime - prevT
-#      log1.html prevT
+      #      log1.html prevT
       loopFunc t
       prevT = frameTime
       requestAnimFrame looper
