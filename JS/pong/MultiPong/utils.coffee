@@ -1,3 +1,5 @@
+_ ?= require('underscore')._
+
 #Math function extraction
 random = Math.random
 pow = Math.pow
@@ -8,6 +10,14 @@ TWOPI = pi * 2
 exp = Math.exp
 cos = Math.cos
 sin = Math.sin
+
+class Point
+  constructor: (@x, @y) ->
+  toString: -> "(#{@x}, #{@y})"
+  round: ->
+    @x = Math.round(@x * 100) / 100
+    @y = Math.round(@y * 100) / 100
+    return this
 
 class Utils
   randomGauss: (mu, sigma) ->
@@ -47,11 +57,26 @@ class Utils
 
   randomInRange: (from, to) -> Math.random() * (to - from) + from;
 
+  randomFromArray: (array) -> array[Math.round  @randomInRange(0, array.length-1)];
+
   degToRad: (deg) -> deg * (Math.PI / 180)
 
   radToDeg: (rad) -> rad * (180 / Math.PI)
 
   xy: (x, y) -> new Point(x, y)
+
+  radialOriginMove: (origin, point, deltaAngle, print) ->
+    xAxis = origin
+#    xAxis.x += 1
+    alpha =  @radToDeg  @angleBetweenLines  point, origin, origin, xAxis
+    alpha = 360 - alpha
+#    if point.y > origin.y
+    r = @distance  origin, point #radius
+    beta = alpha + deltaAngle
+
+    unless print
+      console.log deltaAngle, alpha, beta
+    return @radialMove  origin, r, beta
 
   radialMove: (start, distance, angle) ->
     radians = @degToRad  angle
@@ -59,10 +84,21 @@ class Utils
     deltaX = Math.cos(radians) * distance
     @xy  start.x + deltaX, start.y - deltaY
 
+  mod: (a, b) -> a % b + (if a < 0 then b else 0)
 
-class Point
-  constructor: (@x, @y) ->
-  toString: -> "(#{@x}, #{@y})"
+  findPos: (obj) ->
+    curleft = 0
+    curtop = 0
+    if obj.offsetParent
+      loop
+        curleft += obj.offsetLeft
+        curtop += obj.offsetTop
+        obj = obj.offsetParent
+        break unless obj
+      return @xy  curleft, curtop
+
+exports ?= window ? {}
+exports.utils = new Utils()
 
 
-window.utils = new Utils()
+
