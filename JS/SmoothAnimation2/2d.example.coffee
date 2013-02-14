@@ -2,6 +2,7 @@ $ ->
   class Utils
     @distance = (from, to) -> Math.sqrt(Math.pow((from.x - to.x), 2) + Math.pow((from.y - to.y), 2))
     @getAngle = (x, y) -> @mod (Math.atan2 y, x), @TWOPI
+    @getComponent = (angle, length) -> [Math.cos(angle) * length, Math.sin(angle) * length]
     @degToRad = (deg) -> deg * (Math.PI / 180)
     @radToDeg = (rad) -> rad * (180 / Math.PI)
     @mod = (a, b) -> a % b + (if a < 0 then b else 0)
@@ -12,10 +13,14 @@ $ ->
     y: -1
     sx: 0
     sy: 0
+    speed: 0
+    angle: Utils.degToRad 0
+    controlType: 'type1'
 
   cons =
     maxSpeed: 1
     acceleration: 0.001
+    rotationSpeed: 0.3
     friction: 0.98
 
   keyStatus =
@@ -48,15 +53,24 @@ $ ->
     else if e.keyCode is 40
       keyStatus.down = e.type is 'keydown'
 
+  $("input[name=control]").click ->
+    state.controlType = $(this).val()
+
   object = $("#object")
   container = $("#container")
   log1 = $("#log1")
-  containerWidth = container.width()
-  objectWidth = object.width()
-  containerHeight = container.height()
-  objectHeight = object.width()
+  sizes =
+    area:
+      x: container.width()
+      y: container.height()
+    object:
+      x: object.width()
+      y: object.height()
 
-  tickOneAxis = (speedKey, stateKey, direction, dt, objectSize, arendSize) ->
+  tickOneAxis = (speedKey, stateKey, direction, dt) ->
+    objectSize = sizes.object[stateKey]
+    arendSize = sizes.area[stateKey]
+
     state[speedKey] += cons.acceleration * keyStatus[direction]() * dt
     if state[speedKey] > cons.maxSpeed
       state[speedKey] = cons.maxSpeed
@@ -74,22 +88,48 @@ $ ->
 
     state[stateKey] = newState
 
+  tickOneAxis2 = (dt) ->
+    rotationDeltaDeg = cons.rotationSpeed * keyStatus.horizontal() * dt
+    state.angle = Utils.degToRad  Utils.radToDeg(state.angle) + rotationDeltaDeg
+
+    state.speed += cons.acceleration * keyStatus.vertical() * dt
+    if state.speed > cons.maxSpeed
+      state.speed = cons.maxSpeed
+
+    state.speed *= cons.friction
+    if Math.abs(state.speed) < 0.009
+      state.speed = 0
+
+    [xd, yd] = Utils.getComponent state.angle, state.speed
+
+    for [axis, delta] in [["x", xd], ["y", yd]]
+      newState = state[axis] - dt * delta
+      if newState < -1
+        newState = sizes.area[axis] - 1
+
+      if newState > sizes.area[axis] - sizes.object[axis] and delta < 0
+        newState = -1
+
+      state[axis] = newState
+
   stateLoop = (dt) ->
-    tickOneAxis "sx", "x", "horizontal", dt, objectWidth, containerWidth
-    tickOneAxis "sy", "y", "vertical", dt, objectHeight, containerHeight
+    if state.controlType is "type1"
+      tickOneAxis "sx", "x", "horizontal", dt
+      tickOneAxis "sy", "y", "vertical", dt
+      state.angle = Utils.getAngle state.sx, state.sy
+    else
+      tickOneAxis2 dt
 
   uiLoop = ->
-    angle = Utils.radToDeg Utils.getAngle state.sx, state.sy
     object.css
       'left': state.x
       'top': state.y
-      '-webkit-transform': "rotate(#{angle}deg)"
+      '-webkit-transform': "rotate(#{Utils.radToDeg state.angle}deg)"
 
   prevT = Date.now()
   makeLooper = (loopFunc) ->
     looper = (frameTime) ->
       t = frameTime - prevT
-      #      log1.html prevT
       loopFunc t
       prevT = frameTime
       requestAnimFrame looper
