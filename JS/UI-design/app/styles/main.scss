@@ -1,0 +1,9 @@
+$fontAwesomePath: "../components/font-awesome/font";
+@import 'sass-bootstrap/lib/bootstrap';
+@import 'font-awesome/sass/font-awesome.scss';
+
+
+.hero-unit {
+    margin: 50px auto 0 auto;
+    width: 300px;
+}
