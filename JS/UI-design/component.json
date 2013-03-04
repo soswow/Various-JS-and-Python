@@ -5,7 +5,10 @@
     "sass-bootstrap": "~2.3.0",
     "modernizr": "~2.6.2",
     "jquery": "~1.9.1",
-    "font-awesome": "3.0.2"
+    "font-awesome": "3.0.2",
+    "backbone": "*",
+    "backbone.localStorage": "*",
+    "underscore": "~1.4.4"
   },
   "devDependencies": {}
 }

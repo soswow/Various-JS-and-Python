@@ -5,6 +5,19 @@ var mountFolder = function (connect, dir) {
     return connect.static(require('path').resolve(dir));
 };
 
+var pushStateHook = function (url) {
+  var path = require('path');
+  var request = require('request');
+  return function (req, res, next) {
+    var ext = path.extname(req.url);
+    if ((ext == "" || ext === ".html") && req.url != "/") {
+      req.pipe(request(url)).pipe(res);
+    } else {
+      next();
+    }
+  };
+};
+
 // # Globbing
 // for performance reasons we're only matching one level down:
 // 'test/spec/{,*/}*.js'
@@ -56,6 +69,7 @@ module.exports = function (grunt) {
                 options: {
                     middleware: function (connect) {
                         return [
+                            pushStateHook("http://localhost:9000"),
                             lrSnippet,
                             mountFolder(connect, '.tmp'),
                             mountFolder(connect, 'app')

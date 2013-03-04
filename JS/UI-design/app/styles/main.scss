@@ -1,9 +1,56 @@
 $fontAwesomePath: "../components/font-awesome/font";
+$gridColumnWidth1200:     42px !default;
+$gridGutterWidth1200:     20px !default;
+$gridColumnWidth:         42px !default;
+$gridGutterWidth:         20px !default;
 @import 'sass-bootstrap/lib/bootstrap';
 @import 'font-awesome/sass/font-awesome.scss';
+@import 'sass-bootstrap/lib/responsive.scss';
 
+@mixin placeholder($color){
+  &::-webkit-input-placeholder { /* WebKit browsers */
+    color:    $color;
+  }
+  &:-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+    color:    $color;
+  }
+  &::-moz-placeholder { /* Mozilla Firefox 19+ */
+    color:    $color;
+  }
+  &:-ms-input-placeholder { /* Internet Explorer 10+ */
+    color:    $color;
+  }
+}
 
-.hero-unit {
-    margin: 50px auto 0 auto;
-    width: 300px;
+body{
+  padding-top: 40px;
+  @media (max-width: 979px){
+    padding-top: 0 !important;
+  }
+}
+.container.content{
+  display: none;
+}
+#search{
+  .form-search{
+    position: relative;
+    &:before{
+      font-family: 'FontAwesome';
+      content: "\f002";
+      position: absolute;
+      top: 23px;
+      font-size: 25px;
+      color: lightgray;
+      left: 12px;
+    }
+    .search-query{
+      font-size: 30px !important;
+      height: 45px;
+      margin-top: 10px;
+      padding-left: 45px;
+      padding-top: 2px;
+      line-height: 45px;
+      @include placeholder(lightgray);
+    }
+  }
 }
