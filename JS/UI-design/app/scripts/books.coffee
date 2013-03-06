@@ -6,11 +6,14 @@ class app.Book extends Backbone.Model
     description: raw.volumeInfo.description
     averageRating: raw.volumeInfo.averageRating
     categories: raw.volumeInfo.categories
-    image: raw.volumeInfo.imageLinks.thumbnail
+    image: raw.volumeInfo.imageLinks?.thumbnail
     ISBN: raw.volumeInfo.industryIdentifiers[1].identifier
     language: raw.volumeInfo.language
     publishedDate: raw.volumeInfo.publishedDate
     publisher: raw.volumeInfo.publisher
+
+  @parseGoodreads = (raw) ->
+
 
   defaults:
     barrowed: false

@@ -38,6 +38,7 @@ class app.GoogleApi
         #      maxResults: @perPage
         callback: "callback"
         fields: "items(#{filterBy}),totalItems"
+        filter: "partial"
       dataType: 'jsonp'
       error: -> console.log 'Error', arguments
       success: cb

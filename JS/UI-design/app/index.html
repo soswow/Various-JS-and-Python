@@ -43,7 +43,7 @@
             <h1>Search Books</h1>
             <div class="row">
                 <div class="span12 form-search">
-                    <input type="text" class="input-block-level search-query" placeholder="What do you want to search?" />
+                    <input type="text" class="input-block-level search-query" placeholder="What do you want to find?" />
                 </div>
             </div>
             <div class="row" id="search-results">
@@ -62,6 +62,13 @@
 
         <script id="bookTemplate" type="text/template">
             <h3><%= title %></h3>
+            <p><%= subtitle %></p>
+
+            <div class="row">
+                <div class="span3"><img src="<%= image %>"></div>
+                <div class="span9"></div>
+            </div>
+
         </script>
 
         <!-- build:js scripts/vendor.js -->
@@ -87,6 +94,7 @@
         <!-- build:js(.tmp) scripts/main.js -->
         <script src="scripts/main.js"></script>
         <script src="scripts/google-api.js"></script>
+        <script src="scripts/goodreads-api.js"></script>
         <script src="scripts/books.js"></script>
         <script src="scripts/views.js"></script>
         <!-- endbuild -->
