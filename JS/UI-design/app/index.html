@@ -61,14 +61,41 @@
         <![endif]-->
 
         <script id="bookTemplate" type="text/template">
-            <h3><%= title %></h3>
-            <p><%= subtitle %></p>
-
-            <div class="row">
-                <div class="span3"><img src="<%= image %>"></div>
-                <div class="span9"></div>
+          <div class="book">
+            <div class="row titlePart">
+              <div class="span12">
+                <h3><%= title %></h3>
+                <div class="author">by <%= (authors || ["unknown author"]).join(", ") %></div>
+                <% if(subtitle && subtitle.length) { %>
+                  <p class="subtitle"><%= subtitle %></p>
+                <% } %>
+              </div>
             </div>
-
+            <div class="row infoPart">
+                <div class="span3">
+                  <img src="<%= image %>" class="cover">
+                  <div class="buttons">
+                    <button class="add btn btn-success btn-large btn-block"><i class="icon-plus-sign"></i> To My Shelf</button>
+                    <a href="http://www.goodreads.com/search?search[query]=<%= ISBN %>#other_reviews" target="_blank"><img src="images/goodreads-badge-read-reviews.png" alt="Read Goodreads review"></a>
+                  </div>
+                </div>
+                <div class="span9">
+                  <%= (categories || []).join(" | ") %>
+                  <div class="stars subrow" title="Avg. Rating: <%= averageRating %> (<%= ratingsCount %> votes)">
+                    <% _.each(_.range(1, 6), function(i) { %><i class="icon-star<%= averageRating < i ? '-empty' : '' %>"></i><% }); %>
+                  </div>
+                  <div class="subrow">
+                    <strong>ISBN:</strong> <%= ISBN %>
+                  </div>
+                  <div class="subrow">
+                    <strong>Published by </strong> <%= publisher %>, <%= publishedDate.toString('MMMM d, yyyy') %>
+                  </div>
+                  <div class="subrow description">
+                    <%= description %>
+                  </div>
+                </div>
+            </div>
+          </div>
         </script>
 
         <!-- build:js scripts/vendor.js -->
@@ -89,6 +116,7 @@
         <script src="components/underscore/underscore.js"></script>
         <script src="components/backbone/backbone.js"></script>
         <script src="components/backbone.localStorage/backbone.localStorage.js"></script>
+        <script src="components/datejs/build/date.js"></script>
         <!-- endbuild -->
 
         <!-- build:js(.tmp) scripts/main.js -->

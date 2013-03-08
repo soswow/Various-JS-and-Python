@@ -17,6 +17,7 @@ class app.GoogleApi
       "id"
       "volumeInfo/title"
       "volumeInfo/subtitle"
+      "volumeInfo/authors"
       "volumeInfo/description"
       "volumeInfo/publisher"
       "volumeInfo/publishedDate"
@@ -24,6 +25,7 @@ class app.GoogleApi
       "volumeInfo/categories"
       "volumeInfo/mainCategory"
       "volumeInfo/averageRating"
+      "volumeInfo/ratingsCount"
       "volumeInfo/language"
       "volumeInfo/industryIdentifiers"
       "volumeInfo/imageLinks"
@@ -34,11 +36,11 @@ class app.GoogleApi
       data:
         key: @key
         q: q
+        country: "us"
         #      startIndex: (options.page-1) * @perPage
         #      maxResults: @perPage
         callback: "callback"
         fields: "items(#{filterBy}),totalItems"
-        filter: "partial"
       dataType: 'jsonp'
       error: -> console.log 'Error', arguments
       success: cb

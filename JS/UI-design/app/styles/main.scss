@@ -6,6 +6,7 @@ $gridGutterWidth:         20px !default;
 @import 'sass-bootstrap/lib/bootstrap';
 @import 'font-awesome/sass/font-awesome.scss';
 @import 'sass-bootstrap/lib/responsive.scss';
+@import "compass/css3/images";
 
 @mixin placeholder($color){
   &::-webkit-input-placeholder { /* WebKit browsers */
@@ -31,6 +32,7 @@ body{
 .container.content{
   display: none;
 }
+
 #search{
   .form-search{
     position: relative;
@@ -50,7 +52,79 @@ body{
       padding-left: 45px;
       padding-top: 2px;
       line-height: 45px;
+      margin-bottom: 20px;
       @include placeholder(lightgray);
     }
   }
+}
+
+.book{
+  position: relative;
+
+  margin-bottom: 20px;
+  padding-bottom: 25px;
+
+  &:after{
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    @include background(
+        linear-gradient(left,
+          rgba(180,180,180,0) 0%,
+          rgba(180,180,180,1) 30%,
+          rgba(180,180,180,1) 50%,
+          rgba(180,180,180,1) 70%,
+          rgba(180,180,180,0.01) 100%),
+        radial-gradient(#c00, #fff 100px));
+  }
+  h3{
+    float: left;
+    margin: 0;
+    max-width: 530px;
+    text-shadow: 2px 2px 2px rgb(211, 211, 211);
+  }
+  .author{
+    padding-top:14px;
+    margin-left: 15px;
+    float:left;
+    color: gray;
+    font-weight: 200;
+  }
+  .subtitle{
+    clear: both;
+    font-style: italic;
+  }
+  .infoPart{
+    margin-top: 20px;
+    .stars{
+      color: goldenrod;
+      font-size: 26px;
+      .icon-star{
+        margin-right: 2px;
+      }
+    }
+    .subrow{
+      padding-top: 8px;
+    }
+    .description{
+      height: 220px;
+      line-height: 22px;
+      font-weight: 200;
+      overflow: hidden;
+    }
+    .buttons{
+      text-align: center;
+      button.add{
+        margin:10px 0;
+      }
+    }
+    img.cover{
+      width: 295px;
+    }
+  }
+
+
 }

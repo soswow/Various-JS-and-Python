@@ -11,6 +11,8 @@ class App extends Backbone.Router
 
   search: ->
     @mainView.showSearch()
+    $(".search-query").val("Harry potter");
+    app.googleBooks.search "Harry potter"
 
   myShelf: ->
     @mainView.showMyShelf()
