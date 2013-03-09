@@ -48,7 +48,9 @@
             </div>
             <div class="row" id="search-results">
                 <div class="span12">
+                    <div class="found-count"></div>
                     <div class="list"></div>
+                    <button id="loadMore" class="btn btn-primary btn-large btn-block"><i class="icon-double-angle-down"></i> Load More</button>
                 </div>
             </div>
         </div>
@@ -61,7 +63,7 @@
         <![endif]-->
 
         <script id="bookTemplate" type="text/template">
-          <div class="book">
+          <div class="book" id="book_<%= id %>">
             <div class="row titlePart">
               <div class="span12">
                 <h3><%= title %></h3>
@@ -74,15 +76,18 @@
             <div class="row infoPart">
                 <div class="span3">
                   <img src="<%= image %>" class="cover">
-                  <div class="buttons">
-                    <button class="add btn btn-success btn-large btn-block"><i class="icon-plus-sign"></i> To My Shelf</button>
+                  <div class="buttons <%= app.myBooks.get(id) ? 'onMyShelf' : '' %>">
+                    <button class="remove btn btn-warning btn-large btn-block" data-id="<%= id %>"><i class="icon-minus-sign"></i> From My Shelf</button>
+                    <button class="add btn btn-success btn-large btn-block" data-id="<%= id %>"><i class="icon-plus-sign"></i> To My Shelf</button>
                     <a href="http://www.goodreads.com/search?search[query]=<%= ISBN %>#other_reviews" target="_blank"><img src="images/goodreads-badge-read-reviews.png" alt="Read Goodreads review"></a>
                   </div>
                 </div>
                 <div class="span9">
                   <%= (categories || []).join(" | ") %>
-                  <div class="stars subrow" title="Avg. Rating: <%= averageRating %> (<%= ratingsCount %> votes)">
-                    <% _.each(_.range(1, 6), function(i) { %><i class="icon-star<%= averageRating < i ? '-empty' : '' %>"></i><% }); %>
+                  <div class="stars subrow">
+                    <span data-toggle="tooltip" data-placement="right" title="Avg. Rating: <%= averageRating %> (<%= ratingsCount %> votes)">
+                      <% _.each(_.range(1, 6), function(i) { %><i class="icon-star<%= averageRating < i ? '-empty' : '' %>"></i><% }); %>
+                    </span>
                   </div>
                   <div class="subrow">
                     <strong>ISBN:</strong> <%= ISBN %>

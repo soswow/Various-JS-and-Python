@@ -45,6 +45,14 @@ body{
       color: lightgray;
       left: 12px;
     }
+    &.preloader:before{
+      content: "\f110";
+      display: inline-block;
+      -moz-animation: spin 2s infinite linear;
+      -o-animation: spin 2s infinite linear;
+      -webkit-animation: spin 2s infinite linear;
+      animation: spin 2s infinite linear;
+    }
     .search-query{
       font-size: 30px !important;
       height: 45px;
@@ -56,13 +64,20 @@ body{
       @include placeholder(lightgray);
     }
   }
+  .found-count{
+    color: gray;
+    font-weight: 200;
+    letter-spacing: 1px;
+    margin-top: -10px;
+    margin-bottom: 20px;
+  }
 }
 
 .book{
   position: relative;
 
   margin-bottom: 20px;
-  padding-bottom: 25px;
+  padding-bottom: 35px;
 
   &:after{
     content: '';
@@ -102,6 +117,9 @@ body{
     .stars{
       color: goldenrod;
       font-size: 26px;
+      > span{
+        display: inline-block;
+      }
       .icon-star{
         margin-right: 2px;
       }
@@ -117,14 +135,27 @@ body{
     }
     .buttons{
       text-align: center;
-      button.add{
+      button.btn{
         margin:10px 0;
+      }
+      .remove{
+        display: none;
+      }
+      &.onMyShelf{
+        .remove{
+          display: block;
+        }
+        .add{
+          display: none;
+        }
       }
     }
     img.cover{
       width: 295px;
     }
   }
+}
 
-
+#loadMore{
+  margin:10px 0 40px;
 }

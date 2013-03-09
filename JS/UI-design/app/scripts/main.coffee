@@ -20,8 +20,10 @@ class App extends Backbone.Router
   start: ->
     @mainView = new @MainView()
     Backbone.history.start pushState: true
+    app.myBooks.fetch()
     return this
 
 window.app = new App()
 
-$ -> app.start()
+$ ->
+  app.start()

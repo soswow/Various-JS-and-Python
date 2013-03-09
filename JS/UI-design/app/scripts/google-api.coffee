@@ -7,11 +7,7 @@ class app.GoogleApi
       cb = options
       options = {}
 
-    options = $.extend options,
-      page: 1
-
-#    window.callback = (res) ->
-
+    options = $.extend {page: 1}, options
 
     filterBy = [
       "id"
@@ -37,8 +33,8 @@ class app.GoogleApi
         key: @key
         q: q
         country: "us"
-        #      startIndex: (options.page-1) * @perPage
-        #      maxResults: @perPage
+        startIndex: (options.page-1) * @perPage
+        maxResults: @perPage
         callback: "callback"
         fields: "items(#{filterBy}),totalItems"
       dataType: 'jsonp'

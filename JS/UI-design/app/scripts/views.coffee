@@ -3,30 +3,61 @@ class app.SearchView extends Backbone.View
 
   events:
     'keypress input.search-query': 'doSearch'
+    'click #loadMore': 'moreSearch'
+    'click button.add': 'toMyShelf'
 
   bookTemplate: _.template $("#bookTemplate").html()
 
   initialize: ->
-    _.bindAll @
+    _.bindAll @, 'addAllBooks', 'addOneBook', 'updateMyBook'
     @input = @$('.search-query')
     @resultContainer = @$('#search-results')
     @resultList = @resultContainer.find(".list")
-    app.googleBooks.bind 'reset', @render
+    app.googleBooks.on 'reset', @addAllBooks
+    app.googleBooks.on 'add', @addOneBook
+    app.myBooks.on 'add remove destroy', @updateMyBook
 
   doSearch: (e) ->
     return unless e.keyCode is 13
+    @preloader true
     app.googleBooks.search @input.val()
+
+  moreSearch: ->
+    @preloader true
+    app.googleBooks.searchMore()
+
+  updateCounter: ->
+    @$(".found-count").html "Found #{app.googleBooks.total} results. First #{app.googleBooks.length} shown below."
 
   addOneBook: (book) ->
     @resultList.append @bookTemplate(book.attributes)
+    $(".stars span").tooltip()
+    @updateCounter()
+    @preloader false
 
   addAllBooks: ->
     @resultList.empty()
     app.googleBooks.each @addOneBook
 
+  preloader: (turnOn) ->
+    @$(".form-search").toggleClass "preloader", turnOn
+
+  toMyShelf: (e) ->
+    book = app.googleBooks.get $(e.target).data('id')
+    app.myBooks.create book.attributes
+
+  updateMyBook: (model) ->
+    id = model.id
+    inCollection = app.myBooks.get(id)?
+    console.log id, inCollection
+    @$("#book_#{id} .buttons").toggleClass("onMyShelf", inCollection)
+
   render: ->
     @addAllBooks()
     @$el.show()
+
+
+
 
 
 class app.MyShelfView extends Backbone.View
