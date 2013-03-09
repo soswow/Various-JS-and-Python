@@ -5,6 +5,7 @@ class app.SearchView extends Backbone.View
     'keypress input.search-query': 'doSearch'
     'click #loadMore': 'moreSearch'
     'click button.add': 'toMyShelf'
+    'click button.remove': 'fromMyShelf'
 
   bookTemplate: _.template $("#bookTemplate").html()
 
@@ -46,11 +47,15 @@ class app.SearchView extends Backbone.View
     book = app.googleBooks.get $(e.target).data('id')
     app.myBooks.create book.attributes
 
+  fromMyShelf: (e) ->
+    book = app.myBooks.get $(e.target).data('id')
+    book.destroy()
+
   updateMyBook: (model) ->
     id = model.id
     inCollection = app.myBooks.get(id)?
     console.log id, inCollection
-    @$("#book_#{id} .buttons").toggleClass("onMyShelf", inCollection)
+    @$("#book_#{id}").toggleClass("onMyShelf", inCollection)
 
   render: ->
     @addAllBooks()
@@ -58,12 +63,41 @@ class app.SearchView extends Backbone.View
 
 
 
-
-
 class app.MyShelfView extends Backbone.View
   el: '#my-shelf'
 
+  events:
+    'click button.remove': 'removeBook'
+
+  template: _.template $("#myShelfBookTemplate").html()
+
+  initialize: ->
+    _.bindAll @, 'addOneBook', 'addAllBooks'
+    @tableBody = @$("table tbody")
+    app.myBooks.on 'reset', @addAllBooks
+    app.myBooks.on 'add', @addOneBook
+    app.myBooks.on 'remove destroy', @removeFromDOM
+
+  removeBook: (event) ->
+    id = $(event.target).data('id')
+    app.myBooks.get(id).destroy()
+
+  removeFromDOM: (model) ->
+    id = model.get('id')
+    $("#my_book_#{id}").remove()
+    if app.myBooks.length is 0
+      @$("tr.no-books").show()
+
+  addOneBook: (model) ->
+    @tableBody.append @template(model.attributes)
+    @$("tr.no-books").hide()
+
+  addAllBooks: ->
+    @tableBody.find("tr:not(.no-books)").remove()
+    app.myBooks.each @addOneBook
+
   render: ->
+    @addAllBooks()
     @$el.show()
 
 

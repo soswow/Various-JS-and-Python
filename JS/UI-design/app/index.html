@@ -56,18 +56,42 @@
         </div>
         <div id="my-shelf" class="container content">
             <h1>My Shelf</h1>
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Title/Author</th>
+                  <th>Barrow Info</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="no-books" style="display:none;">
+                  <td colspan="3">No books on my shelf.</td>
+                </tr>
+              </tbody>
+            </table>
         </div>
 
         <!--[if lt IE 7]>
             <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
         <![endif]-->
 
+        <script id="myShelfBookTemplate" type="text/template">
+          <tr id="my_book_<%= id %>">
+            <td><%= title %> by <%= authorsStr %></td>
+            <td></td>
+            <td>
+              <button class="remove btn btn-warning" data-id="<%= id %>">Remove</button>
+            </td>
+          </tr>
+        </script>
+
         <script id="bookTemplate" type="text/template">
-          <div class="book" id="book_<%= id %>">
+          <div class="book <%= app.myBooks.get(id) ? 'onMyShelf' : '' %>" id="book_<%= id %>">
             <div class="row titlePart">
               <div class="span12">
                 <h3><%= title %></h3>
-                <div class="author">by <%= (authors || ["unknown author"]).join(", ") %></div>
+                <div class="author">by <%= authorsStr %></div>
                 <% if(subtitle && subtitle.length) { %>
                   <p class="subtitle"><%= subtitle %></p>
                 <% } %>
@@ -76,7 +100,7 @@
             <div class="row infoPart">
                 <div class="span3">
                   <img src="<%= image %>" class="cover">
-                  <div class="buttons <%= app.myBooks.get(id) ? 'onMyShelf' : '' %>">
+                  <div class="buttons">
                     <button class="remove btn btn-warning btn-large btn-block" data-id="<%= id %>"><i class="icon-minus-sign"></i> From My Shelf</button>
                     <button class="add btn btn-success btn-large btn-block" data-id="<%= id %>"><i class="icon-plus-sign"></i> To My Shelf</button>
                     <a href="http://www.goodreads.com/search?search[query]=<%= ISBN %>#other_reviews" target="_blank"><img src="images/goodreads-badge-read-reviews.png" alt="Read Goodreads review"></a>

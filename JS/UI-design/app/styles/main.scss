@@ -92,8 +92,7 @@ body{
           rgba(180,180,180,1) 30%,
           rgba(180,180,180,1) 50%,
           rgba(180,180,180,1) 70%,
-          rgba(180,180,180,0.01) 100%),
-        radial-gradient(#c00, #fff 100px));
+          rgba(180,180,180,0.01) 100%));
   }
   h3{
     float: left;
@@ -141,17 +140,21 @@ body{
       .remove{
         display: none;
       }
-      &.onMyShelf{
-        .remove{
-          display: block;
-        }
-        .add{
-          display: none;
-        }
-      }
     }
     img.cover{
       width: 295px;
+    }
+  }
+  &.onMyShelf{
+    //@include background(
+        //radial-gradient(50% 100%, rgb(231, 243, 231), white 70%));
+    .buttons{
+      .remove{
+        display: block;
+      }
+      .add{
+        display: none;
+      }
     }
   }
 }

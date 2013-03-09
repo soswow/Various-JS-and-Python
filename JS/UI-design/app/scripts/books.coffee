@@ -6,6 +6,7 @@ class app.Book extends Backbone.Model
     title: volume.title
     subtitle: volume.subtitle
     authors: volume.authors
+    authorsStr: (volume.authors || ["unknown author"]).join(", ")
     description: volume.description
     averageRating: volume.averageRating
     ratingsCount: volume.ratingsCount
