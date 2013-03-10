@@ -20,6 +20,19 @@ class app.Book extends Backbone.Model
   defaults:
     borrowedBy: false
     borrowedDate: null
+    title: null
+    subtitle: null
+    authors: null
+    authorsStr: null
+    description: null
+    averageRating: null
+    ratingsCount: null
+    categories: null
+    image: null
+    ISBN: null
+    language: null
+    publishedDate: null
+    publisher: null
 
 class app.GoogleBooksCollection extends Backbone.Collection
   model: app.Book

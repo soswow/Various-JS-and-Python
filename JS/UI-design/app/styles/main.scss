@@ -112,7 +112,7 @@ body{
     font-style: italic;
   }
   .infoPart{
-    margin-top: 20px;
+    margin-top: 10px;
     .stars{
       color: goldenrod;
       font-size: 26px;
@@ -139,6 +139,9 @@ body{
       }
       .remove{
         display: none;
+      }
+      a{
+        display: block;
       }
     }
     img.cover{
@@ -175,6 +178,19 @@ body{
       left:0;
       right:0;
       margin-top:10px;
+    }
+  }
+}
+
+#modalInfo{
+  width: 742px;
+  margin-left: -371px;
+
+  .book{
+    margin-bottom: 0;
+    padding-bottom: 0;
+    .buttons a{
+      margin:10px 0;
     }
   }
 }

@@ -38,6 +38,7 @@ class app.SearchView extends Backbone.View
 
   addAllBooks: ->
     @resultList.empty()
+    $("#loadMore").show() if app.googleBooks.length > 0
     app.googleBooks.each @addOneBook
 
   preloader: (turnOn) ->
@@ -74,6 +75,7 @@ class app.MyShelfView extends Backbone.View
     'keyup input.borrower-name': 'keyup'
 
   template: _.template $("#myShelfBookTemplate").html()
+  infoTemplate: _.template $("#bookTemplate").html()
 
   initialize: ->
     _.bindAll @, 'addOneBook', 'addAllBooks', 'removeFromDOM', 'giveAwayBook', 'updateBook'
@@ -97,25 +99,27 @@ class app.MyShelfView extends Backbone.View
     row = @rowFromEvent(e)
     row.find(".default-section").hide()
     row.find(".submit-section").show()
-    row.find(".borrower-name-container").slideDown()
+    row.find(".borrower-name-container").slideDown 'fast'
     row.find(".borrower-name").focus()
 
   submitGiveAwayBook: (e) ->
     row = @rowFromEvent(e)
     borrowdBy = row.find("input.borrower-name").val()
-    @modelFromEvent(e).set(
-      borrowedBy: borrowdBy
-      borrowedDate: (new Date).toString("yyyy-MM-ddTHH:mm:ssZ")
-    ).save()
+    row.find(".borrower-name-container").slideUp 'fast', =>
+      @modelFromEvent(e).set(
+        borrowedBy: borrowdBy
+        borrowedDate: (new Date).toString("yyyy-MM-ddTHH:mm:ssZ")
+      ).save()
 
   cancelGiveAwayBook: (e) ->
-    @updateBook @modelFromEvent(e)
+    @rowFromEvent(e).find(".borrower-name-container").slideUp 'fast', =>
+      @updateBook @modelFromEvent(e)
 
   takeBackBook: (e) ->
     @modelFromEvent(e).set('borrowedBy', false).save()
 
   removeBook: (e) ->
-    @modelFromEvent(e).destroy()
+    @modelFromEvent(e).destroy() if confirm("Are you sure want delete it?")
 
   removeFromDOM: (model) ->
     id = model.get('id')
@@ -136,6 +140,22 @@ class app.MyShelfView extends Backbone.View
     if app.myBooks.length is 0
       @$("tr.no-books").show()
     app.myBooks.each @addOneBook
+
+  showModelInfo: (id) ->
+    cb = =>
+      attrs = app.myBooks.get(id).attributes
+      modal = $("#modalInfo")
+      $(".modal-body", modal).html(@infoTemplate(attrs))
+      $("#modalInfoTitle").html(attrs.title).after(attrs.authorsStr)
+      $(".titlePart", modal).remove()
+      $("button.add, button.remove", modal).remove()
+      modal.modal()
+      modal.on 'hide', -> app.navigate 'my-shelf', {trigger: true}
+    if app.myBooks.length > 0
+      cb()
+    else
+      app.myBooks.once 'fetch reset', => cb()
+
 
   render: ->
     @addAllBooks()

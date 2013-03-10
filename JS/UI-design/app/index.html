@@ -10,9 +10,9 @@
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
-        <link rel="stylesheet" href="styles/main.css">
+        <link rel="stylesheet" href="/styles/main.css">
         <!-- build:js scripts/vendor/modernizr.js -->
-        <script src="components/modernizr/modernizr.js"></script>
+        <script src="/components/modernizr/modernizr.js"></script>
         <!-- endbuild -->
     </head>
     <body>
@@ -50,7 +50,7 @@
                 <div class="span12">
                     <div class="found-count"></div>
                     <div class="list"></div>
-                    <button id="loadMore" class="btn btn-primary btn-large btn-block"><i class="icon-double-angle-down"></i> Load More</button>
+                    <button id="loadMore" style="display: none;" class="btn btn-primary btn-large btn-block"><i class="icon-double-angle-down"></i> Load More</button>
                 </div>
             </div>
         </div>
@@ -76,9 +76,21 @@
             <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
         <![endif]-->
 
+        <div id="modalInfo" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h3 id="modalInfoTitle">Modal header</h3>
+          </div>
+          <div class="modal-body span12" style="margin-left:0"></div>
+          <div class="modal-footer">
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+            <button class="btn btn-primary">Save changes</button>
+          </div>
+        </div>
+
         <script id="myShelfBookTemplate" type="text/template">
           <tr id="my_book_<%= id %>" class="<%= borrowedBy ? 'info':'' %>">
-            <td><%= title %> <br/>by <%= authorsStr %></td>
+            <td><a href="/modal-info/<%= id %>"><%= title %></a> <br/>by <%= authorsStr %></td>
             <td>
               <% if (borrowedBy) { %>
               Borrowed by <%= borrowedBy %><br/>
@@ -87,12 +99,12 @@
             </td>
             <td>
               <div class="default-section">
-                <button class="remove btn btn-warning" data-id="<%= id %>">Remove</button>
                 <% if (borrowedBy){ %>
                   <button class="take-back btn btn-success" data-id="<%= id %>">Take Back</button>
                 <% } else { %>
                   <button class="give-away btn btn-primary" data-id="<%= id %>">Give Away</button>
                 <% } %>
+                <button class="remove btn btn-warning" data-id="<%= id %>">Remove</button>
               </div>
               <div class="submit-section" style="display: none;">
                 <button class="submit-give-away btn btn-primary" data-id="<%= id %>">Give Away</button>
@@ -122,7 +134,7 @@
                   <div class="buttons">
                     <button class="remove btn btn-warning btn-large btn-block" data-id="<%= id %>"><i class="icon-minus-sign"></i> From My Shelf</button>
                     <button class="add btn btn-success btn-large btn-block" data-id="<%= id %>"><i class="icon-plus-sign"></i> To My Shelf</button>
-                    <a href="http://www.goodreads.com/search?search[query]=<%= ISBN %>#other_reviews" target="_blank"><img src="images/goodreads-badge-read-reviews.png" alt="Read Goodreads review"></a>
+                    <a href="http://www.goodreads.com/search?search[query]=<%= ISBN %>#other_reviews" target="_blank"><img src="/images/goodreads-badge-read-reviews.png" alt="Read Goodreads review"></a>
                   </div>
                 </div>
                 <div class="span9">
@@ -147,31 +159,31 @@
         </script>
 
         <!-- build:js scripts/vendor.js -->
-        <script src="components/jquery/jquery.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-affix.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-alert.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-dropdown.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-tooltip.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-modal.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-transition.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-button.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-popover.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-typeahead.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-carousel.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-scrollspy.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-collapse.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-tab.js"></script>
-        <script src="components/underscore/underscore.js"></script>
-        <script src="components/backbone/backbone.js"></script>
-        <script src="components/backbone.localStorage/backbone.localStorage.js"></script>
-        <script src="components/datejs/build/date.js"></script>
+        <script src="/components/jquery/jquery.js"></script>
+        <script src="/components/sass-bootstrap/js/bootstrap-affix.js"></script>
+        <script src="/components/sass-bootstrap/js/bootstrap-alert.js"></script>
+        <script src="/components/sass-bootstrap/js/bootstrap-dropdown.js"></script>
+        <script src="/components/sass-bootstrap/js/bootstrap-tooltip.js"></script>
+        <script src="/components/sass-bootstrap/js/bootstrap-modal.js"></script>
+        <script src="/components/sass-bootstrap/js/bootstrap-transition.js"></script>
+        <script src="/components/sass-bootstrap/js/bootstrap-button.js"></script>
+        <script src="/components/sass-bootstrap/js/bootstrap-popover.js"></script>
+        <script src="/components/sass-bootstrap/js/bootstrap-typeahead.js"></script>
+        <script src="/components/sass-bootstrap/js/bootstrap-carousel.js"></script>
+        <script src="/components/sass-bootstrap/js/bootstrap-scrollspy.js"></script>
+        <script src="/components/sass-bootstrap/js/bootstrap-collapse.js"></script>
+        <script src="/components/sass-bootstrap/js/bootstrap-tab.js"></script>
+        <script src="/components/underscore/underscore.js"></script>
+        <script src="/components/backbone/backbone.js"></script>
+        <script src="/components/backbone.localStorage/backbone.localStorage.js"></script>
+        <script src="/components/datejs/build/date.js"></script>
         <!-- endbuild -->
 
         <!-- build:js(.tmp) scripts/main.js -->
-        <script src="scripts/main.js"></script>
-        <script src="scripts/google-api.js"></script>
-        <script src="scripts/books.js"></script>
-        <script src="scripts/views.js"></script>
+        <script src="/scripts/main.js"></script>
+        <script src="/scripts/google-api.js"></script>
+        <script src="/scripts/books.js"></script>
+        <script src="/scripts/views.js"></script>
         <!-- endbuild -->
 </body>
 </html>
