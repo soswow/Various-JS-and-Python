@@ -17,17 +17,15 @@ class app.Book extends Backbone.Model
     publishedDate: Date.parse(volume.publishedDate)
     publisher: volume.publisher
 
-  @parseGoodreads = (raw) ->
-
   defaults:
-    barrowed: false
+    borrowedBy: false
+    borrowedDate: null
 
 class app.GoogleBooksCollection extends Backbone.Collection
   model: app.Book
 
   initialize: ->
     @gapi = new app.GoogleApi()
-    @grApi = new app.GoodreadApi()
 
   search: (@q) ->
     @page = 1

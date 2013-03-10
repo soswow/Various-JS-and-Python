@@ -32,7 +32,7 @@
                                 <a href="/search"><i class="icon-search"></i> Find Books</a>
                             </li>
                             <li class="my-shelf">
-                                <a href="/my-shelf"><i class="icon-bookmark-empty"></i> My Shelf</a>
+                                <a href="/my-shelf"><i class="icon-bookmark-empty"></i> My Shelf (<span id="myBooksCount"></span>)</a>
                             </li>
                         </ul>
                     </div>
@@ -60,8 +60,8 @@
               <thead>
                 <tr>
                   <th>Title/Author</th>
-                  <th>Barrow Info</th>
-                  <th>Actions</th>
+                  <th style="width: 170px;">Barrow Info</th>
+                  <th style="width: 180px;">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -77,11 +77,30 @@
         <![endif]-->
 
         <script id="myShelfBookTemplate" type="text/template">
-          <tr id="my_book_<%= id %>">
-            <td><%= title %> by <%= authorsStr %></td>
-            <td></td>
+          <tr id="my_book_<%= id %>" class="<%= borrowedBy ? 'info':'' %>">
+            <td><%= title %> <br/>by <%= authorsStr %></td>
             <td>
-              <button class="remove btn btn-warning" data-id="<%= id %>">Remove</button>
+              <% if (borrowedBy) { %>
+              Borrowed by <%= borrowedBy %><br/>
+              <%= Date.parse(borrowedDate).toString("on MMM dS, yyyy HH:mm") %>
+              <% } %>
+            </td>
+            <td>
+              <div class="default-section">
+                <button class="remove btn btn-warning" data-id="<%= id %>">Remove</button>
+                <% if (borrowedBy){ %>
+                  <button class="take-back btn btn-success" data-id="<%= id %>">Take Back</button>
+                <% } else { %>
+                  <button class="give-away btn btn-primary" data-id="<%= id %>">Give Away</button>
+                <% } %>
+              </div>
+              <div class="submit-section" style="display: none;">
+                <button class="submit-give-away btn btn-primary" data-id="<%= id %>">Give Away</button>
+                <button class="cancel-give-away btn" data-id="<%= id %>">Cancel</button>
+                <div class="borrower-name-container">
+                  <input type="text" class="borrower-name" data-id="<%= id %>" placeholder="Who you give it?" />
+                </div>
+              </div>
             </td>
           </tr>
         </script>
@@ -151,7 +170,6 @@
         <!-- build:js(.tmp) scripts/main.js -->
         <script src="scripts/main.js"></script>
         <script src="scripts/google-api.js"></script>
-        <script src="scripts/goodreads-api.js"></script>
         <script src="scripts/books.js"></script>
         <script src="scripts/views.js"></script>
         <!-- endbuild -->

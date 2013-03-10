@@ -162,3 +162,19 @@ body{
 #loadMore{
   margin:10px 0 40px;
 }
+
+#my-shelf{
+
+  .borrower-name-container{
+    display: none;
+    position: relative;
+    height: 40px;
+    .borrower-name{
+      position: absolute;
+      width: auto;
+      left:0;
+      right:0;
+      margin-top:10px;
+    }
+  }
+}

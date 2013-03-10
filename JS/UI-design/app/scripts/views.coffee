@@ -54,7 +54,6 @@ class app.SearchView extends Backbone.View
   updateMyBook: (model) ->
     id = model.id
     inCollection = app.myBooks.get(id)?
-    console.log id, inCollection
     @$("#book_#{id}").toggleClass("onMyShelf", inCollection)
 
   render: ->
@@ -68,19 +67,55 @@ class app.MyShelfView extends Backbone.View
 
   events:
     'click button.remove': 'removeBook'
+    'click button.give-away': 'giveAwayBook'
+    'click button.submit-give-away': 'submitGiveAwayBook'
+    'click button.cancel-give-away': 'cancelGiveAwayBook'
+    'click button.take-back': 'takeBackBook'
+    'keyup input.borrower-name': 'keyup'
 
   template: _.template $("#myShelfBookTemplate").html()
 
   initialize: ->
-    _.bindAll @, 'addOneBook', 'addAllBooks'
+    _.bindAll @, 'addOneBook', 'addAllBooks', 'removeFromDOM', 'giveAwayBook', 'updateBook'
     @tableBody = @$("table tbody")
     app.myBooks.on 'reset', @addAllBooks
     app.myBooks.on 'add', @addOneBook
+    app.myBooks.on 'change', @updateBook
     app.myBooks.on 'remove destroy', @removeFromDOM
 
-  removeBook: (event) ->
-    id = $(event.target).data('id')
-    app.myBooks.get(id).destroy()
+  modelFromEvent: (e) -> app.myBooks.get $(e.target).data('id')
+
+  rowFromEvent: (e) ->
+    id = $(e.target).data('id')
+    $("#my_book_#{id}")
+
+  keyup: (e) ->
+    if e.keyCode is 13
+      @rowFromEvent(e).find('button.submit-give-away').click()
+
+  giveAwayBook: (e) ->
+    row = @rowFromEvent(e)
+    row.find(".default-section").hide()
+    row.find(".submit-section").show()
+    row.find(".borrower-name-container").slideDown()
+    row.find(".borrower-name").focus()
+
+  submitGiveAwayBook: (e) ->
+    row = @rowFromEvent(e)
+    borrowdBy = row.find("input.borrower-name").val()
+    @modelFromEvent(e).set(
+      borrowedBy: borrowdBy
+      borrowedDate: (new Date).toString("yyyy-MM-ddTHH:mm:ssZ")
+    ).save()
+
+  cancelGiveAwayBook: (e) ->
+    @updateBook @modelFromEvent(e)
+
+  takeBackBook: (e) ->
+    @modelFromEvent(e).set('borrowedBy', false).save()
+
+  removeBook: (e) ->
+    @modelFromEvent(e).destroy()
 
   removeFromDOM: (model) ->
     id = model.get('id')
@@ -88,12 +123,18 @@ class app.MyShelfView extends Backbone.View
     if app.myBooks.length is 0
       @$("tr.no-books").show()
 
+  updateBook: (model) ->
+    id = model.get('id')
+    $("#my_book_#{id}").replaceWith @template(model.attributes)
+
   addOneBook: (model) ->
     @tableBody.append @template(model.attributes)
     @$("tr.no-books").hide()
 
   addAllBooks: ->
     @tableBody.find("tr:not(.no-books)").remove()
+    if app.myBooks.length is 0
+      @$("tr.no-books").show()
     app.myBooks.each @addOneBook
 
   render: ->
@@ -109,10 +150,14 @@ class app.MainView extends Backbone.View
     "click .nav .my-shelf":   "navigateLink"
 
   initialize: ->
-    console.log "init Main View"
+    _.bindAll @, 'updateMyBooksCount'
     @mainMenu = @$el.find(".navbar:eq(0) .nav")
     @searchView = new app.SearchView()
     @myShelfView = new app.MyShelfView()
+    app.myBooks.on 'add remove destroy fetch reset', @updateMyBooksCount
+
+  updateMyBooksCount: ->
+    $("#myBooksCount").html(app.myBooks.length)
 
   navigateLink: (event) ->
     url = $(event.target).closest("a").attr("href")
