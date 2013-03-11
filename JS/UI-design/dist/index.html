@@ -11,9 +11,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
         <link rel="stylesheet" href="styles/main.css">
-        <!-- build:js scripts/vendor/modernizr.js -->
-        <script src="components/modernizr/modernizr.js"></script>
-        <!-- endbuild -->
+        <script src="scripts/vendor/modernizr.js"></script>
     </head>
     <body>
         <div class="navbar navbar-inverse navbar-fixed-top">
@@ -43,14 +41,14 @@
             <h1>Search Books</h1>
             <div class="row">
                 <div class="span12 form-search">
-                    <input type="text" class="input-block-level search-query" placeholder="What do you want to find?" />
+                    <input type="text" class="input-block-level search-query" placeholder="What do you want to find?">
                 </div>
             </div>
             <div class="row" id="search-results">
                 <div class="span12">
                     <div class="found-count"></div>
                     <div class="list"></div>
-                    <button id="loadMore" style="display: none;" class="btn btn-primary btn-large btn-block"><i class="icon-double-angle-down"></i> Load More</button>
+                    <button id="loadMore" style="display: none" class="btn btn-primary btn-large btn-block"><i class="icon-double-angle-down"></i> Load More</button>
                 </div>
             </div>
         </div>
@@ -60,12 +58,12 @@
               <thead>
                 <tr>
                   <th>Title/Author</th>
-                  <th style="width: 170px;">Barrow Info</th>
-                  <th style="width: 180px;">Actions</th>
+                  <th style="width: 170px">Barrow Info</th>
+                  <th style="width: 180px">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr class="no-books" style="display:none;">
+                <tr class="no-books" style="display:none">
                   <td colspan="3">No books on my shelf.</td>
                 </tr>
               </tbody>
@@ -158,33 +156,8 @@
           </div>
         </script>
 
-        <!-- build:js scripts/vendor.js -->
-        <script src="components/jquery/jquery.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-affix.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-alert.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-dropdown.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-tooltip.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-modal.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-transition.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-button.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-popover.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-typeahead.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-carousel.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-scrollspy.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-collapse.js"></script>
-        <script src="components/sass-bootstrap/js/bootstrap-tab.js"></script>
-        <script src="components/underscore/underscore.js"></script>
-        <script src="components/backbone/backbone.js"></script>
-        <script src="components/backbone.localStorage/backbone.localStorage.js"></script>
-        <script src="components/datejs/build/date.js"></script>
-        <!-- endbuild -->
+        <script src="scripts/vendor.js"></script>
 
-        <!-- build:js(.tmp) scripts/main.js -->
         <script src="scripts/main.js"></script>
-        <script src="scripts/config.js"></script>
-        <script src="scripts/google-api.js"></script>
-        <script src="scripts/books.js"></script>
-        <script src="scripts/views.js"></script>
-        <!-- endbuild -->
 </body>
 </html>

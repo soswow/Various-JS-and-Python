@@ -23,7 +23,7 @@ class App extends Backbone.Router
 
   start: ->
     @mainView = new @MainView()
-    Backbone.history.start pushState: true
+    Backbone.history.start pushState: false
     app.myBooks.fetch()
 
     $(document).delegate "a", "click", (evt) ->

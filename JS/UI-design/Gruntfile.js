@@ -170,13 +170,6 @@ module.exports = function (grunt) {
         },*/
         
         uglify: {
-            dist: {
-                files: {
-                    '<%= yeoman.dist %>/scripts/main.js': [
-                        '<%= yeoman.app %>/scripts/{,*/}*.js'
-                    ],
-                }
-            }
         },
         useminPrepare: {
             html: '<%= yeoman.app %>/index.html',
@@ -233,6 +226,14 @@ module.exports = function (grunt) {
             }
         },
         copy: {
+            font:{
+              files: [
+                { expand: true,
+                  flatten: true,
+                  dest: '.tmp/styles/font',
+                  src: '<%= yeoman.app %>/components/font-awesome/font/*'}
+              ]
+            },
             dist: {
                 files: [{
                     expand: true,
@@ -243,7 +244,14 @@ module.exports = function (grunt) {
                         '*.{ico,txt}',
                         '.htaccess'
                     ]
-                }]
+                },
+                  {
+                    expand: true,
+                    flatten: true,
+                    dest: '<%= yeoman.dist %>/styles/font',
+                    src: '<%= yeoman.app %>/components/font-awesome/font/*'
+                  }
+                ]
             }
         },
         bower: {
@@ -265,6 +273,7 @@ module.exports = function (grunt) {
             'coffee:dist',
             'compass:server',
             'livereload-start',
+            'copy:font',
             'connect:livereload',
             'open',
             'watch'
