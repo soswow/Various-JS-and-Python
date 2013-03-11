@@ -28,11 +28,12 @@ class App extends Backbone.Router
 
     $(document).delegate "a", "click", (evt) ->
       href = $(this).attr("href")
-      protocol = this.protocol + "//"
-
-      if href.slice(protocol.length) isnt protocol
+      if href.indexOf("http") isnt 0
         evt.preventDefault()
         app.navigate href, {trigger: true}
+      else
+        return true
+
 
     return this
 

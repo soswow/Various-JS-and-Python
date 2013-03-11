@@ -146,7 +146,7 @@ class app.MyShelfView extends Backbone.View
       attrs = app.myBooks.get(id).attributes
       modal = $("#modalInfo")
       $(".modal-body", modal).html(@infoTemplate(attrs))
-      $("#modalInfoTitle").html(attrs.title).after(attrs.authorsStr)
+      $("#modalInfoTitle").html(attrs.title).next("p").html(attrs.authorsStr)
       $(".titlePart", modal).remove()
       $("button.add, button.remove", modal).remove()
       modal.modal()
