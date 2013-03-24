@@ -29,7 +29,7 @@ body{
     padding-top: 0 !important;
   }
 }
-.container.content{
+.container.content, .navbar{
   display: none;
 }
 
@@ -53,6 +53,9 @@ body{
       -webkit-animation: spin 2s infinite linear;
       animation: spin 2s infinite linear;
     }
+    .form-search{
+      margin-bottom: 20px;
+    }
     .search-query{
       font-size: 30px !important;
       height: 45px;
@@ -60,7 +63,7 @@ body{
       padding-left: 45px;
       padding-top: 2px;
       line-height: 45px;
-      margin-bottom: 20px;
+      margin-bottom:5px;
       @include placeholder(lightgray);
     }
   }
@@ -192,5 +195,41 @@ body{
     .buttons a{
       margin:10px 0;
     }
+  }
+}
+
+.center-form{
+  line-height: $baseLineHeight * 1.5;
+  color: $heroUnitLeadColor;
+  background-color: $heroUnitBackground;
+  padding: 20px;
+  @include border-radius(6px);
+  .form-header {
+    margin-left: 130px;
+    margin-bottom: 20px;
+  }
+  .control-group {
+    margin-bottom:15px;
+    .control-label{
+      width: 120px;
+    }
+    .controls{
+      margin-left: 130px;
+    }
+    input{
+      &[type=text], &[type=password], &[type=email]{
+        font-size: 18px;
+        font-weight: 200;
+        line-height: 22px;
+        height: 22px;
+        @include placeholder(lightgray);
+      }
+    }
+  }
+}
+
+.search-options{
+  label.radio{
+    margin-right: 10px;
   }
 }

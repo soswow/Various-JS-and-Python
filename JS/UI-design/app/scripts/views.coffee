@@ -6,6 +6,7 @@ class app.SearchView extends Backbone.View
     'click #loadMore': 'moreSearch'
     'click button.add': 'toMyShelf'
     'click button.remove': 'fromMyShelf'
+    'click #showSearchOptions': 'toggleSearchOptions'
 
   bookTemplate: _.template $("#bookTemplate").html()
 
@@ -18,8 +19,11 @@ class app.SearchView extends Backbone.View
     app.googleBooks.on 'add', @addOneBook
     app.myBooks.on 'add remove destroy', @updateMyBook
 
+  toggleSearchOptions: ->
+    @$(".search-options > div").toggle()
+
   doSearch: (e) ->
-    return unless e.keyCode is 13
+    return unless e.keyCode is 13 and @input.val()
     @preloader true
     app.googleBooks.search @input.val()
 
@@ -161,6 +165,86 @@ class app.MyShelfView extends Backbone.View
     @addAllBooks()
     @$el.show()
 
+addError = (field, message) ->
+  parent = field.parents(".control-group")
+  parent.addClass("error")
+  field.after $("<span>").addClass("help-inline").text(message)
+  return false
+
+addGlobalError = (form, message) ->
+  form.find("h1").after $("<div>").addClass("alert alert-error").text(message)
+
+class app.LoginView extends Backbone.View
+  el: '#login'
+
+  usersList:
+    'soswow@gmail.com': ['kala1', 'Aleksandr']
+
+  events:
+    'submit form': 'submit'
+
+  initialize: ->
+    @emailEl = $("input[name=inputEmail]")
+    @passwordEl = $("input[name=inputPassword]")
+
+  clearErrors: ->
+    @$(".alert.alert-error").remove()
+    @$(".control-group.error  .help-inline").remove()
+    @$(".control-group").removeClass("error")
+
+  validate: ->
+    return addError(@emailEl, "Is required") unless @emailEl.val()
+    return addError(@passwordEl, "Is required") unless @passwordEl.val()
+    return addError(@emailEl, "Invalid email") unless @emailEl.val().search /^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}$/ > 0
+    return true
+
+  submit: (e) ->
+    e.preventDefault()
+    @clearErrors()
+    if @validate()
+      unless @usersList[@emailEl.val()]?[0] is @passwordEl.val()
+        return addGlobalError(@$el, "Wrong username or/and password")
+      app.setName @usersList[@emailEl.val()]?[1]
+      app.navigate "search", {trigger: true}
+    return false
+
+  render: ->
+    @$el.show()
+
+
+class app.RegistrationView extends Backbone.View
+  el: '#registration'
+
+  events:
+    'submit form': 'submit'
+
+  initialize: ->
+    @emailEl = $("#registerEmail")
+    @passwordEl = $("#registerPassword")
+    @nameEl = $("#fullName")
+
+  clearErrors: ->
+    @$(".control-group.error  .help-inline").remove()
+    @$(".control-group").removeClass("error")
+
+  validate: ->
+    return addError(@emailEl, "Is required") unless @emailEl.val()
+    return addError(@passwordEl, "Is required") unless @passwordEl.val()
+    return addError(@emailEl, "Invalid email") unless @emailEl.val().search /^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}$/ > 0
+    return true
+
+  submit: (e) ->
+    e.preventDefault()
+    @clearErrors()
+    if @validate()
+      app.setName @nameEl.val() or @emailEl.val()
+      app.navigate "search", {trigger: true}
+    return false
+
+
+  render: ->
+    @$el.show()
+
 
 class app.MainView extends Backbone.View
   el: 'body'
@@ -171,9 +255,11 @@ class app.MainView extends Backbone.View
 
   initialize: ->
     _.bindAll @, 'updateMyBooksCount'
-    @mainMenu = @$el.find(".navbar:eq(0) .nav")
+    @mainMenu = @$el.find(".navbar:eq(0)")
     @searchView = new app.SearchView()
     @myShelfView = new app.MyShelfView()
+    @loginView = new app.LoginView()
+    @registrationView = new app.RegistrationView()
     app.myBooks.on 'add remove destroy fetch reset', @updateMyBooksCount
 
   updateMyBooksCount: ->
@@ -185,7 +271,7 @@ class app.MainView extends Backbone.View
     return false
 
   activateMenu: (name) ->
-    @mainMenu.find("li")
+    @mainMenu.show().find(".nav li")
       .removeClass("active")
       .filter(".#{name}")
       .addClass("active")
@@ -204,3 +290,13 @@ class app.MainView extends Backbone.View
     @activateMenu("my-shelf")
     @hideContent()
     @myShelfView.render()
+
+  showLogin: ->
+    @mainMenu.hide()
+    @hideContent()
+    @loginView.render()
+
+  showRegistration: ->
+    @mainMenu.hide()
+    @hideContent()
+    @registrationView.render()

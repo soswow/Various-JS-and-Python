@@ -1,160 +1,272 @@
 <!doctype html>
-<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
-<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
-<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-        <title>My Library</title>
-        <meta name="description" content="">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
-        <link rel="stylesheet" href="styles/main.css">
-        <script src="scripts/vendor/modernizr.js"></script>
-    </head>
-    <body>
-        <div class="navbar navbar-inverse navbar-fixed-top">
-            <div class="navbar-inner">
-                <div class="container">
-                    <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="brand" href="/">My Books Shelf</a>
+<!--[if lt IE 7]><html class="no-js lt-ie9 lt-ie8 lt-ie7"><![endif]-->
+<!--[if IE 7]><html class="no-js lt-ie9 lt-ie8"><![endif]-->
+<!--[if IE 8]><html class="no-js lt-ie9"><![endif]-->
+<!--[if gt IE 8]><html class="no-js"><![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>My Library</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles/main.css">
+  <script src="scripts/vendor/modernizr.js"></script>
+</head>
+<body>
+<div class="navbar navbar-inverse navbar-fixed-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="brand" href="/">My Books Shelf</a>
 
-                    <div class="nav-collapse collapse">
-                        <ul class="nav">
-                            <li class="search">
-                                <a href="search"><i class="icon-search"></i> Find Books</a>
-                            </li>
-                            <li class="my-shelf">
-                                <a href="my-shelf"><i class="icon-bookmark-empty"></i> My Shelf (<span id="myBooksCount"></span>)</a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+      <div class="nav-collapse collapse">
+        <ul class="nav">
+          <li class="search">
+            <a href="search"><i class="icon-search"></i> Find Books</a>
+          </li>
+          <li class="my-shelf">
+            <a href="my-shelf"><i class="icon-bookmark-empty"></i> My Shelf (<span id="myBooksCount"></span>)</a>
+          </li>
+        </ul>
+        <ul class="nav pull-right">
+          <li class="divider-vertical"></li>
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-user"></i> <span id="userNamePlace"></span> <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="#">User settings</a></li>
+              <li class="divider"></li>
+              <li><a href="login">Logout</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="search" class="container content">
+  <h1>Books Search</h1>
+
+  <div class="row">
+    <div class="span12 form-search">
+      <input type="text" class="input-block-level search-query" placeholder="What do you want to find?">
+      <div class="search-options">
+        <a href="#" style="float:right" id="showSearchOptions"><i class="icon-angle-down"></i> Search options</a>
+        <div style="display: none">
+          <form class="form-inline">
+            <label class="radio"><input type="radio" name="searchBy" value="author"> By Author</label>
+            <label class="radio"><input type="radio" name="searchBy" value="isbn"> By ISBN</label>
+          </form>
         </div>
-        <div id="search" class="container content">
-            <h1>Search Books</h1>
-            <div class="row">
-                <div class="span12 form-search">
-                    <input type="text" class="input-block-level search-query" placeholder="What do you want to find?">
-                </div>
-            </div>
-            <div class="row" id="search-results">
-                <div class="span12">
-                    <div class="found-count"></div>
-                    <div class="list"></div>
-                    <button id="loadMore" style="display: none" class="btn btn-primary btn-large btn-block"><i class="icon-double-angle-down"></i> Load More</button>
-                </div>
-            </div>
+      </div>
+    </div>
+  </div>
+  <div class="row" id="search-results">
+    <div class="span12">
+      <div class="found-count"></div>
+      <div class="list"></div>
+      <button id="loadMore" style="display: none" class="btn btn-primary btn-large btn-block"><i class="icon-double-angle-down"></i> Load More
+      </button>
+    </div>
+  </div>
+</div>
+<div id="my-shelf" class="container content">
+  <h1>My Shelf</h1>
+  <table class="table table-striped">
+    <thead>
+    <tr>
+      <th>Title/Author</th>
+      <th style="width: 170px">Barrow Info</th>
+      <th style="width: 180px">Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr class="no-books" style="display:none">
+      <td colspan="3">No books on my shelf.</td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+
+<!--[if lt IE 7]>
+<p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade
+  your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to
+  improve your experience.</p>
+<![endif]-->
+
+<div id="modalInfo" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="modalInfoTitle"></h3>
+
+    <p></p>
+  </div>
+  <div class="modal-body span12" style="margin-left:0"></div>
+</div>
+
+<div id="login" class="container content">
+  <div class="center-form span7 offset2">
+    <h1 class="form-header">Login</h1>
+    <form class="form-horizontal">
+      <div class="control-group">
+        <label class="control-label" for="inputEmail">Email</label>
+        <div class="controls">
+          <input type="email" name="inputEmail" placeholder="Email">
         </div>
-        <div id="my-shelf" class="container content">
-            <h1>My Shelf</h1>
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>Title/Author</th>
-                  <th style="width: 170px">Barrow Info</th>
-                  <th style="width: 180px">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr class="no-books" style="display:none">
-                  <td colspan="3">No books on my shelf.</td>
-                </tr>
-              </tbody>
-            </table>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="inputPassword">Password</label>
+        <div class="controls">
+          <input type="password" name="inputPassword" placeholder="Password">
         </div>
-
-        <!--[if lt IE 7]>
-            <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
-        <![endif]-->
-
-        <div id="modalInfo" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-            <h3 id="modalInfoTitle"></h3>
-            <p></p>
-          </div>
-          <div class="modal-body span12" style="margin-left:0"></div>
+      </div>
+      <div class="control-group">
+        <div class="controls">
+          <!--<label class="checkbox">-->
+            <!--<input type="checkbox"> Remember me-->
+          <!--</label>-->
+          <button type="submit" class="btn btn-primary">Sign in</button>
+          <a href="registration" class="btn">Register</a>
         </div>
+      </div>
+      <!--<div class="control-group">-->
+        <!--<div class="controls">-->
+          <!--<a href="register">Registration</a> | <a href="#">Forgot password</a>-->
+        <!--</div>-->
+      <!--</div>-->
+    </form>
+  </div>
+</div>
+<div id="registration" class="container content">
+  <div class="center-form span7 offset2">
+    <h1 class="form-header">Registration</h1>
+    <form class="form-horizontal">
+      <div class="control-group">
+        <label class="control-label" for="registerEmail"><strong>Email</strong></label>
+        <div class="controls">
+          <input type="email" name="inputEmail" id="registerEmail" placeholder="Email">
+        </div>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="registerPassword"><strong>Password</strong></label>
+        <div class="controls">
+          <input type="password" name="inputPassword" id="registerPassword" placeholder="Password">
+        </div>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="fullName">Full Name</label>
+        <div class="controls">
+          <input type="text" name="fullName" id="fullName" placeholder="Full Name">
+        </div>
+      </div>
+      <!--<div class="control-group">-->
+        <!--<label class="control-label" for="inputPassword">Repeat Password</label>-->
+        <!--<div class="controls">-->
+          <!--<input type="password" name="inputPassword" placeholder="Password">-->
+        <!--</div>-->
+      <!--</div>-->
+      <div class="control-group">
+        <div class="controls">
+          <!--<label class="checkbox">-->
+          <!--<input type="checkbox"> Remember me-->
+          <!--</label>-->
+          <button type="submit" class="btn btn-primary">Register</button>
+          <a href="login" class="btn">Back</a>
+        </div>
+      </div>
+      <!--<div class="control-group">-->
+      <!--<div class="controls">-->
+      <!--<a href="register">Registration</a> | <a href="#">Forgot password</a>-->
+      <!--</div>-->
+      <!--</div>-->
+    </form>
+  </div>
+</div>
 
-        <script id="myShelfBookTemplate" type="text/template">
-          <tr id="my_book_<%= id %>" class="<%= borrowedBy ? 'info':'' %>">
-            <td><a href="modal-info/<%= id %>"><%= title %></a> <br/>by <%= authorsStr %></td>
-            <td>
-              <% if (borrowedBy) { %>
-              Borrowed by <%= borrowedBy %><br/>
-              <%= Date.parse(borrowedDate).toString("on MMM dS, yyyy HH:mm") %>
-              <% } %>
-            </td>
-            <td>
-              <div class="default-section">
-                <% if (borrowedBy){ %>
-                  <button class="take-back btn btn-success" data-id="<%= id %>">Take Back</button>
-                <% } else { %>
-                  <button class="give-away btn btn-primary" data-id="<%= id %>">Give Away</button>
-                <% } %>
-                <button class="remove btn btn-warning" data-id="<%= id %>">Remove</button>
-              </div>
-              <div class="submit-section" style="display: none;">
-                <button class="submit-give-away btn btn-primary" data-id="<%= id %>">Give Away</button>
-                <button class="cancel-give-away btn" data-id="<%= id %>">Cancel</button>
-                <div class="borrower-name-container">
-                  <input type="text" class="borrower-name" data-id="<%= id %>" placeholder="Who you give it?" />
-                </div>
-              </div>
-            </td>
-          </tr>
-        </script>
 
-        <script id="bookTemplate" type="text/template">
-          <div class="book <%= app.myBooks.get(id) ? 'onMyShelf' : '' %>" id="book_<%= id %>">
-            <div class="row titlePart">
-              <div class="span12">
-                <h3><%= title %></h3>
-                <div class="author">by <%= authorsStr %></div>
-                <% if(subtitle && subtitle.length) { %>
-                  <p class="subtitle"><%= subtitle %></p>
-                <% } %>
-              </div>
-            </div>
-            <div class="row infoPart">
-                <div class="span3">
-                  <img src="<%= image %>" class="cover">
-                  <div class="buttons">
-                    <button class="remove btn btn-warning btn-large btn-block" data-id="<%= id %>"><i class="icon-minus-sign"></i> From My Shelf</button>
-                    <button class="add btn btn-success btn-large btn-block" data-id="<%= id %>"><i class="icon-plus-sign"></i> To My Shelf</button>
-                    <a href="http://www.goodreads.com/search?search[query]=<%= ISBN %>#other_reviews" target="_blank"><img src="images/goodreads-badge-read-reviews.png" alt="Read Goodreads review"></a>
-                  </div>
-                </div>
-                <div class="span9">
-                  <%= (categories || []).join(" | ") %>
-                  <div class="stars subrow">
-                    <span data-toggle="tooltip" data-placement="right" title="Avg. Rating: <%= averageRating %> (<%= ratingsCount %> votes)">
-                      <% _.each(_.range(1, 6), function(i) { %><i class="icon-star<%= averageRating < i ? '-empty' : '' %>"></i><% }); %>
+<script id="myShelfBookTemplate" type="text/template">
+  <tr id="my_book_<%= id %>" class="<%= borrowedBy ? 'info':'' %>">
+    <td><a href="modal-info/<%= id %>"><%= title %></a> <br/>by <%= authorsStr %></td>
+    <td>
+      <% if (borrowedBy) { %>
+      Borrowed by <%= borrowedBy %><br/>
+      <%= Date.parse(borrowedDate).toString("on MMM dS, yyyy HH:mm") %>
+      <% } %>
+    </td>
+    <td>
+      <div class="default-section">
+        <% if (borrowedBy){ %>
+        <button class="take-back btn btn-success" data-id="<%= id %>">Take Back</button>
+        <% } else { %>
+        <button class="give-away btn btn-primary" data-id="<%= id %>">Give Away</button>
+        <% } %>
+        <button class="remove btn btn-warning" data-id="<%= id %>">Remove</button>
+      </div>
+      <div class="submit-section" style="display: none;">
+        <button class="submit-give-away btn btn-primary" data-id="<%= id %>">Give Away</button>
+        <button class="cancel-give-away btn" data-id="<%= id %>">Cancel</button>
+        <div class="borrower-name-container">
+          <input type="text" class="borrower-name" data-id="<%= id %>" placeholder="Who you give it?"/>
+        </div>
+      </div>
+    </td>
+  </tr>
+</script>
+
+<script id="bookTemplate" type="text/template">
+  <div class="book <%= app.myBooks.get(id) ? 'onMyShelf' : '' %>" id="book_<%= id %>">
+    <div class="row titlePart">
+      <div class="span12">
+        <h3><%= title %></h3>
+
+        <div class="author">by <%= authorsStr %></div>
+        <% if(subtitle && subtitle.length) { %>
+        <p class="subtitle"><%= subtitle %></p>
+        <% } %>
+      </div>
+    </div>
+    <div class="row infoPart">
+      <div class="span3">
+        <img src="<%= image %>" class="cover">
+
+        <div class="buttons">
+          <button class="remove btn btn-warning btn-large btn-block" data-id="<%= id %>"><i class="icon-minus-sign"></i>
+            From My Shelf
+          </button>
+          <button class="add btn btn-success btn-large btn-block" data-id="<%= id %>"><i class="icon-plus-sign"></i> To
+            My Shelf
+          </button>
+          <a href="http://www.goodreads.com/search?search[query]=<%= ISBN %>#other_reviews" target="_blank"><img
+              src="images/goodreads-badge-read-reviews.png" alt="Read Goodreads review"></a>
+        </div>
+      </div>
+      <div class="span9">
+        <%= (categories || []).join(" | ") %>
+        <div class="stars subrow">
+                    <span data-toggle="tooltip" data-placement="right"
+                          title="Avg. Rating: <%= averageRating %> (<%= ratingsCount %> votes)">
+                      <% _.each(_.range(1, 6), function(i) { %><i
+                        class="icon-star<%= averageRating < i ? '-empty' : '' %>"></i><% }); %>
                     </span>
-                  </div>
-                  <div class="subrow">
-                    <strong>ISBN:</strong> <%= ISBN %>
-                  </div>
-                  <div class="subrow">
-                    <strong>Published by </strong> <%= publisher %>, <%= publishedDate.toString('MMMM d, yyyy') %>
-                  </div>
-                  <div class="subrow description">
-                    <%= description %>
-                  </div>
-                </div>
-            </div>
-          </div>
-        </script>
+        </div>
+        <div class="subrow">
+          <strong>ISBN:</strong> <%= ISBN %>
+        </div>
+        <div class="subrow">
+          <strong>Published by </strong> <%= publisher %>, <%= publishedDate.toString('MMMM d, yyyy') %>
+        </div>
+        <div class="subrow description">
+          <%= description %>
+        </div>
+      </div>
+    </div>
+  </div>
+</script>
 
-        <script src="scripts/vendor.js"></script>
+<script src="scripts/vendor.js"></script>
 
-        <script src="scripts/main.js"></script>
+<script src="scripts/main.js"></script>
 </body>
-</html>

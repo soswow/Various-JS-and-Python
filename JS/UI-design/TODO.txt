@@ -1,0 +1,18 @@
+TODO Bugs:
+* "From shelf" is not the best name and doesn't currently confirms user action as remove button on "My shelf" page
+* Rating tooltip is not working in popup right now.
+* No "Read more" for description doesn't appear in case of description longer then box
+
+TODO Features:
+* Make explicit button for submitting the search (for mobile users)
+* Paging for my shelf
+* Reminder for books borrowed long time ago
+* Integration with my-books in goodreads.com
+
+TODO Required features:
+* Column sorting for my shelf
+-* Registration
+-* Authorization
+* Compact list mode with open additional info (or maybe my books is enough)
+* Specific fields search
+* Extra book
