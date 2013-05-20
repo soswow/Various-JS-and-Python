@@ -1,0 +1,235 @@
+$fontAwesomePath: "font";
+$gridColumnWidth1200:     42px !default;
+$gridGutterWidth1200:     20px !default;
+$gridColumnWidth:         42px !default;
+$gridGutterWidth:         20px !default;
+@import 'sass-bootstrap/lib/bootstrap';
+@import 'font-awesome/sass/font-awesome.scss';
+@import 'sass-bootstrap/lib/responsive.scss';
+@import "compass/css3/images";
+
+@mixin placeholder($color){
+  &::-webkit-input-placeholder { /* WebKit browsers */
+    color:    $color;
+  }
+  &:-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+    color:    $color;
+  }
+  &::-moz-placeholder { /* Mozilla Firefox 19+ */
+    color:    $color;
+  }
+  &:-ms-input-placeholder { /* Internet Explorer 10+ */
+    color:    $color;
+  }
+}
+
+body{
+  padding-top: 50px;
+  @media (max-width: 979px){
+    padding-top: 0 !important;
+  }
+}
+.container.content, .navbar{
+  display: none;
+}
+
+#search{
+  .form-search{
+    position: relative;
+    &:before{
+      font-family: 'FontAwesome';
+      content: "\f002";
+      position: absolute;
+      top: 23px;
+      font-size: 25px;
+      color: lightgray;
+      left: 12px;
+    }
+    &.preloader:before{
+      content: "\f110";
+      display: inline-block;
+      -moz-animation: spin 2s infinite linear;
+      -o-animation: spin 2s infinite linear;
+      -webkit-animation: spin 2s infinite linear;
+      animation: spin 2s infinite linear;
+    }
+    .form-search{
+      margin-bottom: 20px;
+    }
+    .search-query{
+      font-size: 30px !important;
+      height: 45px;
+      margin-top: 10px;
+      padding-left: 45px;
+      padding-top: 2px;
+      line-height: 45px;
+      margin-bottom:5px;
+      @include placeholder(lightgray);
+    }
+  }
+  .found-count{
+    color: gray;
+    font-weight: 200;
+    letter-spacing: 1px;
+    margin-top: -10px;
+    margin-bottom: 20px;
+  }
+}
+
+.book{
+  position: relative;
+
+  margin-bottom: 20px;
+  padding-bottom: 35px;
+
+  &:after{
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    @include background(
+        linear-gradient(left,
+          rgba(180,180,180,0) 0%,
+          rgba(180,180,180,1) 30%,
+          rgba(180,180,180,1) 50%,
+          rgba(180,180,180,1) 70%,
+          rgba(180,180,180,0.01) 100%));
+  }
+  h3{
+    float: left;
+    margin: 0;
+    max-width: 530px;
+    text-shadow: 2px 2px 2px rgb(211, 211, 211);
+  }
+  .author{
+    padding-top:14px;
+    margin-left: 15px;
+    float:left;
+    color: gray;
+    font-weight: 200;
+  }
+  .subtitle{
+    clear: both;
+    font-style: italic;
+  }
+  .infoPart{
+    margin-top: 10px;
+    .stars{
+      color: goldenrod;
+      font-size: 26px;
+      > span{
+        display: inline-block;
+      }
+      .icon-star{
+        margin-right: 2px;
+      }
+    }
+    .subrow{
+      padding-top: 8px;
+    }
+    .description{
+      height: 220px;
+      line-height: 22px;
+      font-weight: 200;
+      overflow: hidden;
+    }
+    .buttons{
+      text-align: center;
+      button.btn{
+        margin:10px 0;
+      }
+      .remove{
+        display: none;
+      }
+      a{
+        display: block;
+      }
+    }
+    img.cover{
+      width: 295px;
+    }
+  }
+  &.onMyShelf{
+    //@include background(
+        //radial-gradient(50% 100%, rgb(231, 243, 231), white 70%));
+    .buttons{
+      .remove{
+        display: block;
+      }
+      .add{
+        display: none;
+      }
+    }
+  }
+}
+
+#loadMore{
+  margin:10px 0 40px;
+}
+
+#my-shelf{
+
+  .borrower-name-container{
+    display: none;
+    position: relative;
+    height: 40px;
+    .borrower-name{
+      position: absolute;
+      width: auto;
+      left:0;
+      right:0;
+      margin-top:10px;
+    }
+  }
+}
+
+#modalInfo{
+  width: 742px;
+  margin-left: -371px;
+
+  .book{
+    margin-bottom: 0;
+    padding-bottom: 0;
+    .buttons a{
+      margin:10px 0;
+    }
+  }
+}
+
+.center-form{
+  line-height: $baseLineHeight * 1.5;
+  color: $heroUnitLeadColor;
+  background-color: $heroUnitBackground;
+  padding: 20px;
+  @include border-radius(6px);
+  .form-header {
+    margin-left: 130px;
+    margin-bottom: 20px;
+  }
+  .control-group {
+    margin-bottom:15px;
+    .control-label{
+      width: 120px;
+    }
+    .controls{
+      margin-left: 130px;
+    }
+    input{
+      &[type=text], &[type=password], &[type=email]{
+        font-size: 18px;
+        font-weight: 200;
+        line-height: 22px;
+        height: 22px;
+        @include placeholder(lightgray);
+      }
+    }
+  }
+}
+
+.search-options{
+  label.radio{
+    margin-right: 10px;
+  }
+}
