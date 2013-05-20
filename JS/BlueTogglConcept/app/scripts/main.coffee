@@ -2,6 +2,7 @@ $ ->
   gradientIn = (from, to) ->
     $("#inrunner").css
       background: "radial-gradient(circle, rgba(32, 115, 145, 0) #{from}px, #207391 #{from}px, rgba(32, 115, 145, 0) #{to}px)"
+  gradientIn(0, 100)
 
   gradientOut = (from, to) ->
     $("#outrunner").css
@@ -15,7 +16,8 @@ $ ->
     outInChange: 167
     outTo: 267
     length: 100
-    delta: 3.3
+    delta: 4
+    acc: 0.984
   }
 
   isRunning =
@@ -32,14 +34,13 @@ $ ->
       if pos < params.outTo
         if not isRunning.in and pos > params.outInChange
           unless isRunning.stoped
-            console.log "switch to in"
             $("#outer").css(opacity:1).animate(opacity:0.5, 2000)
             runIn params.inFrom
           speed = params.delta
         if isRunning.stoped
           speed = params.delta + 2
         else
-          speed *= 0.984
+          speed *= params.acc
         runOut(pos + speed, speed)
       else
         isRunning.lastRun = 'out'
@@ -53,14 +54,13 @@ $ ->
       if pos > params.inTo
         if not isRunning.out and pos < params.inOutChange
           unless isRunning.stoped
-            console.log "switch to out"
             $("#center").css(opacity:1).animate(opacity:0.9, 2000)
             runOut params.outFrom
           speed = params.delta
         if isRunning.stoped
           speed = params.delta + 2
         else
-          speed *= 0.984
+          speed *= params.acc
         runIn(pos - speed, speed)
       else
         isRunning.lastRun = 'in'
@@ -68,6 +68,7 @@ $ ->
 
   $("#clickCatcher").click ->
     isRunning.stoped = not isRunning.stoped
+    $("body").toggleClass 'stoped', isRunning.stoped
     unless isRunning.stoped
       console.log isRunning.in, isRunning.out
       if isRunning.lastRun is 'out'

@@ -10,6 +10,7 @@ $iconWhiteSpritePath: "../images/glyphicons-halflings-white.png";
 body, html{
   height: 100%;
   background: black;
+  overflow: hidden;
 }
 //.container{
 //  width: 533px;
@@ -51,7 +52,7 @@ body, html{
   left:4px;
   z-index: 10;
 }
-#centerBlack{
+#center-black{
   width: 800px;
   margin: 0 auto;
   height: 100%;
@@ -64,6 +65,7 @@ body, html{
     black 0px,
     black 90px,
     rgba(0,0,0,0) 130px));
+  @include transition(opacity 1s);
 }
 #clickCatcher{
   width: 275px;
@@ -88,4 +90,17 @@ body, html{
   margin: 0 auto;
   width: 800px;
   height: 100%;
+  @include transition(opacity 1s);
+}
+body.stoped{
+  background:rgb(18,46,56);
+  #inrunner{
+    opacity: 0.5;
+  }
+  #center-black{
+    opacity: 0;
+  }
+}
+body{
+  @include transition(background-color 1s);
 }
