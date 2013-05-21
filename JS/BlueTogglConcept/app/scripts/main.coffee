@@ -34,8 +34,7 @@ $ ->
       if pos < params.outTo
         if not isRunning.in and pos > params.outInChange
           unless isRunning.stoped
-            $("#outer").css(opacity:1).animate(opacity:0.5, 2000)
-            runIn params.inFrom
+            startIn()
           speed = params.delta
         if isRunning.stoped
           speed = params.delta + 2
@@ -46,16 +45,15 @@ $ ->
         isRunning.lastRun = 'out'
         isRunning.out = false
 
+
   runIn = (pos, speed=params.delta) ->
-#    console.log 'in'
     isRunning.in = true
     requestAnimationFrame ->
       gradientIn(pos, pos + params.length)
       if pos > params.inTo
         if not isRunning.out and pos < params.inOutChange
           unless isRunning.stoped
-            $("#center").css(opacity:1).animate(opacity:0.9, 2000)
-            runOut params.outFrom
+            startOut()
           speed = params.delta
         if isRunning.stoped
           speed = params.delta + 2
@@ -66,16 +64,28 @@ $ ->
         isRunning.lastRun = 'in'
         isRunning.in = false
 
+  startIn = ->
+    $("#outer").css(opacity:1).animate(opacity:0.5, 1500)
+    console.timeEnd("bounce")
+    console.time("bounce")
+    runIn params.inFrom
+
+  startOut = ->
+    $("#center").css(opacity:1).animate(opacity:0.9, 1500)
+    $("#center-border").css(opacity:1).animate(opacity:0.7, 1500)
+    console.timeEnd("bounce")
+    console.time("bounce")
+    runOut params.outFrom
+
   $("#clickCatcher").click ->
     isRunning.stoped = not isRunning.stoped
     $("body").toggleClass 'stoped', isRunning.stoped
     unless isRunning.stoped
       console.log isRunning.in, isRunning.out
       if isRunning.lastRun is 'out'
-        runIn params.inFrom
+        startIn()
       else
-        $("#center").css(opacity:1).animate(opacity:0.9, 2000)
-        runOut params.outFrom
+        startOut()
 
 
 #  radial-gradient(radial, circle, 0, circle, 361, color-stop(72.29917%, rgba(32, 115, 145, 0)), color-stop(72.29917%, #207391), color-stop(100%, #000000))"
