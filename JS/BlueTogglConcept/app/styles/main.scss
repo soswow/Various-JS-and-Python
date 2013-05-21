@@ -52,6 +52,17 @@ body, html{
   left:4px;
   z-index: 10;
 }
+#center-border{
+  background: url('../images/center-bright-border.png');
+  width: 800px;
+  margin: 0 auto;
+  height: 100%;
+  background-position: center;
+  position: absolute;
+  top:-1px;
+  left:4px;
+  z-index: 11;
+}
 #center-black{
   width: 800px;
   margin: 0 auto;
