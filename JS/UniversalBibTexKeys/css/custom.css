@@ -1,0 +1,23 @@
+body {
+  position: relative;
+  padding-top: 70px;
+  margin: 0;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  color: #333333;
+  background-color: #ffffff;
+}
+
+@media (max-width: 979px) and (min-width: 768px){
+  body {
+    padding-top: 0;
+  }
+}
+
+.buttons-row{
+  text-align: center;
+}
+.btn.icon-arrow-right{
+  color: white;
+}

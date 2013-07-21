@@ -1,0 +1,389 @@
+%\documentclass[preprint,review,12pt]{elsarticle}
+
+\documentclass[final,5p,times,twocolumn]{elsarticle}
+
+%\usepackage[]{trackchanges}
+
+%% Use the option review to obtain double line spacing
+%% \documentclass[preprint,review,12pt]{elsarticle}
+
+%% Use the options 1p,twocolumn; 3p; 3p,twocolumn; 5p; or 5p,twocolumn
+%% for a journal layout:
+%% \documentclass[final,1p,times]{elsarticle}
+%% \documentclass[final,1p,times,twocolumn]{elsarticle}
+%% \documentclass[final,3p,times]{elsarticle}
+%% \documentclass[final,3p,times,twocolumn]{elsarticle}
+%% \documentclass[final,5p,times]{elsarticle}
+%% \documentclass[final,5p,times,twocolumn]{elsarticle}
+
+%% if you use PostScript figures in your article
+%% use the graphics package for simple commands
+%% \usepackage{graphics}
+%% or use the graphicx package for more complicated commands
+%% \usepackage{graphicx}
+%% or use the epsfig package if you prefer to use the old commands
+%% \usepackage{epsfig}
+
+%% The amssymb package provides various useful mathematical symbols
+\usepackage{amssymb}
+%% The amsthm package provides extended theorem environments
+\usepackage{amsthm}
+
+\usepackage{color}
+\usepackage{soul}
+\sethlcolor{yellow}
+% use \hl{text} to highlight the text with a yellow background
+% use \st{text} to cross out a text by a thin black horizontal line
+
+%% The lineno packages adds line numbers. Start line numbering with
+%% \begin{linenumbers}, end it with \end{linenumbers}. Or switch it on
+%% for the whole article with \linenumbers after \end{frontmatter}.
+%\usepackage{lineno}
+
+%% natbib.sty is loaded by default. However, natbib options can be
+%% provided with \biboptions{...} command. Following options are
+%% valid:
+
+%%   round  -  round parentheses are used (default)
+%%   square -  square brackets are used   [option]
+%%   curly  -  curly braces are used      {option}
+%%   angle  -  angle brackets are used    <option>
+%%   semicolon  -  multiple citations separated by semi-colon
+%%   colon  - same as semicolon, an earlier confusion
+%%   comma  -  separated by comma
+%%   numbers-  selects numerical citations
+%%   super  -  numerical citations as superscripts
+%%   sort   -  sorts multiple citations according to order in ref. list
+%%   sort&compress   -  like sort, but also compresses numerical citations
+%%   compress - compresses without sorting
+%%
+%% \biboptions{comma,round}
+
+% \biboptions{}
+
+
+\journal{Electrochimica Acta}
+
+\begin{document}
+
+\begin{frontmatter}
+
+%% Title, authors and addresses
+
+%% use the tnoteref command within \title for footnotes;
+%% use the tnotetext command for the associated footnote;
+%% use the fnref command within \author or \address for footnotes;
+%% use the fntext command for the associated footnote;
+%% use the corref command within \author for corresponding author footnotes;
+%% use the cortext command for the associated footnote;
+%% use the ead command for the email address,
+%% and the form \ead[url] for the home page:
+%%
+%% \title{Title\tnoteref{label1}}
+%% \tnotetext[label1]{}
+%% \author{Name\corref{cor1}\fnref{label2}}
+%% \ead{email address}
+%% \ead[url]{home page}
+%% \fntext[label2]{}
+%% \cortext[cor1]{}
+%% \address{Address\fnref{label3}}
+%% \fntext[label3]{}
+
+\title{Electrical double layer in ionic liquids: structural transitions from multilayer to monolayer structure at the interface}
+
+%% use optional labels to link authors explicitly to addresses:
+%% \author[label1,label2]{<author name>}
+%% \address[label1]{<address>}
+%% \address[label2]{<address>}
+
+\author[StrathclydeUniversity,MISMPG]{K. Kirchner}
+%\ead{kathleen.kirchner@strath.ac.uk}
+
+\author[StrathclydeUniversity,MISMPG]{T. Kirchner}
+%\ead{tom.kirchner@strath.ac.uk}
+
+\author[StrathclydeUniversity]{V. Ivani\v{s}t\v{s}ev}
+%\ead{vladislav.ivanistsev@strath.ac.uk}
+
+\author[StrathclydeUniversity]{M.V. Fedorov\corref{cor}}
+\ead{maxim.fedorov@strath.ac.uk}
+\cortext[cor]{Corresponding author}
+\address[StrathclydeUniversity]{Department of Physics, Scottish Universities Physics Alliance (SUPA), Strathclyde University,\\* John Anderson Building, 107 Rottenrow East, Glasgow, UK~G4~0NG.}
+\address[MISMPG]{Max Planck Institute for Mathematics in the Sciences, Inselstra{\ss}e 22, 04103 Leipzig, Germany.}
+
+
+
+\begin{abstract}
+We have studied structural transitions in the electrical double layer of ionic liquids by molecular dynamics simulations. A model coarse grained room temperature ionic liquid (RTIL) with asymmetric sized ions confined between two oppositely charged walls has been used. The simulations have been performed at different temperatures and electrode charge density values. We found that for the studied charge densities the electrical double layer has a \emph{multilayered} structure with multiple alternating layers of counter- and co-ions at the electrode--RTIL interface; however, at certain charge densities the alternating multilayer structure of the electrical double layer undergoes a structural transition to a surface-frozen \emph{monolayer} of densely packed counter-ions (Moir{\'e}-like structure). At this point the dense ordered monolayer of counter-ions close to the electrode surface coexists with apparently non-structured RTIL further from the electrode. These findings might bring possible explanations to experimental observations of formation of Moir{\'e}-like structures in ionic liquids at electrified interfaces. Moreover, we report the formation of herring-bone interfacial structures at high surface charge densities, that appear as a result of superposition of two ordered monolayers of RTIL ions at the electrode--RTIL interface. Similar structures were observed experimentally; however, to the best of our knowledge they have not been modelled by simulations. We discuss the dependence of the electrical double layer structure in RTILs on the ion size and the surface charge density at the electrodes.
+\end{abstract}
+
+\begin{keyword}
+%% keywords here, in the form: keyword \sep keyword
+electric double layer \sep ionic liquids \sep molecular dynamics simulations \sep structural transition \sep surface-frozen Moir{\'e}-like structure
+\end{keyword}
+
+\end{frontmatter}
+
+%%
+%% Start line numbering here if you want
+%%
+%\linenumbers
+
+%\date{\today}
+
+\section{\label{sec:introduction} Introduction}
+
+Room temperature ionic liquids (RTILs) are of immensely growing importance for the electrochemical technology \cite{Bard2001,Endres2002,Armand2009}. Indeed, applications of RTILs reveal new perspectives in galvanic deposition, etching, corrosion science, electrochemical energy storage, electrocatalysis and other branches of applied electrochemistry \cite{Simon2008,Armand2009,Macfarlane2010,Liu2010}. A much higher ion charge density in RTILs, compared to conventional electrolytes \cite{Galinski2006,Armand2009}, is the cause for many new interesting phenomena at an electrode--RTIL interface \cite{Kornyshev2007,Endres2010}. The main goal of our study is investigation of structural transitions in the electrical double layer (EDL) formed by RTILs at the electrified interface. 
+
+From studies on aqueous electrolyte systems it is known that weakly solvated spherical ions, such as SO$_4^{2-}$, Br$^-$ and I$^-$, can form ordered layers at the electrolyte/electrode interface \cite{Wandlowski2002,Magnussen2002}. The formation of such layers is originated in the partial stripping of the ion solvation shell and direct adhesion of ions to the electrode surface stabilised by intermolecular bonding \cite{Magnussen2002}. However, the absence of solvent molecules in RTILs and domination of electrostatic interactions in these systems imply that the factors determining the interfacial ordering in ionic liquids can be different from those in solvent-based electrolytes where ions are surrounded by a significant amount of solvent molecules \cite{Kornyshev2007,Frolov2011,Georgi2010}. Available experimental results on RTIL interfacial structure  obtained by scanning tunnelling microscopy (STM), atomic force microscopy  (AFM) and X-ray based spectroscopy indicate the formation of cationic layers at negative surface charge densities \cite{Zhou2012,Lauw2012,Tamura2011} and existence of ordered ionic layers at neutral surfaces \cite{Tamam2011,Cremer2011,Foulston2012,Waldmann2011}. Furthermore, as has been reported by Aal et al. \cite{Aal2011} and Dr{\"u}schler et al. \cite{Druschler2012}, the Au(111) surface reconstructs upon charging in some RTIL systems. The reconstruction appears as the formation of a herring bone superstructure, that is not yet properly explained \cite{Aal2011,Druschler2012}.
+
+Ordered Moir{\'e}-like structures were  observed by STM at the interface between Au(111) and 1-butyl-3-methylimidazolium hexafluorophosphate, where an ordered monolayer of PF$_6^-$ ions was found to coexist with uncompressed RTIL structures on the electrode surface \cite{Pan2006}. An ordered molecular structure was also found using STM for 1-butyl-1-methylpyrrolidinium tris(pentafluoro\-ethyl)trifluorophosphate at Au(111), but only at low temperatures \cite{Waldmann2011}.\footnote{ The STM, in comparison to other experimental techniques (such as AFM \cite{Hayes2011,Carstens2012}, X-ray based spectroscopy techniques \cite{Zhou2012,Lauw2012,Tamam2011,Tamura2011,Cremer2011} and other surface-specific techniques \cite{Foulston2012,Penalber2012,Baldelli2013}), is applicable for visualisation of extremely small segments of the interface with molecular resolution. However, at room temperature the mobility of the ions appears to be too high to preserve the rigid structure, instead making STM images blur \cite{Carstens2012,Borisenko2012,Atkin2009}.}
+
+Formation of distinctive cation and anion layers in RTILs, alternating in the direction perpendicular to the surface (so-called charge waves) has been confirmed by several experimental studies that used high-energy X-ray reflectivity \cite{Mezger2008,Zhou2012} and surface force apparatus (SFA) \cite{Perkin2012} techniques. Formation of oscillating charge density profiles in RTILs at electrified interfaces was shown in Molecular Dynamics (MD) simulation studies that used coarse grained RTIL models \cite{Fedorov2008,Fedorov2008a,Fedorov2010}. Similar multilayered EDL structure in RTILs was also observed in MD simulation studies with more sophisticated all-atom non-polarisable \cite{Pinilla2005,Lynden-Bell2012} and polarisable \cite{Vatamanu2010,Vatamanu2011} force fields.
+
+Perkin in her recent review of experimental SFA results on interfacial behaviour of RTILs \cite{Perkin2012} indicates that the charge-induced layering of RTILs leads to unique dynamics at the interface; the  experimental results suggest that the interfacial ionic structure somewhat ``freezes'' compared to the bulk RTIL. Freyland in his 2008 review \cite{Freyland2008} discusses experimental evidences of interfacial freezing (due to structural reorganisation or even crystallisation) at liquid/solid and liquid/vapour interfaces in molten metals and molten salts. Generally, surface freezing was found to coincide with the formation of a hexatic structure \cite{Freyland2008}. Corresponding 2D-ordering transition can be described by the Klosterlitz--Thouless--Halperin--Nelson--Young theory \cite{Strandburg1988}. The formation of hexatic structures in liquid ionic systems at interfaces was confirmed by computer simulations of the restricted primitive model (RPM) and its variations \cite{Strandburg1988,Boda1998,Marzec2007,Hynninen2008,Gribova2011,Schroer2012}, and coarse grained models of ionic species in colloidal suspensions \cite{Grandner2010,Klapp2010}. In 2010, Tazi et al. \cite{Tazi2010} investigated behaviour of molten LiCl salt near Al(111) surface by MD simulations with a polarisable force field; this study revealed a potential-driven 2D ordering transition for the very first LiCl layer at the charged interface.
+
+The above overviewed experimental and theoretical/computational results suggest that many important interfacial processes in ionic liquids (charge transfer, electrodeposition, etc) can be influenced by the interfacial structuring. The interplay between electrode potential and interfacial structure of RTILs offers unique opportunities to control electrochemical processes in RTILs by rational interfacial design \cite{Endres2010}. Indeed, smart functionalisation of electrode surfaces by substrate--adsorbate co-ordination has been already demonstrated in the case of ordered organic monolayers adsorbed from aqueous solutions to metal surfaces \cite{Dretschkow2003}. It has been shown that using similar approaches it is possible to tune interfacial properties of RTIL/solid systems by varying the RTIL chemical composition and/or the charge density of the solid surface \cite{Opallo2011,Walcarius2013}.
+
+In this work we provide microscopic-level insights into the structural transition (ordering) of RTILs at the electrified interface using MD simulations of a model coarse grained RTIL. With this work we continue our theoretical and computational studies on interfacial structural phenomena in RTILs \cite{Fedorov2008,Fedorov2008a,Fedorov2010,Georgi2010,Fedorov2012,Lynden-Bell2012}. The article is organised as follows. Firstly we describe the simulation setup and methodology used for our analysis of the interfacial structural transitions in the modelled system. The following section contains the results of the structural transition analysis and details of the interfacial structure characterisation. The observations and their interpretations are summarised in the conclusion section in conjunction with a set of open questions that require further investigation.
+
+\section{Experimental}
+
+The simulation setup was chosen similar to our former work \cite{Fedorov2008a}: the RTIL was modelled as \emph{charged} purely repulsive Lennard--Jones (LJ) spheres confined between two model electrodes. We extended our former work \cite{Fedorov2008a} by the simulation of two different temperatures, 34 surface charge densities  and five replicas per system with the same parameters setup. In our previous study we run a single simulation for 24 surface charge densities at a single temperature, thereby in this study we massively increased the amount of processable data and improved the quality of sampling of different molecular configurations of the investigated systems. The total number of independent simulations summed up to $34 \times 5 \times 2=340$, with a total simulation time for the production runs of $8.5\,\mathrm{\mu s}$ with the simulation time-step $dt = 0.01\,\mathrm{ps}$. The total amount of simulation time for the equilibration of these systems summed up to $70\,\mathrm{ns}$ with $dt = 0.002\,\mathrm{ps}$ and $3.4\,\mathrm{\mu s}$ with $dt = 0.01\,\mathrm{ps}$.
+
+\subsection{Simulation methodology}
+
+We performed MD simulations with Gromacs 4.5.5 \cite{Hess2008}. Initial system preparation was performed with the Packmol software \cite{Martinez2009}. The model RTIL was confined between two oppositely charged electrodes. The ion pair number in the RTIL part of the system were fixed the same for all simulations and it is equal to 1050. The force field parameters used in this work are summarised in Table \ref{tab:forcefield}.
+
+\begin{table}[htbp]
+\caption[Force field of the model RTIL and the electrodes]{\label{tab:forcefield}Force field of the model RTIL and the electrodes. Ions and electrode atoms are modelled as \emph{charged} Lennard--Jones spheres with a short-range repulsive pairwise potential between species $i$ and $j$ that reads as $U_{\mathrm{LJ}}^{ij}(r)=4\varepsilon \left({ d_{\mathrm{LJ}}^{ij}}/{r}\right)^{12}=2k_{\mathrm{B}}T \left({d_{\mathrm{LJ}}^{ij}}/{r}\right)^{12}$ with the temperature $T=450\,\mathrm K$ and $k_{\mathrm{B}}$ being the Boltzmann constant; $d_{\mathrm{LJ}}^{ij}$  is calculated using the arithmetic combination rule  $d_{\mathrm{LJ}}^{ij}=({d_{\mathrm{LJ}}^{i}+d_{\mathrm{LJ}}^{j}})/{2}$ where $d_{\mathrm{LJ}}^{i}$ and  $d_{\mathrm{LJ}}^{j}$ are the Lennard--Jones diameters of the species $i$ and $j$ correspondingly; $\varepsilon$ is hold constant for all LJ interactions. To account for polarisation effects we scale pairwise electrostatic interactions in the system by an effective dielectric constant $\epsilon_{\mathrm{eff}}=2$, thus multiplying all ``physical'' charges by $1/\sqrt2$.
+}
+\centering
+{\footnotesize
+\begin{tabular}{ccccc} \hline
+Specie & $d_{\mathrm{LJ}}$/nm & $\varepsilon$/$\mathrm{kJ\,mol}^{-1}$ & $m$/$\mathrm{g\,mol}^{-1}$ & $q$/$e$\\ \hline \hline%\multicolumn{2}{c}{Calculation time in s} \\ 
+Cation & 1.00 & 1.8698 & 100.8 & $+0.707$  \\
+Anion & 0.50 & 1.8698 & 100.8  & $-0.707$  \\
+Wall & 0.22 & 1.8698 & 120.11 &  $q(\sigma)$ \\\hline
+\end{tabular}
+}
+\end{table}
+
+Each model electrode consisted of 2500 charged Lennard--Jones spheres with a $d_{\mathrm{LJ}}$ of 0.22\,nm and arranged on a square lattice with $11\,\mathrm{nm}\times 11\,\mathrm{nm}$ size in $x$ and $y$ directions. The distance between the anode and the cathode was fixed to 24\,nm; the electrode atoms were position restrained with a force constant of $k=10^{5}\,\mathrm{kJ/(mol\cdot nm)}$. 
+Periodic boundary conditions were applied in all directions. The cut-off of the Lennard--Jones interactions was taken to be 2.6\,nm with a shifted potential method to account for the coarse grained model of the ions. The long-range Coulomb interactions were handled by the particle-mesh Ewald method \cite{Essmann1995} with a real-space cut-off of 2.9\,nm and a grid spacing of 0.112\,nm; the calculated electrostatic forces in the system were corrected for the slab geometry of the system by using the correction method developed by Yeh and Berkowitz \cite{Yeh1999}. To satisfy the box geometry rules for this correction \cite{Yeh1999}, we added a 16\,nm vacuum slab to the periodic cell in the $z$-direction by prolonging the box size in the $z$-direction up to 40\,nm. 
+
+After several equilibration steps of more than 10\,ns length, the resulting configurations were used to perform production simulations with 25\,ns duration for each system in the $NVT$ ensemble to collect statistics. The neighbour list for non-bonded interactions was updated every 10th integration step. In the production simulations we used the leap-frog algorithm for integrating Newton's equations of motion with 0.01\,ps time step. For the constant temperature simulations we used the velocity rescaling method with a temperature coupling constant of 1.0\,ps \cite{Bussi2007}. We stored the atomic coordinates of the ions each 5\,ps for further analysis.
+
+The electrodes were charged oppositely with 34 different surface charge densities $\sigma$ ranging from 0 to $\pm50\,\mathrm{\mu C/cm^2}$. A surface charge density of $1\,\mathrm{\mu C/cm^2}$ results in a ``physical'' charge per electrode atom of $3.021 \cdot 10^{-3}$ elementary charge. The effective charges used in the simulation setup were obtained by scaling the ``physical'' charges in the system by $1/\sqrt2$ to take into account the polarisability of RTILs \cite{Fedorov2008a}. 
+
+The charge scaling used in this work is in line with the ongoing discussion in the scientific community about the necessity to include polarisation effects into the force field models for RTILs \cite{Tazi2010,Dommert2012,Merlet2013}. Classical MD simulations with non-polarisable potentials often overestimate electrostatic interactions in RTILs and simultaneously underestimate the ionic mobility \cite{Dommert2012,Schroder2012}. These drawbacks can be explained by neglecting of the polarisation effects in these models \cite{Dommert2012,Schroder2012}. The induced dipoles in RTIL molecules are found to have a considerable influence on the short-range ion--ion interactions in RTILs, thereby critically influencing the diffusion coefficients and short-ranged ordering of the ions \cite{Schroder2012}. Implementation of polarisation effects in classical force field models can be done either by scaling of electrostatic charges in the simulated system by a factor between 0.7 and 0.9 \cite{Fedorov2008,Fedorov2008a,Dommert2012}, or by inclusion of explicit polarisation forces into the models \cite{Schroder2012,Tazi2010,Merlet2013}. The charge scaling approach is in line within the electronic continuum model for MD simulations with an effective dielectric constant \cite{Leontyev2009}. For this study we preferred to use the charge scaling approach instead of more sophisticated methods \cite{Vatamanu2010,Vatamanu2011,Tazi2010,Merlet2013} in order to perform a wide screening of charge densities in the RTIL system at reasonable computational costs. Even with using this low-cost approach we spent a considerable computational time on the simulations (around $10^6$ CPU-hours).
+
+\subsection{Model parameters: comparison with real systems}
+
+We provide below some comparison of our model parameters with real RTIL interfacial systems.
+
+For comparison of the ion sizes used in our coarse grained model to the size of the real RTIL ions we refer to the values summarised in Ref. \cite{Costa2012}, using the original notations for the RTIL ions. An estimated molar volume ($V = {4/3}\pi (d_{\mathrm{Ion}}/2)^3 N_{\mathrm{A}}$) for the model anion ($39.2\,\mathrm{cm^3/mol}$) is close to the volume of NO$_3^-$ ($39.1\,\mathrm{cm^3/mol}$), thus smaller than for BF$_4^-$ ($53.4\,\mathrm{cm^3/mol}$), but larger than the volume of halide anions. The molar volume of the model cation ($313\,\mathrm{cm^3/mol}$) is comparable to the volume of [C$_6$pyr]$^+$ ($318.8\,\mathrm{cm^3/mol}$). The cation/anion volume ratio in our model equals to $8.0$  that is similar to the volume ratio between, e.g., [C$_8$mim]$^+$ ($202.3\,\mathrm{cm^3/mol}$) and Cl$^-$ ($25.9\,\mathrm{cm^3/mol}$) or [(C$_6$)$_3$(C$_{14})$P]$^+$ ($556.6\,\mathrm{cm^3/mol}$) and PF$_6^-$ ($73.7\,\mathrm{cm^3/mol}$). Overall, one may conclude that our model is comparable to some real RTIL systems in terms of the ion sizes and the cation/anion volume ratio. 
+
+The modelled range of the electrode surface charge density $\sigma$ (from $-50$ to $+50\,\mathrm{\mu C/cm^2}$) is comparable to the typical ranges measured in surface active electrolytes \cite{Schmickler2010}. For example, measurable surface charge density at Au(\textit{hkl}) electrodes in contact with aqueous solution of octyltrimethylammonium bromide lies from $-40$ to $+80\,\mathrm{\mu C/cm^2}$ \cite{Vivek2012}.\footnote{The volume ratio between the octyltrimethylammonium cation and the bromide anion is also comparable to the cation/anion volume ratio used in our model.} Unfortunately, we were not able to find experimental data for direct measurements of the surface charge density in neat solvent-free RTILs. As an estimate of possible experimental charge densities in RTILs we used the results of the experimental work by Gnahm et al. \cite{Gnahm2011} that provides a $C_\mathrm{d},U$-curve for an RTIL system containing PF$_6^-$ ions ($C_\mathrm{d}$ is the differential capacitance and $U$ is the electrode potential).\footnote{Among ``real'' spherical ions presented in RTILs the PF$_6^-$ ion is of particular relevance to this work because it was previously shown via STM that PF$_6^-$ ions form ordered interfacial structures \cite{Pan2006})} Therefore, the surface charge density at the Au(111) electrode can be estimated as an area under the $C_\mathrm{d},U$-curve reported in the work of Gnahm et al. (Fig. 5  in \cite{Gnahm2011}), starting from the potential of zero charge ($-0.25\,\mathrm{V}$) to the highest value of potential for this curve ($+0.5\,\mathrm{V}$). That estimation gives approximately $+50\,\mathrm{\mu C/cm^2}$ for the maximum charge density at the Au(111) electrode in these experiments \cite{Gnahm2011}.
+
+\subsection{Surface charge compensation parameter ($kappa$)}
+
+It has been shown that the EDL structure in RTILs depends on ions geometric parameters and cation/anion volume ratio and the electrode charge density \cite{Fedorov2008a,Fedorov2010,Georgi2010,Lynden-Bell2012,Vatamanu2011}. Therefore, we aimed to develop a general ansatz for the relation between the ions size and the electrode charge density that determines the specific EDL structuring, which is discussed in this article. For the ordering of ions in the first layer close to the electrode surface we draw a picture of a \textit{densely packed ion monolayer}. The ion size determines the \textit{maximum number} of ions that can be packed in a single monolayer -- the smaller the ions, the more ions can fit into the first interfacial layer. According to this conception, we introduce a \textit{surface charge compensation} parameter, named $kappa$, as a ratio between the electrode surface charge density $\sigma$ and the theoretical maximum counter-ion charge density in a closely packed ion monolayer ($\theta_\mathrm{max}$):
+\begin{equation}
+\label{eq:kappa} \kappa = \left| \frac{\sigma}{\theta_\mathrm{max}} \right|
+\end{equation}
+As an estimation for the $\theta_\mathrm{max}$ one can use an assumption of a dense lattice structure for the ion monolayer. Accordingly, we define the $\theta_\mathrm{max}$ to be equal to the ion charge $q_{\mathrm{Ion}}$ divided by the squared counter-ion diameter $d_\mathrm{Ion}^2$ multiplied by a correction parameter $\alpha$. The later parameter takes into account details of the dense packing of ions and also accounts for deformation of the lattice, e.g. 'squeezing' of generally soft ions under the high electrostatic field. Finally, we express $\kappa$ for a specific ion as: 
+\begin{equation}
+\kappa_{\mathrm{Ion}} = \alpha \cdot d_\mathrm{Ion}^2 \cdot \left| {\sigma}/{q_\mathrm{Ion}} \right|
+\end{equation}
+For the sake of simplicity we set $d_\mathrm{Ion} = d_\mathrm{LJ}^\mathrm{Ion}$ and $\alpha=1$ for the rest of the paper, i.e. $\kappa_{\mathrm{Ion}} = \left(d_\mathrm{LJ}^\mathrm{Ion}\right)^2 \cdot \left| {\sigma}/{q_\mathrm{Ion}} \right|$.  Depending on the choice of the counter-ion we use different notations for $\kappa_{\mathrm{Cation}}$ and $\kappa_{\mathrm{Anion}}$; in a more general case $\kappa$ is written without an index. 
+
+We note that the idea of introducing the $\kappa$ parameter was inspired by the Kornyshev's work \cite{Kornyshev2007}, in which similar parameter ($\gamma$) describes the ratio between the total number of ions and the total number of sites available for the ions. The main difference between the $\kappa$ and $\gamma$ parameters is that $\kappa$ takes into account the actual electrode charge density and may exceed the value of $1.0$; at the higher values ($\kappa>1.0$) additional counter-ions are gathered on top of the first interfacial monolayer (see  Fig. \ref{fig:phasetransition_densityprofile} and the discussion below).
+
+\subsection{Calculation and analysis of the number density profiles}
+
+The number density profiles are calculated using the Gromacs tool \verb|g_density|, while applying a slicing of the simulation box along the $z$-dimension (direction that is normal to the electrode surfaces) in slices of 0.015\,nm thickness. The five replicas modelled for every surface charge density are averaged and the resulting number density profile split into a cathodic and an anodic part, resulting in 816 curves to proceed for further analysis. All analysis steps have been incorporated in the home-build scripting framework NaRIBaS \cite{Naribas2013url}.
+
+To compare structural properties of the number density profiles (maxima and minima that are called below as peaks and valleys) for different surface charge densities and temperatures, a signal processing routine written in Matlab by Tom O'Haver \cite{OHaver2012url} was used. The routine involves two steps to obtain the position of the peak or the valley as well as the height and full width at half maximum (FWHM) of the peak/valley: (i) Finding the peak/valley position: the density profile is differentiated, the first derivative of the profile is smoothed, downward-going zero-crossings are determined; (ii) Characterizing the peak/valley: estimation of the position, height, and width of each peak/valley by least-squares curve-fitting of a segment of the original non-smoothed profile in the vicinity of the zero-crossing. The routine has been carefully applied to take into account the structural features of the number density profiles, e.g. mixtures of extremely narrow peaks and steep broad valleys (see for example Fig. \ref{fig:phasetransition_densityprofile} ). 
+
+\section{Results and discussion}
+
+While comparing the number density profiles at various surface charge densities and temperatures, we found that at a surface charge density of $\sigma=-16.0\,\mathrm{\mu C/cm^2}$ the EDL is re-ordered. At this charge density, instead of multiple alternating ion layers we observe a well structured counter-ion monolayer close to the electrode. Outside this layer the RTIL ions behave bulk-like showing no strong structural correlations with the ions in the interfacial monolayer. However, at lower and higher values of $\sigma$ the subsequent alternating ion layers (re)appear. In this paper we would like to attract attention to these transitions from \emph{multilayer} to \emph{monolayer} structure of the EDL. We relate the positions of the transition points with specific values of the surface charge compensation parameter ($\kappa$) that expresses a \textit{reduced} surface charge density, which is normalised by the maximum counter-ion charge density of a completely filled monolayer (see eq. \ref{eq:kappa}). For the cations at the cathode $\kappa_{\mathrm{Cation}}$ equals 1.0 at $-16.0\,\mathrm{\mu C/cm^2}$ and becomes 2.0 at $-32.0\,\mathrm{\mu C/cm^2}$;  the anodic $\kappa_{\mathrm{Anion}}$ does not exceed 0.8 in the modelled range of electrostatic charge densities (Table \ref{tab:reducedsurfacecharge}) due to the smaller size of the anions compared to the cations.
+
+In the following characterisation of the structural transitions and the morphology of the interfacial structure we aim to answer the following set of questions:
+\begin{enumerate}
+ \item How do the number density profiles evolve near the transition points?
+ \item How does the interfacial structure of counter-ions look like at different electrode charge densities? 
+ \item What is the role of the ion size in the formation of the EDL at a given charge density?
+\end{enumerate}
+
+\begin{table}[htbp]
+\caption{The surface charge compensation parameter $\kappa$ calculated as $\kappa_{\mathrm{Ion}}= \left(d_\mathrm{LJ}^\mathrm{Ion}\right)^2 \cdot \left| \sigma  / q_\mathrm{Ion} \right|$ for various electrode surface charge densities $\sigma$.}
+\begin{center}
+\footnotesize{
+\begin{tabular}{cccc} \hline
+ $\sigma/\mathrm{\mu C\,cm}^{-2}$ & $\kappa_{\mathrm{Anion}}$ (Anode) & $\sigma/\mathrm{\mu C\,cm}^{-2}$ & $\kappa_{\mathrm{Cation}}$ (Cathode) \\
+& $d_\mathrm{Anion}=0.5\,\mathrm{nm}$ & & $d_\mathrm{Cation}=1.0\,\mathrm{nm}$ \\ \hline \hline%\multicolumn{2}{c}{Calculation time in s} \\ 
++0.25 & 0.0039 & $-0.25$ & 0.0156 \\
++1.00 & 0.0156 & $-1.00$ & 0.0624 \\
++5.00 & 0.0780 & $-5.00$ & 0.312 \\ \hline 
++16.0 & 0.250 & $-16.0$ & 1.00 \\ \hline 
++24.0 & 0.375 & $-24.0$ & 1.50 \\
++34.0 & 0.530 & $-34.0$ & 2.12  \\
++50.0 & 0.780 & $-50.0$ & 3.12  \\ \hline 
+\end{tabular}
+}
+\end{center}
+\label{tab:reducedsurfacecharge}
+\end{table}
+
+We note that, as it has been shown before \cite{Fedorov2008a}, the $C_\mathrm{d},U$ dependence for the RTIL model used in this study resembles the main qualitative features (peak magnitude, asymmetric shape) of experimental capacitance curves obtained for comparable RTIL systems \cite{Locket2008,Lockett2010a}.
+
+\subsection{Evolution of the structure of the ion number density profiles near the transition point}
+
+In Fig. \ref{fig:phasetransition_densityprofile} (left) we present the number density profiles for anions at the cathode for values of $\kappa$ varying between $\kappa_{\mathrm{Cation}}=0.75$ ($\sigma=-12.0\,\mathrm{\mu C/cm^2}$) and $\kappa_{\mathrm{Cation}}=1.12$ ($\sigma=-18.0\,\mathrm{\mu C/cm^2}$). The changes in the shapes of these profiles show a clear structural transition in the EDL as indicated on the figure: (A) the height of the first peak decreases with increase of $\kappa$; (B) at $\kappa_{\mathrm{Cation}}=1.00$ (($\sigma=-16.0\,\mathrm{\mu C/cm^2}$) the first peak vanishes completely, the profile shifts to larger $z$ values and becomes flat; (C) with further increase of $\kappa$ the first peak builds up again but it is shifted by approx. 0.85\,nm compared to the density profile at $\kappa_{\mathrm{Cation}}=0.75$. We note that at $\kappa_{\mathrm{Cation}}=1.0$ the first interfacial layer close to the electrode is filled by the counter-ions to its maximum packing capacity. At the same point the cations and anions further from the electrode behave similar to the bulk liquid phase, i.e. without further layering. Accordingly, at the transition point of $\kappa_{\mathrm{Cation}}=1.0$  the cathodic EDL becomes thinner. However, as indicated in the Fig. \ref{fig:phasetransition_densityprofile} (right) the cathodic EDL at $\kappa_{\mathrm{Cation}}=1.25$ again consists of several alternating layers build up further from the frozen counter-ion monolayer.
+
+Our results show that the alternating layering of ions at the interface is also weak for very low surface charge densities (Fig. \ref{fig:firstandsecondtransitionpoint}). When changing $\kappa_{\mathrm{Cation}}$ at the cathode from 0 to 0.5 and from 1.0 to 1.5, quite similarly, the height of the first peak in the anion number density profile increases from 0.45\,nm$^{-3}$ to 0.9\,nm$^{-3}$ and the overall structure of the profile gets sharper.
+
+The structure of the number density profiles (Fig. \ref{fig:peakevolutionwithvoltage}) can be characterised by their specific maxima (peaks) and minima (valleys). To quantify the evolution of the structure of the anion number density profiles over changing the $\kappa$ parameter, we estimated the following properties of the profiles for all surface charge densities under study:
+\begin{itemize}
+\item \emph{Position of the first minimum} ($z^\mathrm{1.min}$, Fig. \ref{fig:peakevolutionwithvoltage}-TOP): The position of the first minimum of the anion number density profile is measured and plotted against $\kappa_{\mathrm{Cation}}$. Our results indicate sharp steps in the evolution of this quantity over $\kappa_{\mathrm{Cation}}$ as the position of the co-ionic layer is significantly shifted at certain $\kappa_{\mathrm{Cation}}$ values further from the electrode due to the formation of the dense counter-ion layer.
+
+\item \emph{Height of the first minimum} ($\rho^\mathrm{1.min}$, Fig. \ref{fig:peakevolutionwithvoltage}-MIDDLE): The height of the first minimum of the anion number density profile is measured and plotted against $\kappa_{\mathrm{Cation}}$. We note that the lower the height of the first minimum, the less diffuse is the ion layer.
+
+\item \emph{Full width at half maximum} (FWHM$^\mathrm{1.max}$, Fig. \ref{fig:peakevolutionwithvoltage}-BOTTOM): The FWHM$^\mathrm{1.max}$ of the first peak of the anion number density profile is estimated at the level of the half peak height. This quantity can be understood as the width of the ionic layer. We plot this quantity against $\kappa_{\mathrm{Cation}}$. A slight increase of FWHM$^\mathrm{1.max}$ with temperature indicates some widening of the EDL with increasing temperature.
+\end{itemize}
+
+The resulting peak evolution over surface charge density (measured by $\kappa_{\mathrm{Cation}}$) for anions at the cathode is shown in Fig. \ref{fig:peakevolutionwithvoltage} for two different temperatures (450 K and 500 K). Upon analysing the evolution of the position of the first valley, a second transition point at $\kappa_{\mathrm{Cation}}=2.38$ ($\sigma=-38.0\,\mathrm{\mu C/cm^2}$) becomes visible, see also Fig. \ref{fig:normalized_chargedens_Cathode_highkappa_Anode}. The position is shifted from the expected 2.0 to 2.38 due to the compression of the ordered layer under the high electrostatic field from the electrode. Note that the ions are modelled as \textit{soft} charged Lennard--Jones spheres.
+
+The valley position is nearly constant at $z^\mathrm{1.min}=2.0\,\mathrm{nm}$ at low $\kappa_{\mathrm{Cation}}$ values (Fig. \ref{fig:peakevolutionwithvoltage}-TOP). At the transition points $\kappa_{\mathrm{Cation}}=1.0$ and $\kappa_{\mathrm{Cation}}=2.38$, the valley position shifts in the $z$-direction further from the electrode by approximately 1.25\,nm. Initially, the whole co-ion layer is shifted by a larger distance than the diameter of a counter-ion. However, at higher surface charge densities, the ion layers are then squeezed in $z$-direction as indicated by the decreased distance $z^\mathrm{1.min}=2.75\,\mathrm{nm}$ between the ion layer and the electrode surface. 
+
+The height of the minimum $\rho^\mathrm{1.min}$ decreases upon electrode charging ($\kappa_{\mathrm{Cation}}\rightarrow0.5$), thus indicating a less smeared appearance of the ion layer as expected for higher surface charge density (Fig. \ref{fig:peakevolutionwithvoltage}-MIDDLE). However, before reaching the first transition point, the height of the minima increases. After the first transition point the cycle of decreasing and increasing of the height of the minima starts over again.
+
+At the neutral interface and at the transition points $\kappa_{\mathrm{Cation}}=1.0$ and $\kappa_{\mathrm{Cation}}=2.38$, the first maximum (peak) of the anion number density profile becomes flat and wide (Fig. \ref{fig:firstandsecondtransitionpoint}). Thus the FWHM of the first peak of the anion number density profile is characterised by noticeably larger values. With increased surface charge density the peak is narrowing that accounts for layering within the solution part of the EDL -- the FWHM$^\mathrm{1.max}$ decreases. This structural evolution of the number density profile, in terms of FWHM, is shown in Fig. \ref{fig:peakevolutionwithvoltage}-BOTTOM. The shapes of the FWHM$^\mathrm{1.max}$-curve in the interval between the transition points look similar, thereby reflecting the similarity of the structural transition at both transition points.
+
+\subsection{Vanishing charge waves at the transition point}
+
+To analyse the RTIL response on electrode charging we discuss the cumulative charge profiles $cn_Q(z)=\int_0^z \rho_Q(z') \mathrm dz'$ (Fig. \ref{fig:normalized_chargedens_Cathode}-LEFT), where charge density profiles $\rho_Q(z)$ is defined as a sum of the ion number density profiles $\rho_N^\mathrm{Ion}$ multiplied by the charge $q_\mathrm{Ion}$ of the ionic species:
+\[\rho_Q(z)=\rho_N^\mathrm{Cation}(z)\cdot q_\mathrm{Cation} + \rho_N^\mathrm{Anion}(z)\cdot q_\mathrm{Anion}.\]
+As can be seen from the figure (Fig. \ref{fig:normalized_chargedens_Cathode}-LEFT) the cumulative charge profiles reveal significant oscillations between $0 < \kappa_{\mathrm{Cation}} < 1.0$, which correspond to a multilayer structure.
+
+To investigate details of the charge compensation mechanisms in the EDL we plotted in Fig. \ref{fig:normalized_chargedens_Cathode}-RIGHT the cumulative charge profiles that are normalised by the number of elementary charges on the electrode $|q_{\mathrm{electrode}}|$. At lower charge densities ($\kappa_{\mathrm{Cation}} < 1.0$) the normalised profiles  $cn_Q(z) / |q_{\mathrm{electrode}}|$ oscillate due to the so-called overscreening effect \cite{Fedorov2008,Georgi2010,Bazant2011}. The height of the first peak of these oscillations that is more than $1.0$ manifests that the number of counter-ions in the first interfacial layer \textit{overcompensates} the surface charge density at the electrode. However, at $\kappa_{\mathrm{Cation}} = 1.0$ the normalised cumulative charge density profile becomes a step-wise curve with a \textit{flat plateau} where the profile value is very close to $1.0$. That shows complete compensation of the electrode charge by the first monolayer of the counter-ions at this value of $\kappa_{\mathrm{Cation}}$. The absence of charge waves at $\kappa_{\mathrm{Cation}} = 1.0$ indicates that a non-ordered liquid phase coexists close to the first interfacial monolayer.
+
+Upon further increasing of the surface charge density and thus reaching the values of the local compensation parameters $\kappa_{\mathrm{Cation}}>1.0$, charge waves are formed again. Alternating cation and anion layers start forming on top of the cationic monolayer. At $\kappa_{\mathrm{Cation}}=2.38$ we observe a second structural transition with a two-step cumulative charge density profile, see Fig. \ref{fig:normalized_chargedens_Cathode_highkappa_Anode}-LEFT. As presented in Fig. \ref{fig:normalized_chargedens_Cathode_highkappa_Anode}-RIGHT, the cumulative charge density profile at the anode shows a similar flattening upon increasing $\kappa_{\mathrm{Anion}}$.
+
+\subsection{2D ordering of the monolayer at the transition point}
+
+Snapshots of the counter-ion structure at different $\kappa_{\mathrm{Cation}}$ values are shown in Figs. \ref{fig:snapshot_cation_cathode_transitionpoint} and  \ref{fig:snapshot_cation_cathode_transitionpoint_2ndlayer}. The transition from a \textit{multilayered} structure of the EDL to a co-existence of counter-ion \textit{monolayer} and unstructured RTIL can be understood as the formation of an ordered surface-frozen structure close to the electrode \cite{Strandburg1988}.
+
+We found that the temperature effect on the interfacial structuring in our system is overall very week (see Fig.~\ref{fig:peakevolutionwithvoltage}), but increases in the region of the transition point. The interfacial structure of cations at the cathode near the transition point and of anions at the anode at the highest surface charge density under study, are similar for the same $\kappa$ values.
+
+The observation of the ordered \textit{monolayer} at $\kappa \rightarrow 1.0$ resembles the experimental findings of Freyland et al. \cite{Pan2006,Freyland2008} that report a monolayer structure of PF$_6^-$ anions adsorbed at Au(111) electrode surface. The overall picture of the structural transitions at the electrode--RTIL interface observed in our simulation correlates well with the results of a recent theoretical work by Bazant et al. \cite{Bazant2011}. Indeed, the phenomenological theory introduced in this work predicts that ``overscreening is pronounced at small voltages and gradually replaced by the formation of a condensed layer of counter-ions'' \cite{Bazant2011}. Moreover, we refer to an opinion from a recent Perspectives article by Baldelli \cite{Baldelli2013} that suggests that at some conditions the structure of the EDL in RTILs might consist of a single monolayer of counter-ions close to the electrode surface with RTIL ions further from the electrode behaving similar to the liquid phase. This opinion is based on a critical review of experimental works that studied interfacial RTIL systems by the sum frequency generation (SFG) spectroscopy technique \cite{Martinez2010,Baldelli2011,Penalber2012}. However, at the same time there is a number of independent experimental works that indicate formation of more complex multilayered structures of RTILs in the EDL \cite{Hayes2011,Zhou2012,Lauw2012,Tamam2011,Tamura2011,Cremer2011,Carstens2012,Borisenko2012,Atkin2009,Perkin2012}. An agreement can be seen in the presented results. We show that depending on the $\kappa$ value the structure of the EDL can vary between multiple alternating layers and a single condensed monolayer.
+
+\section{Conclusions}
+
+In this MD simulation study we investigated structural transitions in a coarse grained model RTIL at an electrified interface. The model RTIL with asymmetric sized ions \cite{Fedorov2008a} somewhat resembles several commonly used real RTILs in terms of the ion sizes and the cation/anion volume ratio \cite{Costa2012}. We analysed the structural response of the EDL to the electrode charge in a wide range of electrode charge densities and at different temperatures. The presented new results complement our previous theoretical and simulations studies of the anatomy of EDL in RTILs \cite{Fedorov2008,Fedorov2008a,Fedorov2010,Georgi2010,Lynden-Bell2012}. 
+
+Within this work we have been able to draw the following conclusions:
+\begin{enumerate}
+ \item  For the most of the studied charge densities the EDL has a \emph{multilayered} structure with multiple alternating layers of the electrode counter-ions and co-ions at the electrode--RTIL interface; however, at certain charge densities the alternating multilayer structure of the EDL undergoes a structural transition to an ordered surface-frozen \emph{monolayer} of densely packed electrode counter-ions. At this point the dense ordered monolayer of counter-ions close to the electrode surface coexists with apparently non-structured RTIL further in the $z$-direction from the electrode.
+ \item The points of the structural transitions  are determined by the balance between the surface--counter-ion attraction and the ion--ion steric repulsion. The multilayer to monolayer transition effect is directly correlated with the surface charge density, counter-ion diameter and counter-ion charge; thereby indicating: 
+ \begin{itemize}
+  \item[a.] Total charge \emph{compensation} of the electrode charge by the interfacial \emph{monolayer} of counter-ions at the transition point, i.e. the phenomena of overscreening and alternating layers are almost absent at this point;
+  \item[b.] Geometric ordering of the interfacial counter-ions in a form of a dense ordered structure (so-called Moir{\'e}-like structure).
+ \end{itemize}
+ The structural transitions are shown to take place at close to integer values of $\kappa$, which is a surface charge compensation parameter introduced in the paper. The $\kappa_{\mathrm{Ion}}$ relates the applied electrode surface charge density, the geometry of electrode counter-ions and the charge of the counter-ions.
+\end{enumerate}
+
+By comparing our results with recently published experimental and theoretical results on the interfacial structuring of RTILs, electrode reconstruction and two-dimensional phase transitions at interfaces, we found:
+
+\begin{enumerate}
+ \item The presented results are in general agreement with experimental works of Freyland and co-workers \cite{Pan2006,Freyland2008} that reported an ordered structure of PF$_6^-$ anions adsorbed on an electrode surface to coexist with uncompressed liquid structures.
+ \item The observed herring-bone structures at high surface charge densities, that form as a superposition of \emph{two} ordered monolayers, are similar to the structures visualised via STM at the interface between a gold electrode and RTILs \cite{Aal2011,Druschler2012}. 
+\end{enumerate}
+
+We note, that in Ref. \cite{Aal2011,Druschler2012} the formation of the herring-bone structures is explained through a reconstruction of the electrode surface. However, we report within this work a herring-bone structure in an interfacial RTIL system that originates from the ordering of the RTIL ion layers. The true origin of the herring-bone structure formed in these experiments remains thereby open as our simulations do not account for possible electrode restructuring. However, we aim to attract attention to possible new hypotheses for explanation of the appearance of the herring-bone structures at the electrode--RTIL interface.\footnote{We thank the unknown referee of our paper for very useful comments on our work and giving us insights on the interpretation of experimental data of interfacial structuring under the influence of specific ion adsorption:
+``Atkin et al. \cite{Atkin2009} have used an RTIL, where the cation ([Pyr$_{1,4}$]$^+$ is much smaller than the anion (FAP). Thus it seems reasonable, when the herring-bone pattern is attributed to the superposition of densely packed counter-ion layers, that a herring-bone pattern should also be observable within the anodic regime -- which is not the case (see \cite{Druschler2012}). A possible explanation might be given as follows: Even at the potential of zero charge, which is unfortunately unknown for this system, [Pyr$_{1,4}$]$^+$-cations are adsorbed to the electrode surface due to non-coloumbic or ``solvophobic'' interactions. Hence if a negative charge is applied to the electrode, providing an additional driving force for cation accumulation, a densely packed cation layer can be realised at moderate electrode potentials. However, if the electrode potential is increased in anodic direction, starting from the potential of zero charge, a significant amount of cations still remains at the surface, and thus a formation of a densely packed anion layer at moderate potentials is hindered." (extracted from the referee's comments on our work)}
+
+We note that this is a pilot study and there are several remaining questions that would require further detailed investigations of the EDL structural properties in RTILs by experimental and theoretical/simulations methods, e.g.: How does the observed structural transition depend on the RTIL ion size asymmetry ($d_{\mathrm{Cation}}/d_{\mathrm{Anion}}$)? Do the electrode structure and possible surface defects affect the structural transition? What are the possible effects  of atomistic-scale details of ion molecular structure and molecular charge density distribution on the structural transition? How does the ordering of counter-ions evolve with time?
+
+We also note that the observed ordering of ions in the interfacial monolayers could be associated with so-called hexatic structures \cite{Strandburg1988}, that are known to have a short range orientational order. A rigorous mathematical analysis of the 2D order parameters in RTILs at the interface is a topic of our ongoing research.
+
+Finally, we underline that depending on the $\kappa_{\mathrm{Ion}}$ value the structure of the EDL is changing from multiple alternating layers to a single monolayer. This is in line with the results from the recent theoretical work by Bazant et al. \cite{Bazant2011} suggesting that at high surface charge densities there is a formation of a condensed layer of counter-ions. Our findings might shed some light on various interpretations of experimental results on the structure of RTILs at the electrified interface (see \cite{Hayes2011,Zhou2012,Lauw2012,Penalber2012}).
+
+\clearpage
+\section{Acknowledgement}
+
+We thank the unknown referee of our paper for giving us insights in the interpretation of experimental data of interfacial structuring under the influence of specific ion adsorption.
+
+We acknowledge the supercomputing support from the von Neumann-Institut f{\"u}r Computing, FZ J{\"u}lich (Project ID ESMI11). The work was supported by Grant FE 1156/2-1 of the Deutsche Forschungsgemeinschaft (DFG). K. Kirchner and T. Kirchner thank the Max Planck Institut f{\"u}r Mathematik in den Naturwissenschaften for hospitality during their stay there and for access to the local computing facilities. Large part of the results were obtained using the EPSRC funded ARCHIE-WeSt High Performance Computer (www.archie-west.ac.uk). EPSRC grant no. EP/K000586/1. Some part of the work has been performed under the HPC-EUROPA2 project (project number: 228398) with the support of the European Commission--Capacities Area--Research Infrastructures. Part of the computations were performed with the facilities of HECToR, the UK's national high-performance computing service, which is provided by UoE HPCx Ltd at the University of Edinburgh, Cray Inc and NAG Ltd, and funded by the Office of Science and Technology through EPSRC's High End Computing Programme. 
+
+We thank Alexei Kornyshev for useful discussions on lattice saturation phenomena in ionic liquids. We thank Frank Endres, Susan Perkin and Tom Welton for useful discussions concerning experiments on interfacial structural transitions in ionic liquids. We thank Ruth Lynden-Bell for useful discussions on electrostatic screening effects in ionic liquids.
+
+% Create the reference section using BibTeX:
+\bibliographystyle{elsarticle-num}
+\bibliography{Article_str.trans_RTIL_accepted}
+
+\clearpage
+
+\begin{figure*}[ht]
+\begin{center}
+\includegraphics[scale=1]{FIG1.eps} %scale =1
+\end{center}
+\caption[Number density profiles for the anions at the cathode at $T=450\,\mathrm{K}$ for different local compensation parameter $\kappa_{\mathrm{Cation}}$ and number density profile for cations and anions at the cathode at $\kappa_{\mathrm{Cation}}=1.25$ and $T=450\,\mathrm{K}$.]{\label{fig:phasetransition_densityprofile} 
+(LEFT) Number density profiles for the cations at the anode at $T=450\,\mathrm{K}$. The profiles are shown for different values of the local compensation parameter $\kappa_\mathrm{Ion} =  d_\mathrm{Ion}^2 \cdot \left| {\sigma}/{q_\mathrm{Ion}} \right|$ (calculated for \emph{cations}), $\kappa_{\mathrm{Cation}}=0.75$,  $0.87$, $1.00$ and $1.12$. The density profiles clearly show a structural transition in the interfacial layer: (A) the first peak decreases in size with increase of $\kappa$; (B) at $\kappa_{\mathrm{Cation}}=1.00$ the first peak vanishes completely, the profile shifts to larger $z$ values and becomes flat; (C) with further increase of $\kappa$ the first peak builds up again but it is shifted by approx. 0.85\,nm compared to the density profile at $\kappa_{\mathrm{Cation}}=0.75$. (RIGHT) The number density profiles for cations and anions at the cathode at the local compensation parameter for cations of $\kappa_{\mathrm{Cation}}=1.25$ and the temperature $T=450\,\mathrm{K}$. The solid curve (red) represents the cation-cathode profile with two subsequent peaks. Between those two peaks no anion-cathode profile peak (dashed curve, blue) shows up, clearly indicating the formation of two cationic layers close to the electrode -- both filled purely with cations -- followed \emph{afterwards} by a third layer filled with anions. The number density profile is underlaid with a simulation snapshot showing electrode atoms as gray, cations as red and anions as blue balls.}
+\end{figure*}
+
+\begin{figure*}[ht]
+\begin{center}
+\includegraphics[scale=1]{FIG2.eps} %scale =1
+\end{center}
+\caption[Number density profiles in the region of structural transition, comparison of first and second transition point]{\label{fig:firstandsecondtransitionpoint} (LEFT) Number density profile for the anions at the cathode at $T=450\,\mathrm{K}$ and four different surface charge compensation parameters $\kappa_{\mathrm{Cation}}$ varied between 0.0 and 0.5. With the increase of $\kappa$ the peak height of the first peak increases from 0.45\,nm$^{-3}$ to 0.9\,nm$^{-3}$ and the overall structure of the profile gets sharper; the peaks become better distinguishable. (RIGHT) The number density profiles for the anions at the cathode at $T=450\,\mathrm{K}$ and four different surface charge compensation parameters $\kappa_{\mathrm{Cation}}$ varied between 1.0 and 1.5. With the increase of $\kappa$ the peak height of the first peak increases similar to the profile evolution shown in the (LEFT) figure. Compared to the (LEFT) figure, the peaks are shifted by approx. 0.85\,nm.}
+\end{figure*}
+
+\clearpage
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics[scale=1]{FIG3.eps} %scale =1
+\end{center}
+\caption{\label{fig:peakevolutionwithvoltage} Evolution of the first peak of the number density profile of anions at the cathode. The peak is defined by the position and height of the global maximum of the number density profile (see Fig. \ref{fig:phasetransition_densityprofile}). As $z$ is increased, a \emph{minimum} follows the global maximum in the number density profile. This local minimum is called \textit{valley}. (TOP) Position of the first valley. (MIDDLE) Height of the first valley. (BOTTOM) Full width at half maximum (FWHM) of the first peak of the profile.}
+\end{figure}
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[scale=1]{FIG4.eps} %scale =1
+\caption[Cumulative charge at the cathode and normalisation -- comparison of surface charge densities]{\label{fig:normalized_chargedens_Cathode} Cumulative charge $cn_Q(z)=\int_0^z \rho_Q(z') \mathrm dz'$ at the cathode for different $\kappa_{\mathrm{Cation}}$ values (that, consequently, correspond to different values of the surface charge density $\sigma$) at $T=450\,\mathrm K$. (LEFT) Cumulative charge profiles for different $\kappa_{\mathrm{Cation}}$ values. (RIGHT) Cumulative charge profiles normalised by the number of elementary charges on the electrode. The legend indicates the $\kappa_{\mathrm{Cation}}$ values.}
+\end{figure*}
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[scale=1]{FIG5.eps} %scale =1
+\caption[Normalised cumulative charge at the Cathode for high surface charge densities and at the Anode]{\label{fig:normalized_chargedens_Cathode_highkappa_Anode} Cumulative charge $cn_Q(z)=\int_0^z \rho_Q(z') \mathrm dz'$ normalised by the number of elementary charges on the electrode for different $\kappa$ values at $T=450\,\mathrm K$. (LEFT) Cathodic cumulative charge profiles for $\kappa_\mathrm{Cation} \ge 1.00$, (RIGHT) Anodic cumulative charge profiles for $\kappa_\mathrm{Anion} \le 0.78$. $\kappa_\mathrm{Anion}$ and $\kappa_\mathrm{Cation}$ are shown in the legend to underline the difference in $\kappa_{\mathrm{Ion}}$ values for the same values of surface charge density due to the specific maximum ion charge density in a closely packed ion monolayer (see eq. \ref{eq:kappa}).}
+\end{figure*}
+
+
+\begin{figure*}[ht]
+\begin{center}
+\includegraphics[scale=1]{FIG6.eps} %scale =1
+\end{center}
+\caption{\label{fig:snapshot_cation_cathode_transitionpoint} Snapshots of the interfacial cation layer at the cathode at 450\,K for three different values of the surface charge compensation parameters (a) $\kappa_\mathrm{Cation}=0.62$, (b) $\kappa_\mathrm{Cation}=0.87$ and (c) $\kappa_\mathrm{Cation}=1.12$, showing the transition from a layered solution-side-EDL to an ordered counter-ion layer.}
+\end{figure*}
+
+\begin{figure*}[ht]
+\begin{center}
+\includegraphics[scale=1]{FIG7.eps} %scale =1
+\end{center}
+\caption{\label{fig:snapshot_cation_cathode_transitionpoint_2ndlayer} Snapshots of the first two interfacial cation layers at the cathode at 450\,K at a high value of the local compensation parameter, $\kappa_\mathrm{Cation}=2.37$, showing the point of structural transition to an ordered structure within the second interfacial layer and thereby the construction of a herring bone structure. (LEFT) First interfacial layer, (MIDDLE) second interfacial layer and (RIGHT) first and second interfacial layer merged.}
+\end{figure*}
+
+\clearpage
+
+\begin{figure*}[ht]
+\begin{center}
+\includegraphics[scale=1]{TOC.eps} %scale =1
+\end{center}
+\caption{Table of content figure.}
+\end{figure*}
+
+\end{document}
