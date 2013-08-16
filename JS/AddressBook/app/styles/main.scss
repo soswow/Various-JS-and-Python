@@ -1,15 +1,59 @@
 $FontAwesomePath: '/styles/font';
-@import 'sass-bootstrap/lib/bootstrap';
+@import 'bootstrap/bootstrap';
 @import 'font-awesome/scss/font-awesome';
 
-.hero-unit {
-    margin: 50px auto 0 auto;
-    width: 300px;
+//@font-family-base:
+$font-size-base: 14px;
+
+body{
+  padding-top: $grid-gutter-width;
 }
 
-.browsehappy {
-    margin: 0.2em 0;
-    background: #ccc;
-    color: #000;
-    padding: 0.2em 0;
+#top-form {
+  .form-group{
+    z-index: 10;
+    position: relative;
+    &.second-row{
+      @include transition(top 0.5s, opacity 0.5s);
+      top: -60px;
+      opacity: 0;
+      z-index: 5;
+    }
+  }
+  .when-closed{
+    display: block;
+  }
+  .when-opened{
+    display: none;
+  }
+  .btn-block{
+    margin-top: 0;
+  }
+  &.opened{
+    .second-row{
+      top: 0px;
+      opacity: 1;
+    }
+    .when-closed{
+      display: none;
+    }
+    .when-opened{
+      display: block;
+    }
+  }
+  label {
+    font-size: 24px;
+    color: #D6D6D6;
+    position: absolute;
+    left: 24px;
+    top: 5px;
+    i.icon-group{
+      font-size: 20px;
+    }
+  }
+
+  input{
+    padding-left: 38px;
+  }
 }
+

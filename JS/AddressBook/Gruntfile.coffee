@@ -236,7 +236,7 @@ module.exports = (grunt) ->
         src: "{,*/}*.css"
 
     concurrent:
-      server: ["copy:fonts", "compass", "coffee:dist", "copy:styles"]
+      server: ["copy:fonts", "compass:dist", "coffee:dist", "copy:styles"]
       test: ["coffee", "copy:styles"]
       dist: ["coffee", "compass", "copy:fonts", "copy:styles", "imagemin", "htmlmin"]
 

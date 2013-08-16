@@ -19,7 +19,36 @@
     </head>
     <body>
         <div class="container">
+          <div class="row">
+            <div class="col-md-8 col-md-offset-2">
+              <form id="top-form" class="form-horizontal" role="form">
+                <div class="form-group">
+                  <div class="col-md-9">
+                    <label for="search-add-field"><i class="icon-search"></i></label>
+                    <input type="text" id="search-add-field" class="form-control input-lg" placeholder="Search contact"/>
+                  </div>
+                  <div class="col-md-3">
+                    <button type="button" class="btn-block when-closed btn btn-success btn-lg">or Add one</button>
+                    <div class="btn-group when-opened btn-block">
+                      <button type="button" class="btn btn-success btn-lg col-md-6"><i class="icon-ok"></i></button>
+                      <button type="button" class="btn btn-danger btn-lg col-md-6"><i class="icon-remove"></i></button>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group second-row">
+                  <div class="col-md-6">
+                    <label for="phone-field"><i class="icon-phone"></i></label>
+                    <input type="text" id="phone-field" class="form-control input-lg" placeholder="Phone number"/>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="group-field"><i class="icon-group"></i></label>
+                    <input type="text" id="group-field" class="form-control input-lg" placeholder="Member of group"/>
+                  </div>
+                </div>
+              </form>
 
+            </div>
+          </div>
         </div>
 
         <!--[if lt IE 7]>
@@ -30,7 +59,7 @@
         <script src="bower_components/jquery/jquery.js"></script>
         <!-- endbuild -->
 
-        <!-- build:js(.tmp) scripts/coffee.js -->
+        <!-- build:js(.tmp) scripts/main.js -->
         <script src="scripts/main.js"></script>
         <!-- endbuild -->
 
