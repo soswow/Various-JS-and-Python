@@ -1,0 +1,15 @@
+$FontAwesomePath: '/styles/font';
+@import 'sass-bootstrap/lib/bootstrap';
+@import 'font-awesome/scss/font-awesome';
+
+.hero-unit {
+    margin: 50px auto 0 auto;
+    width: 300px;
+}
+
+.browsehappy {
+    margin: 0.2em 0;
+    background: #ccc;
+    color: #000;
+    padding: 0.2em 0;
+}
