@@ -6,7 +6,7 @@ $FontAwesomePath: '/styles/font';
 $font-size-base: 14px;
 
 body{
-  padding-top: $grid-gutter-width;
+  padding-top: $grid-gutter-width * 2;
 }
 
 #top-form {
@@ -29,7 +29,7 @@ body{
   .btn-block{
     margin-top: 0;
   }
-  &.opened{
+  &.add-form-state{
     .second-row{
       top: 0px;
       opacity: 1;
@@ -47,6 +47,7 @@ body{
     position: absolute;
     left: 24px;
     top: 5px;
+    z-index: 20;
     i.icon-group{
       font-size: 20px;
     }
@@ -55,5 +56,20 @@ body{
   input{
     padding-left: 38px;
   }
+  button.group-select-ui{
+    font-weight: normal;
+    &:hover, &:active, &:focus{
+      background-color: white;
+    }
+    .filter-option{
+      left: 38px;
+    }
+  }
 }
 
+#alerts-box{
+  position: absolute;
+  top: -63px;
+  left: 0;
+  right: 0;
+}

@@ -13,6 +13,9 @@
         <!-- build:css(.tmp) styles/main.css -->
         <link rel="stylesheet" href="styles/main.css">
         <!-- endbuild -->
+        <!-- build:css styles/vendor.css -->
+        <link rel="stylesheet" href="bower_components/bootstrap-select/bootstrap-select.css">
+        <!-- endbuild -->
         <!-- build:js scripts/vendor/modernizr.js -->
         <script src="bower_components/modernizr/modernizr.js"></script>
         <!-- endbuild -->
@@ -20,29 +23,35 @@
     <body>
         <div class="container">
           <div class="row">
-            <div class="col-md-8 col-md-offset-2">
+            <div class="col-md-8 col-md-offset-2" id="main-page-content">
+              <div id="alerts-box"></div>
               <form id="top-form" class="form-horizontal" role="form">
                 <div class="form-group">
                   <div class="col-md-9">
                     <label for="search-add-field"><i class="icon-search"></i></label>
-                    <input type="text" id="search-add-field" class="form-control input-lg" placeholder="Search contact"/>
+                    <input type="text" data-field="name" tabindex="10" id="search-add-field" class="form-control input-lg" placeholder="Search contact"/>
                   </div>
                   <div class="col-md-3">
-                    <button type="button" class="btn-block when-closed btn btn-success btn-lg">or Add one</button>
+                    <button tabindex="15" type="button" class="btn-block when-closed btn btn-success btn-lg add-one">or Add one</button>
                     <div class="btn-group when-opened btn-block">
-                      <button type="button" class="btn btn-success btn-lg col-md-6"><i class="icon-ok"></i></button>
-                      <button type="button" class="btn btn-danger btn-lg col-md-6"><i class="icon-remove"></i></button>
+                      <button tabindex="40" type="button" class="btn btn-success btn-lg col-md-6 save"><i class="icon-ok"></i></button>
+                      <button tabindex="50" type="button" class="btn btn-danger btn-lg col-md-6 cancel"><i class="icon-remove"></i></button>
                     </div>
                   </div>
                 </div>
                 <div class="form-group second-row">
-                  <div class="col-md-6">
+                  <div class="col-md-5">
                     <label for="phone-field"><i class="icon-phone"></i></label>
-                    <input type="text" id="phone-field" class="form-control input-lg" placeholder="Phone number"/>
+                    <input type="text" data-field="phone" tabindex="20" id="phone-field" class="form-control input-lg" placeholder="Phone number"/>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-4">
                     <label for="group-field"><i class="icon-group"></i></label>
-                    <input type="text" id="group-field" class="form-control input-lg" placeholder="Member of group"/>
+                    <!--form-control input-lg-->
+                    <select tabindex="30" data-field="group" id="group-field" class="show-tick" title='Member of group'>
+                      <option value="12">Work</option>
+                      <option value="11">Friends</option>
+                      <option value="10">Family</option>
+                    </select>
                   </div>
                 </div>
               </form>
@@ -51,22 +60,35 @@
           </div>
         </div>
 
+        <script type="text/html" id="error-message-box">
+          <div class="alert alert-danger alert-dismissable">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+            <strong>Error!</strong> <%= message %>
+          </div>
+        </script>
+
         <!--[if lt IE 7]>
             <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
         <![endif]-->
 
-        <!-- build:js scripts/main.js -->
+        <!-- build:js scripts/vendor.js -->
         <script src="bower_components/jquery/jquery.js"></script>
+        <script src="bower_components/underscore/underscore.js"></script>
+        <script src="bower_components/underscore.string/lib/underscore.string.js"></script>
+        <script src="bower_components/backbone/backbone.js"></script>
+        <script src="bower_components/Backbone.localStorage/backbone.localStorage.js"></script>
+        <script src="bower_components/bootstrap-select/bootstrap-select.js"></script>
+        <script src="scripts/vendor/bootstrap/alert.js"></script>
         <!-- endbuild -->
 
         <!-- build:js(.tmp) scripts/main.js -->
+        <script src="scripts/boot.js"></script>
+        <script src="scripts/models.js"></script>
+        <script src="scripts/views.js"></script>
         <script src="scripts/main.js"></script>
         <!-- endbuild -->
 
-        <!-- build:js scripts/plugins.js -->
-        <!-- endbuild -->
         <!--<script src="bower_components/sass-bootstrap/js/bootstrap-affix.js"></script>-->
-        <!--<script src="bower_components/sass-bootstrap/js/bootstrap-alert.js"></script>-->
         <!--<script src="bower_components/sass-bootstrap/js/bootstrap-dropdown.js"></script>-->
         <!--<script src="bower_components/sass-bootstrap/js/bootstrap-tooltip.js"></script>-->
         <!--<script src="bower_components/sass-bootstrap/js/bootstrap-modal.js"></script>-->
