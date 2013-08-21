@@ -31,7 +31,9 @@ class ContactsCollection extends Backbone.Collection
   localStorage: new Backbone.LocalStorage("ContactsCollection")
 
 class GroupsCollection extends Backbone.Collection
+
   model: app.models.Group
+
   localStorage: new Backbone.LocalStorage("GroupCollection")
 
   makeOptions: (selectedId) ->

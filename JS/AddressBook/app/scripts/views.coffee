@@ -2,7 +2,7 @@ class app.views.SearchForm extends Backbone.View
   el: '#top-form'
 
   events:
-    'keydown #search-add-field': 'search'
+    'keyup #search-add-field': 'search'
 
   initialize: ->
     @$query = $ '#search-add-field'
@@ -18,6 +18,7 @@ class app.views.SearchForm extends Backbone.View
     @$(".second-row").slideUp('fast')
 
   search: ->
+    app.mainPage.filter @$query.val()
 
 class app.views.AddForm extends Backbone.View
   el: '#top-form'
@@ -143,7 +144,6 @@ class app.views.ContactsListView extends Backbone.View
 
   clickDelete: (e) ->
     @getContactOnEvent(e).destroy()
-#    @collection.remove @getContactOnEvent(e)
 
   saveRow: (e) ->
     $row = @getRow e
@@ -168,6 +168,20 @@ class app.views.ContactsListView extends Backbone.View
     @$(".col.js-group select").selectpicker(
       container: 'body'
     ).selectpicker('setStyle', 'form-control group-select-ui')
+
+  filterOut: (query) ->
+    @query = _.trim(query.toLowerCase())
+    $rows = @$el.find('.row').show()
+    if @query
+      toHide = @collection.filter (contact) =>
+        for subQuery in @query.split(" ")
+          found = _.str.include(contact.get('name').toLowerCase(), subQuery) or
+            _.str.include(contact.get('phone').toLowerCase(), subQuery)
+          return false if found
+        return true
+      ids = _.map(toHide, (contact) -> "#contact-#{contact.id}").join(", ")
+      $rows.filter(ids).hide()
+
 
   render: ->
     if @collection.length > 0
@@ -201,3 +215,6 @@ class app.views.MainPage extends Backbone.View
 
   closeError: ->
     @$("button.close").click()
+
+  filter: (query) ->
+    @contactsListView.filterOut query
