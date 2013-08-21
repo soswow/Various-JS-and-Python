@@ -26,6 +26,7 @@ class app.models.Contact extends BaseModel
 
   mandatory: ['name', 'phone']
 
+
 class ContactsCollection extends Backbone.Collection
   model: app.models.Contact
   localStorage: new Backbone.LocalStorage("ContactsCollection")
