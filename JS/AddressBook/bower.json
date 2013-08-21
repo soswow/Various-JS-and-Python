@@ -1,0 +1,15 @@
+{
+  "name": "addressbook",
+  "version": "0.0.0",
+  "dependencies": {
+    "modernizr": "~2.6.2",
+    "jquery": "~1.9.1",
+    "font-awesome": "~3.2.1",
+    "backbone": "~1.0.0",
+    "Backbone.localStorage": "~1.1.6",
+    "underscore": "~1.5.1",
+    "underscore.string": "~2.3.3",
+    "bootstrap-select": "*"
+  },
+  "devDependencies": {}
+}
