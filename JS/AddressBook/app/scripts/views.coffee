@@ -191,7 +191,7 @@ class app.views.ContactsListView extends Backbone.View
 
 
   render: ->
-    if @collection.length > 0
+    if @collection.notNew().length > 0
       @renderAll()
     else
       @$el.html "<span class='no-data'>There is no contacts yet. <strong>Add one!</strong></span>"

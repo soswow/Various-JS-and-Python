@@ -31,6 +31,7 @@ class ContactsCollection extends Backbone.Collection
   model: app.models.Contact
   localStorage: new Backbone.LocalStorage("ContactsCollection")
   comparator: (contact) -> contact.get("name")
+  notNew: -> @filter (contact) -> not contact.isNew()
 
 class GroupsCollection extends Backbone.Collection
 
