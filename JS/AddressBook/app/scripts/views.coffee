@@ -18,7 +18,9 @@ class app.views.SearchForm extends Backbone.View
     @$(".second-row").slideUp('fast')
 
   search: ->
-    app.mainPage.filter @$query.val()
+    opened = @$(".second-row:visible").length is 0
+    if opened
+      app.mainPage.filter @$query.val()
 
 class app.views.AddForm extends Backbone.View
   el: '#top-form'
