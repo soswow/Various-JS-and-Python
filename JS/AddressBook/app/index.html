@@ -69,9 +69,15 @@
 
         <script type="text/html" id="contact-list-item">
           <div class="row">
-            <div class="col-md-4"><%- name %></div>
-            <div class="col-md-4"><%- phone %></div>
-            <div class="col-md-4"><%- groupName %></div>
+            <div class="col col-md-7"><%- name %></div>
+            <div class="col col-md-3"><%- phone %></div>
+            <div class="col col-md-2"><%- groupName %></div>
+            <div class="right-menu">
+              <div class="btn-group btn-group-lg">
+                <button type="button" class="btn btn-success"><div class="arrow"></div><i class="icon-pencil"></i></button>
+                <button type="button" class="btn btn-danger"><i class="icon-trash"></i></button>
+              </div>
+            </div>
           </div>
         </script>
 
