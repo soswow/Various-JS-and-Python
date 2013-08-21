@@ -15,7 +15,7 @@ class app.views.SearchForm extends Backbone.View
     @$('.has-error').removeClass 'has-error'
     app.mainPage.closeError()
     @$query.val("").focus()
-    @$(".second-row").slideUp()
+    @$(".second-row").slideUp('fast')
 
   search: ->
 
@@ -77,7 +77,7 @@ class app.views.AddForm extends Backbone.View
     app.mainPage.closeError()
     @$name.focus()
     @renderGroups()
-    @$(".second-row").slideDown()
+    @$(".second-row").slideDown('fast')
 
     @$group.selectpicker(
       container: 'body'
@@ -102,13 +102,13 @@ class app.views.ContactsListView extends Backbone.View
   initialize: ->
     _.bindAll @, 'renderAll', 'renderOne', 'deleteOne', 'changeOne'
     @collection.on 'reset add', @renderAll
-    @collection.on 'delete', @deleteOne
+    @collection.on 'destroy', @deleteOne
     @collection.on 'change', @changeOne
     @collection.fetch()
 
   deleteOne: (contact) ->
     $row = $("#contact-#{contact.id}")
-    $row.slideUp()
+    $row.slideUp('fast')
     setTimeout (-> $row.remove()), 1000
 
   changeOne: (contact) ->
@@ -142,7 +142,8 @@ class app.views.ContactsListView extends Backbone.View
     $row.removeClass 'edit-mode'
 
   clickDelete: (e) ->
-    @deleteOne @getContactOnEvent e #TODO delete from collection
+    @getContactOnEvent(e).destroy()
+#    @collection.remove @getContactOnEvent(e)
 
   saveRow: (e) ->
     $row = @getRow e
