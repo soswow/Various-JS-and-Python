@@ -26,33 +26,34 @@ class app.views.AddForm extends Backbone.View
   el: '#top-form'
 
   events:
-    'click button.cancel': 'cancel'
+    'click button.cancel': 'clear'
     'click button.save': 'save'
     'keyup input': 'clearErorrs'
 
   initialize: ->
-    _.bindAll @, 'renderGroups'
+    _.bindAll @, 'renderGroups', 'resetModel'
     @$name = $ '#search-add-field'
     @$phone = $ '#phone-field'
     @$group = $ '#group-field'
     @$searchAddIcon = @$ "label[for=search-add-field] i"
-    @resetModel()
-    @model.on 'invalid', (a,b) =>
-      console.log a,b,@model.validationError
-      [fields, message] = @model.validationError
-      for field in fields
-        @$("[data-field=#{field}]").parent().addClass('has-error')
-      app.mainPage.showError message
-
+    app.models.contacts.on 'reset', @resetModel
     app.models.groups.on 'all', @renderGroups
 
   renderGroups: ->
     @$group.html app.models.groups.makeOptions()
 
   resetModel: ->
+    @clear()
     @model = new app.models.Contact()
+    app.models.contacts.add @model
+    @model.on 'invalid', ((a,b) =>
+      [fields, message] = @model.validationError
+      for field in fields
+        @$("[data-field=#{field}]").parent().addClass('has-error')
+      app.mainPage.showError message
+    ), this
 
-  cancel: ->
+  clear: ->
     @$name.val ""
     @$phone.val ""
 
@@ -61,16 +62,16 @@ class app.views.AddForm extends Backbone.View
     app.mainPage.closeError()
 
   save: ->
-    @model.set
+    @model.save {
       name: @$name.val()
       phone: @$phone.val()
       groupId: @$group.val()
-
-    if @model.isValid()
-      app.models.contacts.create @model
-      @model.save()
-      @trigger 'done'
-      console.log("ok")
+    }, {
+      success: =>
+        @model.off null, null, this
+        @trigger 'done'
+        @resetModel()
+    }
 
   render: ->
     @$name.attr 'placeholder', 'Full name'
@@ -107,7 +108,7 @@ class app.views.ContactsListView extends Backbone.View
     @collection.on 'reset add', @renderAll
     @collection.on 'destroy', @deleteOne
     @collection.on 'change', @changeOne
-    @collection.fetch()
+    @collection.fetch reset: true
 
   deleteOne: (contact) ->
     $row = $("#contact-#{contact.id}")
@@ -116,8 +117,11 @@ class app.views.ContactsListView extends Backbone.View
 
   changeOne: (contact) ->
     $row = $("#contact-#{contact.id}")
-    $row.replaceWith @renderOne contact
-    @updateSelects()
+    if $row.length
+      $row.replaceWith @renderOne contact
+      @updateSelects()
+    else
+      @renderAll()
 
   getRow: (e) -> ($ e.currentTarget).parents('.row:eq(0)')
 
@@ -156,9 +160,10 @@ class app.views.ContactsListView extends Backbone.View
       groupId: $row.find(".js-group select").val()
 
   renderOne: (contact) ->
+    return if contact.isNew()
     attrs = _.clone contact.attributes
     attrs.groupName = app.models.groups.get(attrs.groupId).get('name')
-    attrs.id = contact.id
+    attrs.id = contact.id || contact.cid
     attrs.groups = app.models.groups.makeOptions contact.get 'groupId'
     @template attrs
 
