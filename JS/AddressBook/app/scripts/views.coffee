@@ -93,6 +93,7 @@ class app.views.ContactsListView extends Backbone.View
     'click .row .save': 'saveRow'
     'click .row .cancel': 'cancelRow'
     'click .row .delete': 'clickDelete'
+    'keyup .row input': 'keyPress'
 
   collection: app.models.contacts
 
@@ -122,10 +123,19 @@ class app.views.ContactsListView extends Backbone.View
     id = $row.data 'id'
     @collection.get id
 
+  keyPress: (e) ->
+    if e.keyCode is 13
+      @saveRow(e)
+
   editMode: (e) ->
     $row = @getRow e
     return if $row.is '.edit-mode'
+    @cancelAllRows()
     $row.addClass 'edit-mode'
+    ($ e.currentTarget).closest('.col').find("input, button.dropdown-toggle").focus().select()
+
+  cancelAllRows: ->
+    $(".row").removeClass 'edit-mode'
 
   cancelRow: (e) ->
     $row = @getRow e
@@ -146,7 +156,7 @@ class app.views.ContactsListView extends Backbone.View
     attrs = _.clone contact.attributes
     attrs.groupName = app.models.groups.get(attrs.groupId).get('name')
     attrs.id = contact.id
-    attrs.groups = app.models.groups.makeOptions()
+    attrs.groups = app.models.groups.makeOptions contact.get 'groupId'
     @template attrs
 
   renderAll: ->

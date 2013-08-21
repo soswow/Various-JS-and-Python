@@ -136,7 +136,7 @@ body{
             }
           }
 
-          &:hover{
+          &:hover, &:focus, &:active{
             .arrow{
               &:before{
                 border-right-color: darken($btn-success-border, 12%);
@@ -150,7 +150,7 @@ body{
       }
     }
 
-    &:hover{
+    &:hover, &:focus, &:active{
       background: #f5f5f5;
       .right-menu{
         display: block;

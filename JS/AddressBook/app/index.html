@@ -69,9 +69,9 @@
 
         <script type="text/html" id="contact-list-item">
           <div id="contact-<%= id %>" class="row" data-id="<%= id %>">
-            <div class="col col-md-7 js-name"><%- name %><input type="text" class="form-control on-edit-mode" value="<%- name %>"/></div>
-            <div class="col col-md-3 js-phone"><%- phone %><input type="text" class="form-control on-edit-mode" value="<%- phone %>"/></div>
-            <div class="col col-md-2 js-group"><%- groupName %><select tabindex="30" data-field="group" class="show-tick on-edit-mode">
+            <div class="col col-md-7 js-name"><%- name %><input type="text" tabindex="50" class="form-control on-edit-mode" value="<%- name %>"/></div>
+            <div class="col col-md-3 js-phone"><%- phone %><input type="text" tabindex="60" class="form-control on-edit-mode" value="<%- phone %>"/></div>
+            <div class="col col-md-2 js-group"><%- groupName %><select tabindex="70" data-field="group" class="show-tick on-edit-mode">
               <%= groups %>
             </select></div>
             <div class="right-menu">

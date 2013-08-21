@@ -34,9 +34,11 @@ class GroupsCollection extends Backbone.Collection
   model: app.models.Group
   localStorage: new Backbone.LocalStorage("GroupCollection")
 
-  makeOptions: ->
+  makeOptions: (selectedId) ->
     @map((group) ->
-      "<option value='#{group.id or group.cid}'>#{group.escape('name')}</option>"
+      id = group.id or group.cid
+      selected = if id is selectedId then "selected" else ""
+      "<option value='#{id}' #{selected}>#{group.escape('name')}</option>"
     ).join("")
 
 app.models.contacts = new ContactsCollection()
