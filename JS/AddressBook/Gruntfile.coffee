@@ -213,7 +213,7 @@ module.exports = (grunt) ->
             "*.{ico,png,txt}"
             ".htaccess"
             "images/{,*/}*.{webp,gif}"
-            "styles/fonts/*"
+            "styles/font/*"
           ]
         ]
 
