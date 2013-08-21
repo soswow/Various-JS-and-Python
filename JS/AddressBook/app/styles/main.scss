@@ -93,71 +93,101 @@ body{
     }
     cursor: pointer;
     position: relative;
-    .arrow, .right-menu{
+    .right-menu {
       display: none;
-    }
-    &:hover{
-      background: #f5f5f5;
-      .right-menu{
-        position: absolute;
-        right: -105px;
-        top: -1px;
-        display: block;
-        .btn-group{
-          z-index: 25;
-          > .btn:first-child{
-            @include border-left-radius(0);
+      position: absolute;
+      right: -105px;
+      top: -1px;
+
+      .btn-group {
+        z-index: 25;
+        > .btn:first-child{
+          @include border-left-radius(0);
+        }
+        .btn{
+          padding: 7px 14px 8px;
+          i {
+            font-size: 28px;
           }
-          .btn{
-            padding: 7px 14px 8px;
-            i {
-              font-size: 28px;
-            }
 
-            .arrow{
-              display: block;
+          .arrow{
+            display: block;
+            position: absolute;
+            left: -22px;
+            top: 10px;
+            z-index: 30;
+
+            &:before{
+              content: ' ';
+              height: 0;
+              width: 0;
               position: absolute;
-              left: -22px;
-              top: 10px;
-              z-index: 30;
+              border: 11px solid transparent;
+              border-right-color: $btn-success-border;
+            }
+            &:after{
+              content: ' ';
+              height: 0;
+              width: 0;
+              left: 1px;
+              position: absolute;
+              border: 11px solid transparent;
+              border-right-color: $btn-success-bg;
+            }
+          }
 
+          &:hover{
+            .arrow{
               &:before{
-                content: ' ';
-                height: 0;
-                width: 0;
-                position: absolute;
-                border: 11px solid transparent;
-                border-right-color: $btn-success-border;
+                border-right-color: darken($btn-success-border, 12%);
               }
               &:after{
-                content: ' ';
-                height: 0;
-                width: 0;
-                left: 1px;
-                position: absolute;
-                border: 11px solid transparent;
-                border-right-color: $btn-success-bg;
-              }
-            }
-
-            &:hover{
-              .arrow{
-                &:before{
-                  border-right-color: darken($btn-success-border, 12%);
-                }
-                &:after{
-                  border-right-color: darken($btn-success-bg, 8%);
-                }
+                border-right-color: darken($btn-success-bg, 8%);
               }
             }
           }
         }
       }
     }
+
+    &:hover{
+      background: #f5f5f5;
+      .right-menu{
+        display: block;
+      }
+    }
+    &.edit-mode{
+      .right-menu{
+        display: block;
+      }
+    }
     border-bottom: 1px solid $gray-lighter;
+
     > div.col {
       padding-bottom: 12px;
       padding-top: 13px;
+    }
+    input, .bootstrap-select{
+      position: absolute;
+      top: 0;
+      top: 5px;
+      left: 0px;
+      right: 15px;
+      width: auto;
+    }
+    .on-edit-mode{
+      display: none;
+    }
+    &.edit-mode{
+      .btn-group{
+        display: none;
+      }
+      .on-edit-mode{
+        display: block;
+      }
+      &:hover{
+        background: none;
+      }
     }
   }
 }

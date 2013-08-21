@@ -44,9 +44,7 @@ class app.views.AddForm extends Backbone.View
     app.models.groups.on 'all', @renderGroups
 
   renderGroups: ->
-    @$group.html app.models.groups.map((group) ->
-      "<option value='#{group.id or group.cid}'>#{group.escape('name')}</option>"
-    ).join("")
+    @$group.html app.models.groups.makeOptions()
 
   resetModel: ->
     @model = new app.models.Contact()
@@ -89,22 +87,76 @@ class app.views.AddForm extends Backbone.View
 class app.views.ContactsListView extends Backbone.View
   el: '#contacts-list'
 
+  events:
+    'click .row .col': 'editMode'
+    'click .row .edit': 'editMode'
+    'click .row .save': 'saveRow'
+    'click .row .cancel': 'cancelRow'
+    'click .row .delete': 'clickDelete'
+
   collection: app.models.contacts
 
   template: _.template $("#contact-list-item").html()
 
   initialize: ->
-    _.bindAll @, 'renderAll', 'renderOne'
-    @collection.on 'all', @renderAll
+    _.bindAll @, 'renderAll', 'renderOne', 'deleteOne', 'changeOne'
+    @collection.on 'reset add', @renderAll
+    @collection.on 'delete', @deleteOne
+    @collection.on 'change', @changeOne
     @collection.fetch()
+
+  deleteOne: (contact) ->
+    $row = $("#contact-#{contact.id}")
+    $row.slideUp()
+    setTimeout (-> $row.remove()), 1000
+
+  changeOne: (contact) ->
+    $row = $("#contact-#{contact.id}")
+    $row.replaceWith @renderOne contact
+    @updateSelects()
+
+  getRow: (e) -> ($ e.currentTarget).parents('.row:eq(0)')
+
+  getContactOnEvent: (e) ->
+    $row = @getRow e
+    id = $row.data 'id'
+    @collection.get id
+
+  editMode: (e) ->
+    $row = @getRow e
+    return if $row.is '.edit-mode'
+    $row.addClass 'edit-mode'
+
+  cancelRow: (e) ->
+    $row = @getRow e
+    $row.removeClass 'edit-mode'
+
+  clickDelete: (e) ->
+    @deleteOne @getContactOnEvent e #TODO delete from collection
+
+  saveRow: (e) ->
+    $row = @getRow e
+    contact = @getContactOnEvent e
+    contact.save
+      name: $row.find(".js-name input").val()
+      phone: $row.find(".js-phone input").val()
+      groupId: $row.find(".js-group select").val()
 
   renderOne: (contact) ->
     attrs = _.clone contact.attributes
     attrs.groupName = app.models.groups.get(attrs.groupId).get('name')
+    attrs.id = contact.id
+    attrs.groups = app.models.groups.makeOptions()
     @template attrs
 
   renderAll: ->
     @$el.html @collection.map(@renderOne).join("")
+    @updateSelects()
+
+  updateSelects: ->
+    @$(".col.js-group select").selectpicker(
+      container: 'body'
+    ).selectpicker('setStyle', 'form-control group-select-ui')
 
   render: ->
     if @collection.length > 0
