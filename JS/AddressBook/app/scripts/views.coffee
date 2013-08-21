@@ -14,7 +14,8 @@ class app.views.SearchForm extends Backbone.View
     @$el.removeClass 'add-form-state'
     @$('.has-error').removeClass 'has-error'
     app.mainPage.closeError()
-    @$query.focus()
+    @$query.val("").focus()
+    @$(".second-row").slideUp()
 
   search: ->
 
@@ -27,6 +28,7 @@ class app.views.AddForm extends Backbone.View
     'keyup input': 'clearErorrs'
 
   initialize: ->
+    _.bindAll @, 'renderGroups'
     @$name = $ '#search-add-field'
     @$phone = $ '#phone-field'
     @$group = $ '#group-field'
@@ -38,6 +40,13 @@ class app.views.AddForm extends Backbone.View
       for field in fields
         @$("[data-field=#{field}]").parent().addClass('has-error')
       app.mainPage.showError message
+
+    app.models.groups.on 'all', @renderGroups
+
+  renderGroups: ->
+    @$group.html app.models.groups.map((group) ->
+      "<option value='#{group.id or group.cid}'>#{group.escape('name')}</option>"
+    ).join("")
 
   resetModel: ->
     @model = new app.models.Contact()
@@ -51,15 +60,16 @@ class app.views.AddForm extends Backbone.View
     app.mainPage.closeError()
 
   save: ->
-    dataOpts =
+    @model.set
       name: @$name.val()
       phone: @$phone.val()
-      group: @$group.val()
-    console.log dataOpts
-    if @model.set(dataOpts, validate: true)
-      console.log("OK")
-    else
-      console.log("ERR")
+      groupId: @$group.val()
+
+    if @model.isValid()
+      app.models.contacts.create @model
+      @model.save()
+      @trigger 'done'
+      console.log("ok")
 
   render: ->
     @$name.attr 'placeholder', 'Full name'
@@ -68,6 +78,8 @@ class app.views.AddForm extends Backbone.View
     @$('.has-error').removeClass 'has-error'
     app.mainPage.closeError()
     @$name.focus()
+    @renderGroups()
+    @$(".second-row").slideDown()
 
     @$group.selectpicker(
       container: 'body'
@@ -75,9 +87,30 @@ class app.views.AddForm extends Backbone.View
 
 
 class app.views.ContactsListView extends Backbone.View
+  el: '#contacts-list'
+
   collection: app.models.contacts
 
+  template: _.template $("#contact-list-item").html()
+
+  initialize: ->
+    _.bindAll @, 'renderAll', 'renderOne'
+    @collection.on 'all', @renderAll
+    @collection.fetch()
+
+  renderOne: (contact) ->
+    attrs = _.clone contact.attributes
+    attrs.groupName = app.models.groups.get(attrs.groupId).get('name')
+    @template attrs
+
+  renderAll: ->
+    @$el.html @collection.map(@renderOne).join("")
+
   render: ->
+    if @collection.length > 0
+      @renderAll()
+    else
+      @$el.html "<span class='no-data'>There is no contacts yet. <strong>Add one!</strong></span>"
 
 
 class app.views.MainPage extends Backbone.View
@@ -91,6 +124,7 @@ class app.views.MainPage extends Backbone.View
 
   initialize: ->
     @addForm = new app.views.AddForm()
+    @addForm.on 'done', => @searchForm.render()
     @searchForm = new app.views.SearchForm()
     @contactsListView = new app.views.ContactsListView()
 

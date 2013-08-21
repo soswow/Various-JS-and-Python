@@ -48,13 +48,13 @@
                     <label for="group-field"><i class="icon-group"></i></label>
                     <!--form-control input-lg-->
                     <select tabindex="30" data-field="group" id="group-field" class="show-tick" title='Member of group'>
-                      <option value="12">Work</option>
-                      <option value="11">Friends</option>
-                      <option value="10">Family</option>
                     </select>
                   </div>
                 </div>
               </form>
+              <div id="contacts-list">
+
+              </div>
 
             </div>
           </div>
@@ -64,6 +64,14 @@
           <div class="alert alert-danger alert-dismissable">
             <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
             <strong>Error!</strong> <%= message %>
+          </div>
+        </script>
+
+        <script type="text/html" id="contact-list-item">
+          <div class="row">
+            <div class="col-md-4"><%- name %></div>
+            <div class="col-md-4"><%- phone %></div>
+            <div class="col-md-4"><%- groupName %></div>
           </div>
         </script>
 

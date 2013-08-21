@@ -22,11 +22,22 @@ class app.models.Contact extends BaseModel
   defaults:
     name: ''
     phone: ''
-    group: null
+    groupId: null
 
   mandatory: ['name', 'phone']
 
-app.models.contacts = new Backbone.Collection([],
+class ContactsCollection extends Backbone.Collection
   model: app.models.Contact
-  localStorage: new Backbone.LocalStorage("ContactsCollection"),
-)
+  localStorage: new Backbone.LocalStorage("ContactsCollection")
+
+class GroupsCollection extends Backbone.Collection
+  model: app.models.Group
+  localStorage: new Backbone.LocalStorage("GroupCollection")
+
+app.models.contacts = new ContactsCollection()
+
+app.models.groups = new GroupsCollection()
+app.models.groups.fetch()
+if app.models.groups.length is 0
+  for name in ['Work', 'Family', 'Other']
+    app.models.groups.create name: name

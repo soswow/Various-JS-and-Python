@@ -14,10 +14,11 @@ body{
     z-index: 10;
     position: relative;
     &.second-row{
-      @include transition(top 0.5s, opacity 0.5s);
-      top: -60px;
-      opacity: 0;
-      z-index: 5;
+      display: none;
+    //  @include transition(top 0.5s, opacity 0.5s);
+    //  top: -60px;
+    //  opacity: 0;
+    //  z-index: 5;
     }
   }
   .when-closed{
@@ -30,10 +31,11 @@ body{
     margin-top: 0;
   }
   &.add-form-state{
-    .second-row{
-      top: 0px;
-      opacity: 1;
-    }
+    //.second-row{
+    //  top: 0px;
+    //  display: block;
+      //opacity: 1;
+    //}
     .when-closed{
       display: none;
     }
@@ -72,4 +74,13 @@ body{
   top: -63px;
   left: 0;
   right: 0;
+}
+
+#contacts-list{
+  margin-top: 30px;
+  .no-data{
+    font-size: 18px;
+    font-style: italic;
+    font-weight: 200;
+  }
 }
