@@ -1,0 +1,105 @@
+<!doctype html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width">
+        <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+        <link rel="stylesheet" href="styles/a56f9640.main.css">
+        <link rel="stylesheet" href="styles/cb4ae5ce.vendor.css">
+        <script src="scripts/vendor/f7f27360.modernizr.js"></script>
+    </head>
+    <body>
+        <div class="container">
+          <div class="row">
+            <div class="col-md-8 col-md-offset-2" id="main-page-content">
+              <div id="alerts-box"></div>
+              <form id="top-form" class="form-horizontal" role="form">
+                <div class="form-group">
+                  <div class="col-md-9">
+                    <label for="search-add-field"><i class="icon-search"></i></label>
+                    <input type="text" data-field="name" tabindex="10" id="search-add-field" class="form-control input-lg" placeholder="Search contact">
+                  </div>
+                  <div class="col-md-3">
+                    <button tabindex="15" type="button" class="btn-block when-closed btn btn-success btn-lg add-one">or Add one</button>
+                    <div class="btn-group when-opened btn-block">
+                      <button tabindex="40" type="button" class="btn btn-success btn-lg col-md-6 save"><i class="icon-ok"></i></button>
+                      <button tabindex="50" type="button" class="btn btn-danger btn-lg col-md-6 cancel"><i class="icon-remove"></i></button>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group second-row">
+                  <div class="col-md-5">
+                    <label for="phone-field"><i class="icon-phone"></i></label>
+                    <input type="text" data-field="phone" tabindex="20" id="phone-field" class="form-control input-lg" placeholder="Phone number">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="group-field"><i class="icon-group"></i></label>
+                    <!--form-control input-lg-->
+                    <select tabindex="30" data-field="group" id="group-field" class="show-tick" title="Member of group">
+                    </select>
+                  </div>
+                </div>
+              </form>
+              <div id="contacts-list">
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <script type="text/html" id="error-message-box">
+          <div class="alert alert-danger alert-dismissable">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+            <strong>Error!</strong> <%= message %>
+          </div>
+        </script>
+
+        <script type="text/html" id="contact-list-item">
+          <div id="contact-<%= id %>" class="row" data-id="<%= id %>">
+            <div class="col col-md-7 js-name"><%- name %><input type="text" tabindex="50" class="form-control on-edit-mode" value="<%- name %>"/></div>
+            <div class="col col-md-3 js-phone"><%- phone %><input type="text" tabindex="60" class="form-control on-edit-mode" value="<%- phone %>"/></div>
+            <div class="col col-md-2 js-group"><%- groupName %><select tabindex="70" data-field="group" class="show-tick on-edit-mode">
+              <%= groups %>
+            </select></div>
+            <div class="right-menu">
+              <div class="btn-group btn-group-lg">
+                <button type="button" class="btn btn-success edit"><div class="arrow"></div><i class="icon-pencil"></i></button>
+                <button type="button" class="btn btn-danger delete"><i class="icon-trash"></i></button>
+              </div>
+              <div class="btn-group btn-group-lg on-edit-mode">
+                <button type="button" class="btn btn-success save"><div class="arrow"></div><i class="icon-save"></i></button>
+                <button type="button" class="btn btn-danger cancel"><i class="icon-remove"></i></button>
+              </div>
+            </div>
+          </div>
+        </script>
+
+        <!--[if lt IE 7]>
+            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+
+        <script src="scripts/0729250d.vendor.js"></script>
+
+        <script src="scripts/1f002034.main.js"></script>
+
+        <!--<script src="bower_components/sass-bootstrap/js/bootstrap-affix.js"></script>-->
+        <!--<script src="bower_components/sass-bootstrap/js/bootstrap-dropdown.js"></script>-->
+        <!--<script src="bower_components/sass-bootstrap/js/bootstrap-tooltip.js"></script>-->
+        <!--<script src="bower_components/sass-bootstrap/js/bootstrap-modal.js"></script>-->
+        <!--<script src="bower_components/sass-bootstrap/js/bootstrap-transition.js"></script>-->
+        <!--<script src="bower_components/sass-bootstrap/js/bootstrap-button.js"></script>-->
+        <!--<script src="bower_components/sass-bootstrap/js/bootstrap-popover.js"></script>-->
+        <!--<script src="bower_components/sass-bootstrap/js/bootstrap-typeahead.js"></script>-->
+        <!--<script src="bower_components/sass-bootstrap/js/bootstrap-carousel.js"></script>-->
+        <!--<script src="bower_components/sass-bootstrap/js/bootstrap-scrollspy.js"></script>-->
+        <!--<script src="bower_components/sass-bootstrap/js/bootstrap-collapse.js"></script>-->
+        <!--<script src="bower_components/sass-bootstrap/js/bootstrap-tab.js"></script>-->
+</body>
+</html>
