@@ -29,6 +29,7 @@ class app.models.Contact extends BaseModel
 class ContactsCollection extends Backbone.Collection
   model: app.models.Contact
   localStorage: new Backbone.LocalStorage("ContactsCollection")
+  comparator: (contact) -> contact.get("name")
 
 class GroupsCollection extends Backbone.Collection
 
