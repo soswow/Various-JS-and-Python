@@ -72,7 +72,7 @@ module.exports = (grunt) ->
           middleware: (connect) ->
             [
               mountFolder(connect, ".tmp")
-              mountFolder(connect, "test")
+              mountFolder(connect, yeomanConfig.app)
             ]
 
       dist:
@@ -114,6 +114,9 @@ module.exports = (grunt) ->
           run: true
           urls: ["http://localhost:<%= connect.options.port %>/index.html"]
 
+    casperjs:
+      files: ['test/casperjs/**/*.coffee']
+
     coffee:
       dist:
         files: [
@@ -127,9 +130,9 @@ module.exports = (grunt) ->
       test:
         files: [
           expand: true
-          cwd: "test/spec"
+          cwd: "test"
           src: "{,*/}*.coffee"
-          dest: ".tmp/spec"
+          dest: ".tmp"
           ext: ".js"
         ]
 
@@ -237,7 +240,7 @@ module.exports = (grunt) ->
 
     concurrent:
       server: ["copy:fonts", "compass:dist", "coffee:dist", "copy:styles"]
-      test: ["coffee", "copy:styles"]
+      test: ["coffee", "compass", "copy:styles"]
       dist: ["coffee", "compass", "copy:fonts", "copy:styles", "imagemin", "htmlmin"]
 
   grunt.registerTask "server", (target) ->
@@ -258,16 +261,16 @@ module.exports = (grunt) ->
     "clean:server"
     "concurrent:test"
     "connect:test"
-    "mocha"
+    "casperjs"
   ]
 
-  grunt.registerTask "test-server", [
-    "clean:server"
-    "concurrent:test"
-    "connect:test"
-    "open"
-    "watch"
-  ]
+#  grunt.registerTask "test-server", [
+#    "clean:server"
+#    "concurrent:test"
+#    "connect:test"
+#    "open"
+#    "watch"
+#  ]
 
   grunt.registerTask "build", [
     "clean:dist"
