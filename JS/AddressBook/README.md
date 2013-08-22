@@ -1,3 +1,3 @@
 Prerequisites
 -------------
-* casperjs (```brew install casperjs```)
+* casperjs (```brew install casperjs --devel```)

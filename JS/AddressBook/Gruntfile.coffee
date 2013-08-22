@@ -69,6 +69,7 @@ module.exports = (grunt) ->
 
       test:
         options:
+          port: 9001
           middleware: (connect) ->
             [
               mountFolder(connect, ".tmp")
