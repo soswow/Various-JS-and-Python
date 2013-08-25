@@ -115,6 +115,10 @@ module.exports = (grunt) ->
           run: true
           urls: ["http://localhost:<%= connect.options.port %>/index.html"]
 
+    karma:
+      unit:
+        configFile: 'karma.conf.coffee'
+
     casperjs:
       files: ['test/casperjs/**/*.coffee']
 
@@ -133,7 +137,7 @@ module.exports = (grunt) ->
           expand: true
           cwd: "test"
           src: "{,*/}*.coffee"
-          dest: ".tmp"
+          dest: ".tmp/test/"
           ext: ".js"
         ]
 
@@ -258,7 +262,7 @@ module.exports = (grunt) ->
       "watch"
     ]
 
-  grunt.registerTask "test", [
+  grunt.registerTask "ui-test", [
     "clean:server"
     "concurrent:test"
     "connect:test"
