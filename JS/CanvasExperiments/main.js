@@ -22,24 +22,22 @@ var cellSize = 4;
 //};
 
 var $log = document.getElementById("span");
-var buffer = [], i;
-var imageData = ctx.createImageData(max.w, max.h);
+var buffer = [], i, j, k=0;
+for(i=0;i<100;i++){
+  buffer.push(ctx.createImageData(max.w, max.h));
+  for (j = 0; j < max.h * max.w * 4; buffer[i].data[j++] = Math.round(Math.random() * 255)) {}
+}
+//var imageData = ctx.createImageData(max.w, max.h);
 var stop = false;
 step = function () {
   requestAnimationFrame(function () {
 //    var imageData = ctx.createImageData(max.w, max.h);
-    for (i = 0; i < max.h * max.w * 4; imageData.data[i++] = Math.round(Math.random() * 255)) {}
-    ctx.putImageData(imageData, 0, 0, 0, 0, max.w, max.h);
-    imageData.length = 0;
+//    for (i = 0; i < max.h * max.w * 4; imageData.data[i++] = Math.round(Math.random() * 255)) {}
+    if(k>=100) k=0;
+    ctx.putImageData(buffer[k++], 0, 0, 0, 0, max.w, max.h);
     if (!stop) {
-      setTimeout(step, 5);
+      setTimeout(step, 1);
     }
-//    buffer.push(imageData);
-//    j+=1;
-//    if(j==100){
-//      buffer = [];
-//      j = 0;
-//    }
   });
 };
 //step();
