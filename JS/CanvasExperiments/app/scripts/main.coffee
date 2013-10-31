@@ -3,8 +3,18 @@ $ = (arg) -> document.querySelector arg
 el = $("#canvas")
 ctx = el.getContext("2d")
 max =
-  w: el.width
-  h: el.height
+  w: window.innerWidth
+  h: 100
+console.log max
+el.width = max.w
+el.height = max.h
+
+window.addEventListener 'resize', ->
+  max =
+    w: window.innerWidth
+    h: 100
+  el.width = max.w
+  el.height = max.h
 
 
 $log = document.getElementById("span")
@@ -58,8 +68,10 @@ drawNewImage = ->
   imageData = ctx.createImageData(max.w, max.h)
   j = 0
   while j < (max.h-lines) * max.w * 4
-    imageData.data[j] = iData.data[j]
-    j += 1
+    imageData.data[j++] = iData.data[j]
+    imageData.data[j++] = iData.data[j]
+    imageData.data[j++] = iData.data[j]
+    imageData.data[j] = 1
 
   while j < max.h * max.w * 4
     imageData.data[j++] = Math.round(Math.random() * 255)

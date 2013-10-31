@@ -6,34 +6,34 @@
   <style type="text/css">
     body,html{
       background: white;
+      position: relative;
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
     }
-    canvas{
-      border: 1px dotted lightgray;
+    #canvas{
+      /*border: 1px dotted lightgray;*/
+      display: block;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
     }
-    /*@-webkit-keyframes spin {*/
-      /*0% {*/
-        /*-webkit-transform: rotate(0deg);*/
-      /*}*/
-      /*100% {*/
-        /*-webkit-transform: rotate(359deg);*/
-      /*}*/
-    /*}*/
-    /*.spinner{*/
-      /*width: 10px;*/
-      /*height: 10px;*/
-      /*background: black;*/
-      /*-webkit-animation: spin 2s infinite linear;*/
-    /*}*/
+    #controls{
+      position: absolute;
+      top:0;
+      left:0;
+      z-index: 100;
+    }
   </style>
 </head>
 <body>
-<div id="span"></div>
-<button id="start">Start</button> <button id="stop">Stop</button><br/>
-<div class="spinner"></div>
-<canvas id="canvas"
-        width=600
-        height=500
-    ></canvas>
+<div id="controls">
+  <div id="span"></div>
+  <button id="start">Start</button> <button id="stop">Stop</button><br/>
+</div>
+<canvas id="canvas"></canvas>
 <!-- build:js(.tmp) scripts/app.js -->
 <script type="text/javascript" src="scripts/main.js"></script>
 <!-- endbuild -->
