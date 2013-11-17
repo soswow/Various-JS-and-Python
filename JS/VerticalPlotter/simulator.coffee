@@ -49,6 +49,10 @@ distance = ({x: x1, y: y1}, {x: x2, y: y2}) ->
 
 $left = document.getElementById("left")
 $right = document.getElementById("right")
+$angles =
+  l: document.getElementById("leftAngle")
+  r: document.getElementById("rightAngle")
+
 
 updateState = ->
   plotter.state.l = +$left.value
@@ -95,12 +99,16 @@ class Plotter
   renderRolleres: ->
     @ctx.lineWidth = 0.3
     @ctx.beginPath()
-    drawForX = (x) =>
+    drawForX = (x, side) =>
       @ctx.moveTo x + @roller.r, @roller.y
       @ctx.arc x, @roller.y, @roller.r, 0, Math.PI * 2
+      @ctx.moveTo x + Math.cos(@state.angles[side]) * @roller.r, @roller.y + Math.sin(@state.angles[side]) * @roller.r
+      @ctx.lineTo x + Math.cos(@state.angles[side] + PI) * @roller.r, @roller.y + Math.sin(@state.angles[side] + PI) * @roller.r
+#      @ctx.moveTo x + Math.cos(@state.angles[side] - PI/2) * @roller.r, @roller.y + Math.sin(@state.angles[side] - PI/2) * @roller.r
+#      @ctx.lineTo x + Math.cos(@state.angles[side] + PI/2) * @roller.r, @roller.y + Math.sin(@state.angles[side] + PI/2) * @roller.r
 
-    drawForX @roller.x
-    drawForX @roller.d + @roller.x
+    drawForX @roller.x, 'l'
+    drawForX @roller.d + @roller.x, 'r'
 
     @ctx.closePath()
     @ctx.stroke()
@@ -163,7 +171,9 @@ class Plotter
     lenPerStep = c / @roller.steps
     anglePerStep = (2 * PI) / @roller.steps
     @state[side] += direction * lenPerStep
+    direction *= -1 if side is 'r'
     @state.angles[side] += direction * anglePerStep
+    $angles[side].innerText = (@state.angles[side] * (180/PI)).toFixed(2)
 
   start: ->
     @moveToNext()
@@ -178,12 +188,12 @@ class Plotter
 
   goToPosition: (x, y, cb) ->
     d = distance @state, {x:x, y:y}
-    console.log 'distance', d
-    console.log 'from', @state.x, @state.y
-    console.log 'to', x, y
+#    console.log 'distance', d
+#    console.log 'from', @state.x, @state.y
+#    console.log 'to', x, y
     c = 2 * PI * @roller.r
     lenPerStep = c / @roller.steps
-    console.log 'lenPerStep', lenPerStep
+#    console.log 'lenPerStep', lenPerStep
     parts = Math.ceil(d) * 2
     startX = @state.x
     startY = @state.y
@@ -245,12 +255,30 @@ ctx = canvas.getContext('2d')
 plotter = new Plotter(ctx)
 plotter.render()
 
-plotter.relativePlan = [
-  [0, -100]
-  [100, 0]
-  [0, 100]
-  [-100, 0]
-]
+#plotter.relativePlan = [
+#  [0, -100]
+#  [100, 0]
+#  [0, 100]
+#  [-100, 0]
+#]
+x = plotter.state.x
+y = plotter.state.y
+r = 150
+oldx = x + Math.cos(0) * r
+oldy = y + Math.sin(0) * r
+plotter.relativePlan.push [100, 0]
+for i in [0..100]
+  angle = PI*2*(i/100)
+  newx = x + Math.cos(angle) * r
+  newy = y + Math.sin(angle) * r
+  dx = newx - oldx
+  dy = newy - oldy
+  plotter.relativePlan.push [dx, dy]
+  oldx = newx
+  oldy = newy
+
+#console.log plotter.relativePlan
+
 plotter.start()
 
 #plotter.goToState(l:100, r:500)
