@@ -54,16 +54,17 @@ $angles =
   r: document.getElementById("rightAngle")
 
 
-updateState = ->
-  plotter.state.l = +$left.value
-  plotter.state.r = +$right.value
-  requestAnimationFrame ->
-    plotter.render()
+#updateState = ->
+#  plotter.state.l = +$left.value
+#  plotter.state.r = +$right.value
+#  requestAnimationFrame ->
+#    plotter.moveGandola()
+#    plotter.render()
 
-$left.addEventListener 'keyup', updateState
-$right.addEventListener 'keyup', updateState
-$left.addEventListener 'change', updateState
-$right.addEventListener 'change', updateState
+#$left.addEventListener 'keyup', updateState
+#$right.addEventListener 'keyup', updateState
+#$left.addEventListener 'change', updateState
+#$right.addEventListener 'change', updateState
 
 class Plotter
   stringLen: 500
@@ -88,9 +89,11 @@ class Plotter
 
   relativePlan: []
 
+  interactive: false
+
   constructor: (@ctx, properties=null) ->
     @prop = properties if properties
-    @moveGandola()
+    @updatePosition()
     console.log @state
 
   clear: ->
@@ -128,7 +131,7 @@ class Plotter
     @ctx.closePath()
     @ctx.stroke()
 
-  moveGandola: ->
+  updatePosition: ->
     data = realHypStartPositions(@state.l, @state.r, @roller.d, @roller.r)
     @state.x = data.left.x
     @state.y = data.height
@@ -162,7 +165,6 @@ class Plotter
     @clear()
     @renderRolleres()
     @renderCounterweights()
-    @moveGandola()
     @renderPath()
     @renderGandola() #with strings
 
@@ -176,29 +178,42 @@ class Plotter
     $angles[side].innerText = (@state.angles[side] * (180/PI)).toFixed(2)
 
   start: ->
-    @moveToNext()
+    @moveByRelativePlan =>
+      @render()
 
-  moveToNext: ->
-    return unless @relativePlan.length
+  generateInstructions: ->
+    @frames = []
+    for [dx, dy] in @relativePlan
+      @generateTurnFrames @state.x + dx, @state.y + dy
+
+#      @moveBy dx, dy
+
+#    return cb() unless @relativePlan.length
+#    [x, y] = .shift()
+#    @moveBy x, y, => @moveByRelativePlan(cb)
+
+  moveByRelativePlan: (cb) ->
+    return cb() unless @relativePlan.length
     [x, y] = @relativePlan.shift()
-    @moveBy x, y, => @moveToNext()
+    @moveBy x, y, => @moveByRelativePlan(cb)
 
   moveBy: (dx, dy, cb) ->
     @goToPosition @state.x + dx, @state.y + dy, cb
 
-  goToPosition: (x, y, cb) ->
+  generateTurnFrames: (x, y) ->
     d = distance @state, {x:x, y:y}
 #    console.log 'distance', d
 #    console.log 'from', @state.x, @state.y
 #    console.log 'to', x, y
     c = 2 * PI * @roller.r
     lenPerStep = c / @roller.steps
+
 #    console.log 'lenPerStep', lenPerStep
     parts = Math.ceil(d) * 2
     startX = @state.x
     startY = @state.y
-    i = 0
-    step = =>
+    wheelTurns = []
+    for i in [0..parts]
       portion =
         if i < parts
           i / parts
@@ -206,46 +221,48 @@ class Plotter
           1
       sx = startX + (x - startX) * portion
       sy = startY + (y - startY) * portion
+
+      turn = ''
+
       currentLD = distance {x:0, y:0}, @state
       newLD = distance {x:0, y:0}, {x:sx, y:sy}
-      leftStep = false
       if Math.abs(currentLD - newLD) >= lenPerStep
-        @stepWheel 'l', if newLD - currentLD > 0 then 1 else -1
-        leftStep = true
+        bigger = newLD - currentLD > 0
+        turn += if bigger then 'L' else 'l'
+        direction = if bigger then 1 else -1
+        @state.l += direction * lenPerStep
 
       currentRD = distance {x:@roller.d, y:0}, @state
       newRD = distance {x:@roller.d, y:0}, {x:sx, y:sy}
-      rightStep = false
       if Math.abs(currentRD - newRD) >= lenPerStep
-        @stepWheel 'r', if newRD - currentRD > 0 then 1 else -1
-        rightStep = true
+#        turn += if newRD - currentRD > 0 then 'R' else 'r'
+        bigger = newRD - currentRD
+        turn += if bigger then 'R' else 'r'
+        direction = if bigger then 1 else -1
+        @state.r += direction * lenPerStep
 
-#      console.log sx, sy, "#{currentLD.toFixed(2)} => #{newLD.toFixed(2)} (#{(currentLD - newLD).toFixed(2)}) #{leftStep}"
+      wheelTurns.push turn
 
-      requestAnimationFrame =>
-        @render()
-        if i++ < parts
-          step()
-        else
-          cb()
-    step()
+    return wheelTurns
+
+#      @moveGandola()
 
 
-  goToState: (newState) ->
-    if newState.l isnt @state.l or newState.r isnt @state.r
-      requestAnimationFrame =>
-        if newState.l > @state.l
-          @stepWheel 'l'
-        else if newState.l < @state.l
-          @stepWheel 'l', -1
-        if newState.r > @state.r
-          @stepWheel 'r'
-        else if newState.r < @state.r
-          @stepWheel 'r', -1
-        $left.value = @state.l
-        $right.value = @state.r
-        @render()
-        @goToState(newState)
+#  goToState: (newState) ->
+#    if newState.l isnt @state.l or newState.r isnt @state.r
+#      requestAnimationFrame =>
+#        if newState.l > @state.l
+#          @stepWheel 'l'
+#        else if newState.l < @state.l
+#          @stepWheel 'l', -1
+#        if newState.r > @state.r
+#          @stepWheel 'r'
+#        else if newState.r < @state.r
+#          @stepWheel 'r', -1
+#        $left.value = @state.l
+#        $right.value = @state.r
+#        @render()
+#        @goToState(newState)
 
 [w, h] = [700, 600]
 canvas = document.getElementsByTagName('canvas').item(0)
@@ -261,24 +278,42 @@ plotter.render()
 #  [0, 100]
 #  [-100, 0]
 #]
+
+#Draw circles
+
+#x = plotter.state.x
+#y = plotter.state.y
+#r = 50
+#oldx = x + Math.cos(0) * r
+#oldy = y + Math.sin(0) * r
+#plotter.relativePlan.push [100, -100]
+#sides = 10
+#for i in [0..sides]
+#  angle = PI*2*(i/sides)
+#  newx = x + Math.cos(angle) * r
+#  newy = y + Math.sin(angle) * r
+#  dx = newx - oldx
+#  dy = newy - oldy
+#  plotter.relativePlan.push [dx, dy]
+#  oldx = newx
+#  oldy = newy
+
 x = plotter.state.x
 y = plotter.state.y
-r = 150
-oldx = x + Math.cos(0) * r
-oldy = y + Math.sin(0) * r
-plotter.relativePlan.push [100, 0]
-for i in [0..100]
-  angle = PI*2*(i/100)
-  newx = x + Math.cos(angle) * r
-  newy = y + Math.sin(angle) * r
-  dx = newx - oldx
-  dy = newy - oldy
+times = 25
+angle = PI/4
+len = 10
+plotter.relativePlan.push [10, 10]
+for i in [1..times]
+  dx = Math.cos(angle) * len
+  dy = Math.sin(angle) * len
+  len += 10
+  angle += PI/2
+
   plotter.relativePlan.push [dx, dy]
-  oldx = newx
-  oldy = newy
 
 #console.log plotter.relativePlan
-
+plotter.interactive = false
 plotter.start()
 
 #plotter.goToState(l:100, r:500)
