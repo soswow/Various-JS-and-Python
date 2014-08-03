@@ -3,91 +3,79 @@ $ = (arg) -> document.querySelector arg
 el = $("#canvas")
 ctx = el.getContext("2d")
 max =
-  w: window.innerWidth
-  h: 100
-console.log max
-el.width = max.w
-el.height = max.h
-
-window.addEventListener 'resize', ->
-  max =
-    w: window.innerWidth
-    h: 100
-  el.width = max.w
-  el.height = max.h
-
+  w: el.width
+  h: el.height
 
 $log = document.getElementById("span")
 buffer = []
 i = undefined
 j = undefined
 k = 0
+state =
+  for j in [0...max.h]
+    Math.round(Math.random()) for i in [0...max.w]
+stateTmp =
+  for j in [0...max.h]
+    Math.round(Math.random()) for i in [0...max.w]
 
-#for (i = 0; i < 100; i++) {
-#  buffer.push(ctx.createImageData(max.w, max.h));
-#  for (j = 0; j < max.h * max.w * 4; buffer[i].data[j++] = Math.round(Math.random() * 155 + i));
-#}
-
-#console.time("Create buffer");
-#var workers = [];
-#var workersNum = 4;
-num = 100
-
-#for (i = 0; i < workersNum; i++) {
-#  workers.push(new Worker("make-data.js"));
-#  workers[i].onmessage = function (oEvent) {
-#    console.log('hello');
-#    var imageData = ctx.createImageData(max.w, max.h);
-#    imageData.data.set(oEvent.data);
-#    buffer.push(imageData);
-#    if (buffer.length == num) {
-#      console.timeEnd("Create buffer");
-#    }
-#  };
-#}
-
-#for (i = 0; i < num; i++) {
-#  var data = new Uint8ClampedArray(max.h * max.w * 4);
-#  for (j = 0; j < max.h * max.w * 4; data[j++] = Math.round(Math.random() * 255));
-#  var imageData = ctx.createImageData(max.w, max.h);
-#  imageData.data.set(data);
-#  buffer.push(imageData);
-#  workers[i % workersNum].postMessage(max);
-#}
-#console.timeEnd("Create buffer");
-
-#var imageData = canvas.getContext('2d').createImageData(width, height);
-#imageData.data.set(myData);
-
-#var imageData = ctx.createImageData(max.w, max.h);
-stop = false
 drawNewImage = ->
-  #  var data = new Uint8ClampedArray(max.h * max.w * 4);
-  lines = 2
-  iData = ctx.getImageData(0,lines,max.w, max.h-1)
   imageData = ctx.createImageData(max.w, max.h)
   j = 0
-  while j < (max.h-lines) * max.w * 4
-    imageData.data[j++] = iData.data[j]
-    imageData.data[j++] = iData.data[j]
-    imageData.data[j++] = iData.data[j]
-    imageData.data[j] = 1
-
+  inRow = max.w * 4
   while j < max.h * max.w * 4
-    imageData.data[j++] = Math.round(Math.random() * 255)
+    if (j+1) % 4 is 0
+      row = Math.ceil((j+1) / inRow) - 1
+      col = ((j-3) % inRow) / 4
+      imageData.data[j] = (state[row][col] > 0) and 255 or 0
+    j++
+
   ctx.putImageData imageData, 0, 0, 0, 0, max.w, max.h
 
+neighbour = (row, col) ->
+  row >= 0 and col >= 0 and state[row] and state[row][col] or 0
+
+countNeighbours = (row, col) ->
+  neighbour(row-1,  col-1) +
+  neighbour(row-1,  col) +
+  neighbour(row-1,  col+1) +
+  neighbour(row,    col-1) +
+  neighbour(row,    col+1) +
+  neighbour(row+1,  col-1) +
+  neighbour(row+1,  col)
+  neighbour(row+1,  col+1)
+
+updateState = ->
+#  console.time "updateState"
+  #  Any live cell with fewer than two live neighbours dies, as if caused by under-population.
+  #  Any live cell with two or three live neighbours lives on to the next generation.
+  #  Any live cell with more than three live neighbours dies, as if by overcrowding.
+  #  Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+  for row in [0...max.h]
+    for col in [0...max.w]
+      neighboursNum = countNeighbours(row, col)
+      if state[row][col] is 1
+        if neighboursNum < 2 or neighboursNum > 3
+          stateTmp[row][col] = 0
+        else
+          stateTmp[row][col] = 1
+      else
+        if neighboursNum is 3
+          stateTmp[row][col] = 1
+        else
+          stateTmp[row][col] = 0
+#  console.timeEnd "updateState"
+  tmp = state
+  state = stateTmp
+  stateTmp = tmp
+
+
+stop = false
 step = ->
-  console.timeStamp "Step Start"
-
   drawNewImage()
-
-  console.timeStamp "Before next frame"
+  updateState()
   requestAnimationFrame step  unless stop
-  console.timeStamp "Step End"
 
 
-#step();
 $("#start").addEventListener "click", ->
   stop = false
   step()

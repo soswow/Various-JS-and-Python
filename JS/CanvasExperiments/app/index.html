@@ -7,24 +7,10 @@
     body,html{
       background: white;
       position: relative;
-      padding: 0;
-      margin: 0;
-      height: 100%;
-      width: 100%;
     }
-    #canvas{
-      /*border: 1px dotted lightgray;*/
-      display: block;
+    canvas{
+      border: 1px dotted lightgray;
       position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-    }
-    #controls{
-      position: absolute;
-      top:0;
-      left:0;
-      z-index: 100;
     }
   </style>
 </head>
@@ -33,7 +19,7 @@
   <div id="span"></div>
   <button id="start">Start</button> <button id="stop">Stop</button><br/>
 </div>
-<canvas id="canvas"></canvas>
+<canvas id="canvas" width="300" height="300"></canvas>
 <!-- build:js(.tmp) scripts/app.js -->
 <script type="text/javascript" src="scripts/main.js"></script>
 <!-- endbuild -->
