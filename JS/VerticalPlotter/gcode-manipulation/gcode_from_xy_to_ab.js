@@ -1,6 +1,5 @@
 const fs = require('fs');
 const leftPad = require('left-pad');
-const initialSettingsGen = require('./initial_settings_gen');
 const argv = require('yargs').argv;
 
 const index = argv.index || 10;
@@ -11,22 +10,21 @@ console.log(`Reading ${fileName}`);
 const content = fs.readFileSync(fileName, 'utf-8');
 const lines = content.split('\n');
 
-const w = 1110; //mm
-const h = 1300; //mm
-// const drawingSpeed = 600;
+const w = 460; //mm
+const h = 640; //mm
+const drawingSpeed = 500;
 const penOut = "S80 (pen up)\n";
 const penIn = "S83 (pen down)\n";
 
-const params = initialSettingsGen(w, h);
-// Reimplement this.
-// h: 1300
-// w: 1110
-// bMax: 1709.4151046483707
-// b0: 1413.5151219566064
-// hSpooledAt0: 316.8101310914651
-// yMax: 1190
-// Writing output_0011_ab_system.gcode
-// All good. Done.
+const {sqrt,pow} = Math;
+
+const params = {};
+params.a0 = sqrt(pow(w/2, 2) + pow(h, 2));
+params.b0 = params.a0;
+
+console.log(`h: ${h}`);
+console.log(`w: ${w}`);
+console.log(`a0, b0: ${params.a0}`);
 
 const convertXYtoAB = (data) => {
   // Invert Xs and Ys not to have mirrored image.
@@ -38,8 +36,8 @@ const convertXYtoAB = (data) => {
   const aAbs = Math.sqrt(Math.pow(y2, 2) + Math.pow(x2, 2));
   const bAbs = Math.sqrt(Math.pow(y2, 2) + Math.pow(w - x2, 2));
 
-  data.X = params.a0 - aAbs;
-  data.Y = params.b0 - bAbs;
+  data.Y = params.a0 - aAbs;
+  data.X = params.b0 - bAbs;
 };
 
 const parseCGodeValues = (str) => {
@@ -63,6 +61,7 @@ const newContent = lines.map((line) => {
 
     let prependCommand = '';
     if (data.Z > 0) {
+      data.Z = 1;
       prependCommand = penOut;
     } else if (line.endsWith('(Penetrate)')){
       prependCommand = penIn;
@@ -70,6 +69,8 @@ const newContent = lines.map((line) => {
 
     if (data.X !== undefined && data.Y !== undefined) {
       convertXYtoAB(data);
+    }
+    if (data.X !== undefined || data.Y !== undefined || data.Z !== undefined) {
       line = Object.keys(data).map((key) => `${key}${data[key]}`).join(' ');
     }
 
