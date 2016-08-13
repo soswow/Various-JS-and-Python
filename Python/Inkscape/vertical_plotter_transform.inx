@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+  <_name>Vertical Plotter Transform</_name>
+  <id>org.soswow.vertical.plotter.transform</id>
+  <dependency type="executable" location="extensions">flatten.py</dependency>
+  <dependency type="executable" location="extensions">addnodes.py</dependency>
+  <dependency type="executable" location="extensions">inkex.py</dependency>
+
+  <dependency type="executable" location="extensions">vertical_plotter_transform.py</dependency>
+  <param name="flatness" type="float" min="0.0" max="1000.0" _gui-text="Flatness:">10.0</param>
+  <param name="max" type="float" min="0.1" max="10000.0" _gui-text="Maximum segment length (px):">10.0</param>
+  <effect needs-live-preview="false">
+      <object-type>path</object-type>
+      <effects-menu>
+          <submenu _name="Modify Path"/>
+      </effects-menu>
+  </effect>
+  <script>
+      <command reldir="extensions" interpreter="python">vertical_plotter_transform.py</command>
+  </script>
+</inkscape-extension>
