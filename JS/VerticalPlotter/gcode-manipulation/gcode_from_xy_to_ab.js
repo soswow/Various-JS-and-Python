@@ -10,13 +10,14 @@ console.log(`Reading ${fileName}`);
 const content = fs.readFileSync(fileName, 'utf-8');
 const lines = content.split('\n');
 
-const w = 460; //mm
+const w = 490; //mm
 const h = 640; //mm
 const drawingSpeed = 500;
 const penOut = "S80 (pen up)\n";
 const penIn = "S83 (pen down)\n";
 
-const {sqrt,pow} = Math;
+const sqrt = Math.sqrt;
+const pow = Math.pow;
 
 const params = {};
 params.a0 = sqrt(pow(w/2, 2) + pow(h, 2));
