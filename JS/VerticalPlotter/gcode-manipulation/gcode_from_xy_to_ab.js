@@ -10,9 +10,9 @@ console.log(`Reading ${fileName}`);
 const content = fs.readFileSync(fileName, 'utf-8');
 const lines = content.split('\n');
 
-const w = 460; //mm
-const h = 640; //mm
-const drawingSpeed = 500;
+const w = 1070; //mm
+const h = 1130; //mm
+const drawingSpeed = 1000;
 const penOut = "S80 (pen up)\n";
 const penIn = "S83 (pen down)\n";
 
