@@ -6,21 +6,47 @@ int H = 500;
 float bigD = 400;
 float thickness = 50;
 int numberOfSections = 10;
-float sectionGap = 5.0; //Angle
+float sectionGap = 10.0;
 
 float smallD, sectionAngle;
 PVector center;
+
+ArrayList<GcodeCommand> commands = new ArrayList<GcodeCommand>();
 
 void settings(){
   size(W, H);
 }
 
+class GcodeCommand{
+  public float feedRate = 0;
+}
+
+class G2 extends GcodeCommand{
+  G2 (PVector destination, PVector center) {
+    this.destination = destination;
+    this.center = center;
+  }
+  
+  public PVector destination;
+  public PVector center;
+  public String toString(){
+    return String.format(
+      "G2 X%.4f Y%.4f I%.4f J%.4f E%.4f", 
+      destination.x,
+      destination.y,
+      center.x,
+      center.y,
+      feedRate);
+  }
+}
+
 void draw(){
+  commands.clear();
   
   bigD = 500;
-  thickness = 56;
+  thickness = 68;
   numberOfSections = 24;
-  sectionGap = 1.0;
+  sectionGap = 13.0;
   
   center = new PVector(bigD/2+10, bigD/2+10);
   
@@ -31,18 +57,30 @@ void draw(){
   stroke(0);
   noFill();
   
-  for (int i=0; i<numberOfSections; i++) {
-    float startAngle = i*sectionAngle+sectionGap;
+  //float endAngle = 0;
+  float prevEndAngle = 0;
+  //float i=0;
+  //for (int i=0; i<numberOfSections; i++) {
+  for (int i=0; i<2; i++) {
+    float startAngle = prevEndAngle;
     float endAngle = (i+1)*sectionAngle;
-    PVector[] intersection12 = drawSectionCurve(startAngle);
-    PVector[] intersection34 = drawSectionCurve(endAngle);
+    float d = bigD + (bigD-smallD)/2;
+    d *= 0.6;
+    // We move anti-clock wise
+    //First curve
+    PVector[] intersection34 = drawSectionCurve(endAngle, d, d/2);
+    //Second curve
+    PVector[] intersection12 = drawSectionCurve(startAngle, d-sectionGap, d/2);
+    prevEndAngle = endAngle;
     
+    //Outside curve
     alpha = atan2(intersection34[1].y - center.y, intersection34[1].x - center.x);
     beta = atan2(intersection12[1].y - center.y, intersection12[1].x - center.x);
     alpha = fixSmallerAngle(alpha, beta);
     
     arc(center.x, center.y, bigD, bigD, alpha, beta);
   
+    //Inner curve
     alpha = atan2(intersection34[0].y - center.y, intersection34[0].x - center.x);
     beta = atan2(intersection12[0].y - center.y, intersection12[0].x - center.x);
     alpha = fixSmallerAngle(alpha, beta);
@@ -58,11 +96,9 @@ float fixSmallerAngle(float smallerAngle, float biggerAngle){
   return smallerAngle;
 }
 
-PVector[] drawSectionCurve(float angle) {
-  float d = bigD + (bigD-smallD)/2;
-  d *= 1.0;
-  float arcx = sin(radians(angle)) * d/2;
-  float arcy = cos(radians(angle)) * d/2;
+PVector[] drawSectionCurve(float angle, float d, float r) {
+  float arcx = sin(radians(angle)) * r;
+  float arcy = cos(radians(angle)) * r;
   
   PVector interesction1 = firstInterection(
     new PVector(center.x, center.y),
@@ -83,6 +119,7 @@ PVector[] drawSectionCurve(float angle) {
   alpha = fixSmallerAngle(alpha, beta);
   
   arc(center.x-arcx, center.y-arcy, d, d, alpha, beta);
+  //arc(center.x-arcx, center.y-arcy, d, d, 0, TWO_PI);
   
   return new PVector[]{interesction1, interesction2};
 }
