@@ -47,8 +47,8 @@ class Solver:
         )
 
         # start = time.clock()
-        x = convert_to_float32(sections)
-        predicted_moves = list(self.classifier.predict(x))
+        # x = convert_to_float32(sections)
+        predicted_moves = list(self.classifier.predict(sections))
         # end = time.clock()
         return [Move(square=square, direction=predicted_moves[i]) for i, square in enumerate(my_squares)]
 

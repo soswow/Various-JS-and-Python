@@ -1,5 +1,7 @@
 import os
 
+from sklearn.model_selection import train_test_split
+
 from replay import Replay
 import pickle
 import numpy as np
@@ -51,14 +53,20 @@ def save_data(filenames):
         print("Generating sections for own cells with surrounding")
         replay.load_sections_and_labels()
         sections, labels = equalized_sections(replay)
+
         sectionss.append(sections)
         labelss.append(labels)
 
     sections = np.concatenate(sectionss, axis=0)
     labels = np.concatenate(labelss, axis=0)
+
+    train_data, test_data, train_labels, test_labels = train_test_split(sections, labels, train_size=.8)
+
     data = {
-        'sections': sections,
-        'labels': labels,
+        'train_data': train_data,
+        'train_labels': train_labels,
+        'test_data': test_data,
+        'test_labels': test_labels
         # 'width': replay.width,
         # 'height': replay.height,
         # 'max_production': replay.max_production,
@@ -68,23 +76,11 @@ def save_data(filenames):
         pickle.dump(data, f)
     return data
 
-# TODO Data labels should be equalized. Number of SOUTH and NORTH and STILL etc should be equal
 
 def main():
-    filenames = os.listdir("./data")[:10]
+    filenames = os.listdir("./data")[:20]
     save_data(filenames)
-    # for filename in :
-        # labels = data['labels']
 
-        # replay.labels
-        # start_frames_animation(replay)
-        # test_a1 = np.reshape(np.arange(5*5), (5, 5))
-        # for section in wrap_slice_generator(test_a1, 3):
-        #     print(section)
-
-        # start_time = time.clock()
-        # ms_time = (time.clock() - start_time) * 1000
-        # print("%f ms" % ms_time)
 
 if __name__ == '__main__':
     main()
