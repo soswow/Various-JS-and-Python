@@ -1,6 +1,12 @@
 import sys
 from collections import namedtuple
-from itertools import chain, zip_longest
+# Python 2/3 workaround
+try:
+    from itertools import chain, zip_longest
+except:
+    from itertools import izip_longest
+    zip_longest = izip_longest
+
 
 
 def grouper(iterable, n, fillvalue=None):

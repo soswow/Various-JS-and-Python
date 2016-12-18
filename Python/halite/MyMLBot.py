@@ -1,4 +1,8 @@
 # import hlt_debug
+# Make TF not to post warnings and info
+import os
+os.putenv('TF_CPP_MIN_LOG_LEVEL', '2')
+
 import sys
 import hlt
 from hlt import Move
