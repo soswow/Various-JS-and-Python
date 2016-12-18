@@ -1,6 +1,7 @@
 # import hlt_debug
 import sys
 import hlt
+import random
 from hlt import Move
 from machine_learning import get_classifier
 from process_replay import kernel_size
@@ -49,7 +50,10 @@ class Solver:
         # start = time.clock()
         # x = convert_to_float32(sections)
         predicted_moves = list(self.classifier.predict(sections))
-        # end = time.clock()
+        for i, move in enumerate(predicted_moves):
+            if random.random() > 0.9:
+                predicted_moves[i] = random.choice((hlt.NORTH, hlt.EAST, hlt.SOUTH, hlt.WEST, hlt.STILL))
+
         return [Move(square=square, direction=predicted_moves[i]) for i, square in enumerate(my_squares)]
 
 

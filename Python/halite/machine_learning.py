@@ -54,11 +54,11 @@ def get_classifier():
     # (kernel_size * kernel_size, 3)
     feature_columns = [layers.real_valued_column("", dimension=3)]
     return DNNClassifier(feature_columns=feature_columns,
-                         hidden_units=[100, 200],
+                         hidden_units=[500, 300],
                          n_classes=5,
                          model_dir="saved_model",
-                         optimizer=AdamOptimizer(),
-                         dropout=0.5
+                         optimizer=AdamOptimizer()
+                         # dropout=0.5
                          )
     # return SKCompat(Estimator(model_fn=conv_model, model_dir='saved_model'))
 
@@ -71,23 +71,28 @@ def load_data_from_pickle():
     return load_dataset(pickle_path)
 
 
-stop_when_finish = False
 def main():
+    stop_when_finish = False
     # global stop_when_finish
     # def signal_handler(signal, frame):
     #     print('You pressed Ctrl+C!')
-        # stop_when_finish = True
+    # stop_when_finish = True
     # signal.signal(signal.SIGINT, signal_handler)
 
     datasets = load_data_from_pickle()
 
     classifier = get_classifier()
+    max_score = 0
     while not stop_when_finish:
         classifier.fit(x=datasets.train.data, y=datasets.train.target,
-                       batch_size=150, steps=5000)
+                       batch_size=150, steps=2000)
 
         score = metrics.accuracy_score(
             datasets.test.target, list(classifier.predict(datasets.test.data)))
+        if score > max_score:
+            max_score = score
+        else:
+            stop_when_finish = True
         print('Test Accuracy: {0:f}%'.format(score * 100))
 
 
@@ -117,6 +122,15 @@ def analise():
                                            target_names=['NORTH', 'EAST', 'SOUTH', 'WEST', 'STILL'])
     print(report)
 
+# Something is wrong. I have 90% match with NORTH direction. Which is just 0 value.
+# With different players, different sizes of kernel. All the same.
+# 1. Maybe need to look into data. Randomly look to what sections looks like.
+# 2. Also, what about use same data and turn it and re-save.
+# 3. Make multi-model with different kernels contributing
+# 4. Read Forums
+# 5. Randomize choice
+# 6. Weigths? Can I make one of the axies in input vector be more important?
+# 7. Should I make more layers, with strength for own, enemy and map on different layers?
 
 if __name__ == '__main__':
     main()
