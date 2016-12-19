@@ -12,6 +12,9 @@ from tensorflow.contrib import layers
 from tensorflow.contrib.learn import DNNClassifier
 from tensorflow.contrib.learn.python.learn.datasets.base import Dataset, Datasets
 from sklearn import metrics
+from tensorflow.contrib.learn.python.learn.metric_spec import MetricSpec
+
+from process_replay import kernel_size as image_size
 
 import signal
 import sys
@@ -22,7 +25,8 @@ from tensorflow.python.training.adam import AdamOptimizer
 logging.getLogger().setLevel(logging.INFO)
 
 num_labels = 5
-
+image_width = image_size
+image_height = image_size
 
 def convert_to_float32(images):
     images = images.astype(np.float32)
@@ -50,21 +54,70 @@ def load_dataset(pickle_file):
 
         return Datasets(train=train_dataset, test=test_dataset, validation=None)
 
+#
+# def get_validation_monitor(test_set):
+#     validation_metrics = {
+#         "accuracy": MetricSpec(
+#             metric_fn=tf.contrib.metrics.streaming_accuracy,
+#             prediction_key="classes"),
+#         # "precision": MetricSpec(
+#         #     metric_fn=tf.contrib.metrics.streaming_precision,
+#         #     prediction_key="classes"),
+#         # "recall": MetricSpec(
+#         #     metric_fn=tf.contrib.metrics.streaming_recall,
+#         #     prediction_key="classes")
+#     }
+#     validation_monitor = tf.contrib.learn.monitors.ValidationMonitor(
+#         test_set.data,
+#         test_set.target,
+#         every_n_steps=100,
+#         metrics=validation_metrics,
+#         early_stopping_metric="loss",
+#         early_stopping_metric_minimize=True,
+#         early_stopping_rounds=200)
+#
+#     return validation_monitor
 
-def get_validation_monitor(test_set):
-    validation_metrics = {"accuracy": tf.contrib.metrics.streaming_accuracy,
-                          "precision": tf.contrib.metrics.streaming_precision,
-                          "recall": tf.contrib.metrics.streaming_recall}
-    validation_monitor = tf.contrib.learn.monitors.ValidationMonitor(
-        test_set.data,
-        test_set.target,
-        every_n_steps=50,
-        metrics=validation_metrics,
-        early_stopping_metric="loss",
-        early_stopping_metric_minimize=True,
-        early_stopping_rounds=200)
 
-    return validation_monitor
+def conv2d(x, W, b, strides=1):
+    # Conv2D wrapper, with bias and relu activation
+    x = tf.nn.conv2d(x, W, strides=[1, strides, strides, 1], padding='SAME')
+    x = tf.nn.bias_add(x, b)
+    return tf.nn.relu(x)
+
+
+def maxpool2d(x, k=2):
+    # MaxPool2D wrapper
+    return tf.nn.max_pool(x, ksize=[1, k, k, 1], strides=[1, k, k, 1],
+                          padding='SAME')
+
+
+# Create model
+def conv_net(x, weights, biases, dropout):
+    # Reshape input picture
+    x = tf.reshape(x, shape=[-1, image_width, image_height, 4])
+
+    # Convolution Layer
+    conv1 = conv2d(x, weights['wc1'], biases['bc1'])
+    # Max Pooling (down-sampling)
+    conv1 = maxpool2d(conv1, k=2)
+
+    # Convolution Layer
+    conv2 = conv2d(conv1, weights['wc2'], biases['bc2'])
+    # Max Pooling (down-sampling)
+    conv2 = maxpool2d(conv2, k=2)
+
+    # Fully connected layer
+    # Reshape conv2 output to fit fully connected layer input
+    fc1 = tf.reshape(conv2, [-1, weights['wd1'].get_shape().as_list()[0]])
+    fc1 = tf.add(tf.matmul(fc1, weights['wd1']), biases['bd1'])
+    fc1 = tf.nn.relu(fc1)
+    # Apply Dropout
+    fc1 = tf.nn.dropout(fc1, dropout)
+
+    # Output, class prediction
+    out = tf.add(tf.matmul(fc1, weights['out']), biases['out'])
+    return out
 
 
 def get_classifier():
@@ -99,8 +152,9 @@ def main():
     while not stop_when_finish:
         classifier.fit(x=datasets.train.data,
                        y=datasets.train.target,
-                       monitors=[get_validation_monitor(datasets.test)],
-                       steps=1000)
+                       batch_size=150,
+                       # monitors=[get_validation_monitor(datasets.test)],
+                       steps=2000)
 
         score = classifier.evaluate(x=datasets.test.data,
                                     y=datasets.test.target)["accuracy"]
@@ -109,7 +163,8 @@ def main():
         if score > max_score:
             max_score = score
         elif max_score > (score + 0.001):
-            stop_when_finish = True
+            print("ARR going down!!")
+            # stop_when_finish = True
         print('Test Accuracy: {0:f}%'.format(score * 100))
     analise()
 
@@ -150,7 +205,10 @@ def analise():
 # 5. Randomize choice
 # 6. Weigths? Can I make one of the axies in input vector be more important?
 # 7. Should I make more layers, with strength for own, enemy and map on different layers?
+# 8. Separate datasets into different stages. When there are < N units == starting stage,
+# When there are > N units == expansion state.
+
 
 if __name__ == '__main__':
-    main()
-    # analise()
+    # main()
+    analise()
