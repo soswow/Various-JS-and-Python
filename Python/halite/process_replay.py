@@ -107,7 +107,7 @@ def save_data(filenames):
 
 
 def main():
-    filenames = os.listdir("./data/erdman")[:10]
+    filenames = os.listdir("./data/erdman")[:4]
     save_data(filenames)
 
 
