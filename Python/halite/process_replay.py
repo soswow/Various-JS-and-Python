@@ -9,7 +9,7 @@ import numpy as np
 import hashlib
 
 
-kernel_size = 13
+kernel_size = 9
 
 
 def equalized_sections(sections, labels):
@@ -107,7 +107,7 @@ def save_data(filenames):
 
 
 def main():
-    filenames = os.listdir("./data/erdman")[:4]
+    filenames = os.listdir("./data/erdman")[:2]
     save_data(filenames)
 
 

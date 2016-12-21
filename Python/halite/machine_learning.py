@@ -7,6 +7,9 @@ import pickle
 import logging
 
 import tensorflow as tf
+from keras.callbacks import EarlyStopping
+from keras.optimizers import SGD
+from keras.utils import np_utils
 from sklearn.model_selection import train_test_split
 from tensorflow.contrib import layers
 from tensorflow.contrib.learn import DNNClassifier
@@ -22,11 +25,16 @@ import sys
 from tensorflow.python.training.adadelta import AdadeltaOptimizer
 from tensorflow.python.training.adam import AdamOptimizer
 
+from keras.models import Sequential
+from keras.layers import Dense, Activation, Input, Convolution2D, GlobalMaxPooling1D, Dropout, GlobalMaxPooling2D, \
+    MaxPooling2D, Flatten, Reshape, LocallyConnected2D
+
 logging.getLogger().setLevel(logging.INFO)
 
 num_labels = 5
 image_width = image_size
 image_height = image_size
+
 
 def convert_to_float32(images):
     images = images.astype(np.float32)
@@ -53,6 +61,7 @@ def load_dataset(pickle_file):
         test_dataset = Dataset(data=test_data, target=test_labels)
 
         return Datasets(train=train_dataset, test=test_dataset, validation=None)
+
 
 #
 # def get_validation_monitor(test_set):
@@ -122,7 +131,7 @@ def conv_net(x, weights, biases, dropout):
 
 def get_classifier():
     # (kernel_size * kernel_size, 3)
-    feature_columns = [layers.real_valued_column("", dimension=3)]
+    feature_columns = [layers.real_valued_column("", dimension=4)]
     return DNNClassifier(feature_columns=feature_columns,
                          hidden_units=[256, 128],
                          n_classes=5,
@@ -140,6 +149,67 @@ def load_data_from_pickle():
     pickle_path = os.path.join('data', filename)
 
     return load_dataset(pickle_path)
+
+
+def using_keras(datasets):
+    # X_train = datasets.train.data.reshape(-1, image_size * image_size, 3)
+    # X_test = datasets.test.data.reshape(-1, image_size * image_size, 3)
+    X_train = datasets.train.data
+    X_test = datasets.test.data
+    Y_train = np_utils.to_categorical(datasets.train.target, num_labels)
+    Y_test = np_utils.to_categorical(datasets.test.target, num_labels)
+
+    # model = Sequential()
+    # model.add(Convolution2D(64, 5, 5,
+    #                         input_shape=datasets.train.data.shape[1:],
+    #                         border_mode='same',
+    #                         activation='relu'))
+    #
+    # model.add(MaxPooling2D(border_mode='same'))
+    # model.add(Flatten())
+    # model.add(Dense(250, activation='relu'))
+    # model.add(Dropout(0.2))
+    # model.add(Dense(250, activation='relu'))
+    # model.add(Dropout(0.2))
+    # model.add(Dense(num_labels))
+    # model.add(Activation('softmax'))
+    # model.compile(
+    #     loss='categorical_crossentropy',
+    #     optimizer='sgd',
+    #     metrics=['accuracy'])
+
+    model = Sequential()
+    model.add(Convolution2D(32, 5, 5,
+                            input_shape=datasets.train.data.shape[1:],
+                            border_mode='same'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Convolution2D(32, 4, 4))
+    model.add(Reshape(target_shape=(32,)))
+    model.add(Dense(128, activation='relu'))
+    model.add(Dense(64, activation='relu'))
+    # model.add(Dense(126, activation='relu'))
+    # model.add(Dense(128, activation='relu'))
+    model.add(Dense(num_labels, activation='softmax'))
+    adam = AdamOptimizer(learning_rate=0.1)
+    sgd = SGD(lr=0.5, decay=1e-6, momentum=0.999, nesterov=True)
+    model.compile(
+        loss='categorical_crossentropy',
+        optimizer=sgd,
+        metrics=['accuracy']
+    )
+
+    # from keras.utils.visualize_util import plot
+    # plot(model, to_file='model.png')
+
+    # early_stopping = EarlyStopping(monitor='val_loss', patience=2)
+
+    hist = model.fit(
+        X_train, Y_train,
+        nb_epoch=10, batch_size=500,
+        validation_data=(X_test, Y_test))
+    #
+    model.evaluate(X_test, Y_test)
+    print(hist.history)
 
 
 def main():
@@ -210,5 +280,9 @@ def analise():
 
 
 if __name__ == '__main__':
-    # main()
-    analise()
+    main()
+    # datasets = load_data_from_pickle()
+    # 'train', 'validation', 'test'
+
+    # using_keras(datasets)
+    # analise()

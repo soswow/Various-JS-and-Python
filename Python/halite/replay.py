@@ -47,23 +47,22 @@ class Replay:
             yield self.combined_data_for_frame(frame_index)
 
     def combined_data_for_frame(self, frame_index):
-        res = np.zeros((self.height, self.width, 3))
+        res = np.zeros((self.height, self.width, 4))
         for y in range(self.height):
             for x in range(self.width):
-                # 0 owner type (0 - my, 100 - map, 200 - enemy)
-                # 1 production
-                # 3 strength
                 site = self.frames[frame_index][y][x]
                 production = self.productions[y][x]
-                # production = int((production/self.max_production) * 255)
+                production = int((production/self.max_production) * 255)
                 owner, strength = site
+                my_strength, enemy_strength, neutral_strength = 0, 0, 0
                 if owner == self.winner_index + 1:
-                    owner_type = 0
+                    my_strength = strength
                 elif owner == 0:
-                    owner_type = 127
+                    neutral_strength = strength
                 else:
-                    owner_type = 255
-                res[y][x] = (owner_type, production, strength)
+                    enemy_strength = strength
+
+                res[y][x] = (production, my_strength, enemy_strength, neutral_strength)
         return res
 
     def prepare_padded_arrays(self, kernel_size):
@@ -81,25 +80,25 @@ class Replay:
         return self.combined_data_padded[frame_index][y:y + self.kernel_size, x:x + self.kernel_size]
 
     def own_locations_generator(self):
-        for frame_index, frame in enumerate(self.combined_data):
+        for frame_index, frame in enumerate(self.frames):
             for y in range(self.height):
                 for x in range(self.width):
-                    owner_type, production, strength = frame[y][x]
-                    if owner_type == 0:
+                    owner, strength = frame[y][x]
+                    if owner == self.winner_index + 1:
                         yield frame_index, y, x
 
     def own_sections_generator(self):
         for frame_index, y, x in self.own_locations_generator():
             if frame_index < len(self.moves):
                 # We want all moves in the first part of the game and then sparsely
-                if frame_index < 40 or frame_index % 2 == 0:
+                if frame_index < 70 or frame_index % 2 == 0:
                     yield self.get_section(frame_index, y, x)
 
     def own_labels_generator(self):
         for frame_index, y, x in self.own_locations_generator():
             if frame_index < len(self.moves):
                 # We want all moves in the first part of the game and then sparsely
-                if frame_index < 40 or frame_index % 2 == 0:
+                if frame_index < 70 or frame_index % 2 == 0:
                     yield self.moves[frame_index][y][x]
 
     def load_sections_and_labels(self):
