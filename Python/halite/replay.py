@@ -37,7 +37,10 @@ class Replay:
         self.moves = np.array(data['moves'])
 
         self.winner = self.path.split('-')[1]
-        self.winner_index = self.player_names.index(self.winner)
+        for i, name in enumerate(self.player_names):
+            if name.startswith(self.winner):
+                self.winner_index = i
+                break
 
     def combine_data(self):
         self.combined_data = np.array(list(self.combined_data_generator_all_frames()))

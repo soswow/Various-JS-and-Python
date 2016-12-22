@@ -7,26 +7,29 @@ import pickle
 import logging
 
 import tensorflow as tf
-from sklearn.model_selection import train_test_split
+# from keras.optimizers import Adagrad, Adadelta
 from tensorflow.contrib import layers
-from tensorflow.contrib.learn import DNNClassifier
+from tensorflow.contrib.layers.python.layers import optimizers, contrib_variables
+from tensorflow.contrib.learn import DNNClassifier, SKCompat, Estimator, model_fn
 from tensorflow.contrib.learn.python.learn.datasets.base import Dataset, Datasets
+from tensorflow.contrib.learn.python.learn.estimators import head as head_lib
+from tensorflow.python.ops import variable_scope
 from sklearn import metrics
-from tensorflow.contrib.learn.python.learn.metric_spec import MetricSpec
+from tensorflow.python.training.adadelta import AdadeltaOptimizer
+from tensorflow.python.training.adagrad import AdagradOptimizer
+from tensorflow.python.training.adam import AdamOptimizer
+from tensorflow.python.training.ftrl import FtrlOptimizer
+from tensorflow.python.training.gradient_descent import GradientDescentOptimizer
+from tensorflow.python.training.rmsprop import RMSPropOptimizer
 
 from process_replay import kernel_size as image_size
-
-import signal
-import sys
-
-from tensorflow.python.training.adadelta import AdadeltaOptimizer
-from tensorflow.python.training.adam import AdamOptimizer
 
 logging.getLogger().setLevel(logging.INFO)
 
 num_labels = 5
 image_width = image_size
 image_height = image_size
+
 
 def convert_to_float32(images):
     images = images.astype(np.float32)
@@ -53,6 +56,7 @@ def load_dataset(pickle_file):
         test_dataset = Dataset(data=test_data, target=test_labels)
 
         return Datasets(train=train_dataset, test=test_dataset, validation=None)
+
 
 #
 # def get_validation_monitor(test_set):
@@ -134,6 +138,109 @@ def get_classifier():
     # return SKCompat(Estimator(model_fn=conv_model, model_dir='saved_model'))
 
 
+def get_conv_model(features, labels, mode, params):
+    parent_scope = "cnn"
+
+    features = _get_feature_dict(features)
+    head = params.get("head")
+    feature_columns = params.get("feature_columns")
+    activation_fn = params.get("activation_fn")
+    dropout = params.get("dropout")
+    learning_rate = params.get("learning_rate")
+    optimizer = params.get("optimizer")
+
+    with variable_scope.variable_scope(
+                    parent_scope + "/input_from_feature_columns",
+            values=features.values()) as scope:
+        net = layers.input_from_feature_columns(
+            columns_to_tensors=features,
+            feature_columns=feature_columns,
+            weight_collections=[parent_scope],
+            scope=scope)
+
+    hidden_units = [256, 128]
+    for layer_id, num_hidden_units in enumerate(hidden_units):
+        with variable_scope.variable_scope(
+                        parent_scope + "/hiddenlayer_%d" % layer_id,
+                values=[net]) as scope:
+            net = layers.fully_connected(
+                net,
+                num_hidden_units,
+                activation_fn=activation_fn,
+                variables_collections=[parent_scope],
+                scope=scope)
+            if dropout is not None and mode == model_fn.ModeKeys.TRAIN:
+                net = layers.dropout(
+                    net,
+                    keep_prob=(1.0 - dropout))
+
+    with variable_scope.variable_scope(
+                    parent_scope + "/logits",
+            values=[net]) as scope:
+        logits = layers.fully_connected(
+            net,
+            head.logits_dimension,
+            activation_fn=None,
+            variables_collections=[parent_scope],
+            scope=scope)
+
+    def _train_op_fn(loss):
+        """Returns the op to optimize the loss."""
+        return optimizers.optimize_loss(
+            loss=loss,
+            global_step=contrib_variables.get_global_step(),
+            learning_rate=learning_rate,
+            optimizer=optimizer,
+            name=parent_scope,
+            # Empty summaries to prevent optimizers from logging the training_loss.
+            summaries=[])
+
+    return head.head_ops(features, labels, mode, _train_op_fn, logits)
+
+
+def _get_feature_dict(features):
+    if isinstance(features, dict):
+        return features
+    return {"": features}
+
+
+def get_conv_classifier():
+    n_classes = 5
+    feature_columns = [layers.real_valued_column("", dimension=3)]
+
+    # learning_rate = 0.1
+    # optimizer = AdagradOptimizer(learning_rate)
+    #
+    # learning_rate = 1.0
+    # optimizer = AdadeltaOptimizer(learning_rate=learning_rate)
+
+    # ~ 62.55%
+    learning_rate = 0.001
+    optimizer = AdamOptimizer(learning_rate, epsilon=0.1)
+
+    # learning_rate = 0.05
+    # optimizer = GradientDescentOptimizer(learning_rate)
+
+    # learning_rate = 0.1
+    # optimizer = RMSPropOptimizer(learning_rate, momentum=0.1)
+
+    # learning_rate = 0.1
+    # optimizer = FtrlOptimizer(learning_rate)
+
+    return SKCompat(Estimator(
+        model_fn=get_conv_model,
+        params={
+            'head': head_lib._multi_class_head(  # pylint: disable=protected-access
+                n_classes,
+                enable_centered_bias=False),
+            'feature_columns': feature_columns,
+            'activation_fn': tf.nn.relu,
+            'learning_rate': learning_rate,
+            'optimizer': optimizer
+        },
+        model_dir='saved_model'))
+
+
 def load_data_from_pickle():
     filenames = filter(lambda name: name.endswith('.pickle'), os.listdir("./data"))
     filename = list(filenames)[0]
@@ -145,19 +252,22 @@ def load_data_from_pickle():
 def main():
     stop_when_finish = False
 
+    if not os.path.exists("saved_model"):
+        os.makedirs("saved_model")
+
     datasets = load_data_from_pickle()
 
-    classifier = get_classifier()
+    classifier = get_conv_classifier()
     max_score = 0
     while not stop_when_finish:
         classifier.fit(x=datasets.train.data,
                        y=datasets.train.target,
-                       batch_size=150,
+                       # batch_size=150,
                        # monitors=[get_validation_monitor(datasets.test)],
-                       steps=2000)
+                       steps=1000)
 
-        score = classifier.evaluate(x=datasets.test.data,
-                                    y=datasets.test.target)["accuracy"]
+        score = classifier.score(x=datasets.test.data,
+                                 y=datasets.test.target)["accuracy"]
         print("Accuracy: {0:f}".format(score))
 
         if score > max_score:
@@ -210,5 +320,5 @@ def analise():
 
 
 if __name__ == '__main__':
-    # main()
-    analise()
+    main()
+    # analise()

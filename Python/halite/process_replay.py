@@ -8,9 +8,7 @@ import pickle
 import numpy as np
 import hashlib
 
-
-kernel_size = 13
-
+kernel_size = 5
 
 def equalized_sections(sections, labels):
     bins = np.bincount(labels)
@@ -49,8 +47,8 @@ def rotate_all_sections(sections, labels):
 
 
 
-def save_data(filenames):
-    description = "%s.%d" % (".".join(filenames), kernel_size)
+def save_data(replay_paths):
+    description = "%s.%d" % (".".join(replay_paths), kernel_size)
 
     hash = hashlib.md5(description.encode('utf-8')).hexdigest()
     pickle_path = os.path.join('data', "%s.pickle" % hash)
@@ -61,12 +59,11 @@ def save_data(filenames):
     sectionss = []
     labelss = []
 
-    for filename in filenames:
-        print("Processing replay %s with kernel %d" % (filename, kernel_size))
+    for replay_path in replay_paths:
+        print("Processing replay %s with kernel %d" % (replay_path, kernel_size))
         # pickle_path = os.path.join('data/', '%s.%d.%s' % (filename, kernel_size, 'pickle'))
 
-        print("Loading replay %s" % filename)
-        replay_path = os.path.join('data/erdman/', filename)
+        print("Loading replay %s" % replay_path)
         replay = Replay(replay_path)
         replay.load()
         print(replay)
@@ -77,10 +74,13 @@ def save_data(filenames):
         print("Generating sections for own cells with surrounding")
         replay.load_sections_and_labels()
         sections, labels = replay.sections, replay.labels
+
+        first_stage_limit = 30
+        print("Leave only first %d moves" % first_stage_limit)
+        sections, labels = sections[:first_stage_limit], labels[:first_stage_limit]
+
         print("Rotating each section")
         sections, labels = rotate_all_sections(sections, labels)
-        print("Equalizing all labels")  # Maybe this is not needed?
-        sections, labels = equalized_sections(sections, labels)
 
         sectionss.append(sections)
         labelss.append(labels)
@@ -90,6 +90,10 @@ def save_data(filenames):
 
     train_data, test_data, train_labels, test_labels = train_test_split(sections, labels, train_size=.8)
 
+    print("Equalizing train data and labels")  # Maybe this is not needed?
+    test_data, test_labels = equalized_sections(test_data, test_labels)
+
+    print("%d of training data, %d of testing data" % (len(train_data), len(test_data)))
     data = {
         'train_data': train_data,
         'train_labels': train_labels,
@@ -107,8 +111,8 @@ def save_data(filenames):
 
 
 def main():
-    filenames = os.listdir("./data/erdman")[:4]
-    save_data(filenames)
+    replay_paths = [os.path.join(root, file) for root, dirs, files in os.walk("./data") for file in files if file.endswith(".json")]
+    save_data(replay_paths)
 
 
 if __name__ == '__main__':
