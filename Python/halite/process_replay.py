@@ -1,6 +1,5 @@
 import os
 from collections import namedtuple
-from typing import NamedTuple
 
 from sklearn.model_selection import train_test_split
 

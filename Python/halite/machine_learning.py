@@ -135,6 +135,19 @@ def get_conv_model(features, labels, mode, params):
             weight_collections=[parent_scope],
             scope=scope)
 
+    with variable_scope.variable_scope(
+                    parent_scope + "/convlayer_1",
+            values=features.values()) as scope:
+        net = layers.conv2d(net, 64, 3,
+                            variables_collections=[parent_scope],
+                            scope=scope)
+        net = layers.max_pool2d(net, 2,
+                          stride=1,
+                          padding='SAME',
+                          scope=scope)
+
+    tf.reshape(net, [-1, net.get_shape().as_list()[0]])
+
     hidden_units = [256, 128]
     for layer_id, num_hidden_units in enumerate(hidden_units):
         with variable_scope.variable_scope(
@@ -185,14 +198,14 @@ def get_conv_classifier():
     n_classes = 5
     feature_columns = [layers.real_valued_column("", dimension=3)]
 
-    # learning_rate = 0.1
+    # learning_rate = 1.0
     # optimizer = AdagradOptimizer(learning_rate)
     #
     # learning_rate = 1.0
     # optimizer = AdadeltaOptimizer(learning_rate=learning_rate)
 
     # ~ 62.55%
-    learning_rate = 0.001
+    learning_rate = 0.01
     optimizer = AdamOptimizer(learning_rate, epsilon=0.1)
 
     # learning_rate = 0.05
@@ -242,9 +255,9 @@ def main():
     while not stop_when_finish:
         classifier.fit(x=expand_data['train_data'],
                        y=expand_data['train_labels'],
-                       # batch_size=150,
+                       batch_size=200,
                        # monitors=[get_validation_monitor(datasets.test)],
-                       steps=1000)
+                       steps=2000)
 
         score = classifier.score(x=expand_data['test_data'],
                                  y=expand_data['test_labels'])["accuracy"]
