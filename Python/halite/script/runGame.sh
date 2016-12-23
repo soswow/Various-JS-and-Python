@@ -1,8 +1,7 @@
 #!/bin/bash
 
 if hash python3 2>/dev/null; then
-    ./halite -d "10 10" "python3 MyBot2.py" "python3 MyMLBot.py"
-#    ./halite -d "30 30" "python3 MyBot2.py" "python3 MyBot2.py"
+    ./halite-mac -d "30 30" "python3 MyBot2.py" "python3 MyBot3.py"
 else
-    ./halite -d "30 30" "python MyBot2.py" "python MyMLBot.py"
+    ./halite-mac -d "30 30" "python MyBot2.py" "python MyMLBot.py"
 fi

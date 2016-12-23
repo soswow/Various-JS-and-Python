@@ -1,4 +1,6 @@
 import os
+from collections import namedtuple
+from typing import NamedTuple
 
 from sklearn.model_selection import train_test_split
 
@@ -8,7 +10,8 @@ import pickle
 import numpy as np
 import hashlib
 
-kernel_size = 5
+expand_kernel_size = 5
+conquer_kernel_size = 13
 
 def equalized_sections(sections, labels):
     bins = np.bincount(labels)
@@ -45,22 +48,25 @@ def rotate_all_sections(sections, labels):
     return sections, labels
 
 
+Dataset = namedtuple('Dataset', ['sections', 'labels'])
+Buckets = namedtuple('Buckets', ['expand', 'conquer'])
 
 
 def save_data(replay_paths):
-    description = "%s.%d" % (".".join(replay_paths), kernel_size)
+    # description = "%s" % (".".join(replay_paths))
 
-    hash = hashlib.md5(description.encode('utf-8')).hexdigest()
-    pickle_path = os.path.join('data', "%s.pickle" % hash)
-    if os.path.exists(pickle_path):
-        print("%s already saved" % pickle_path)
-        return
+    # hash = hashlib.md5(description.encode('utf-8')).hexdigest()
+    # pickle_path = os.path.join('data', "%s.pickle")
+    # if os.path.exists(pickle_path):
+    #     print("%s already saved" % pickle_path)
+    #     return
 
-    sectionss = []
-    labelss = []
+    expand_dataset = Dataset(sections=[], labels=[])
+    conquer_dataset = Dataset(sections=[], labels=[])
+    buckets = Buckets(expand=expand_dataset, conquer=conquer_dataset)
 
     for replay_path in replay_paths:
-        print("Processing replay %s with kernel %d" % (replay_path, kernel_size))
+        print("Processing replay %s with kernels %d and %d" % (replay_path, expand_kernel_size, conquer_kernel_size))
         # pickle_path = os.path.join('data/', '%s.%d.%s' % (filename, kernel_size, 'pickle'))
 
         print("Loading replay %s" % replay_path)
@@ -69,41 +75,86 @@ def save_data(replay_paths):
         print(replay)
         print("Combining data ... ")
         replay.combine_data()
-        print("Padding with %d ... " % kernel_size)
-        replay.prepare_padded_arrays(kernel_size)
-        print("Generating sections for own cells with surrounding")
-        replay.load_sections_and_labels()
-        sections, labels = replay.sections, replay.labels
 
-        first_stage_limit = 30
-        print("Leave only first %d moves" % first_stage_limit)
-        sections, labels = sections[:first_stage_limit], labels[:first_stage_limit]
+        first_stage_limit = replay.find_sections_count_before_first_collision()
 
-        print("Rotating each section")
-        sections, labels = rotate_all_sections(sections, labels)
+        # Expand Data prep
+        print("Padding with %d ... " % expand_kernel_size)
+        replay.prepare_padded_arrays(expand_kernel_size)
+        print("Generating sections for cells with surrounding")
+        sections, labels = replay.get_sections_and_labels(own=False)
 
-        sectionss.append(sections)
-        labelss.append(labels)
+        print("Collect expand phase. First %d moves." % first_stage_limit)
+        expand_sections, expand_labels = sections[:first_stage_limit], labels[:first_stage_limit]
+        print("Rotate each section")
+        expand_sections, expand_labels = rotate_all_sections(expand_sections, expand_labels)
+        buckets.expand.sections.append(expand_sections)
+        buckets.expand.labels.append(expand_labels)
 
-    sections = np.concatenate(sectionss, axis=0)
-    labels = np.concatenate(labelss, axis=0)
+        # Conquer Data prep
+        # print("Padding with %d ... " % conquer_kernel_size)
+        # replay.prepare_padded_arrays(conquer_kernel_size)
+        # print("Generating sections for OWN cells with surrounding")
+        # sections, labels = replay.get_sections_and_labels(own=True)
+        #
+        # print("Collect conquer phase. Last %d moves." % (len(sections) - first_stage_limit))
+        # conquer_sections, conquer_labels = sections[first_stage_limit:], labels[first_stage_limit:]
+        # print("Rotate each section")
+        # conquer_sections, conquer_labels = rotate_all_sections(conquer_sections, conquer_labels)
+        # buckets.conquer.sections.append(conquer_sections)
+        # buckets.conquer.labels.append(conquer_labels)
 
-    train_data, test_data, train_labels, test_labels = train_test_split(sections, labels, train_size=.8)
+    # Expand
+    expand_dataset = Dataset(
+        sections=np.concatenate(buckets.expand.sections, axis=0),
+        labels=np.concatenate(buckets.expand.labels, axis=0)
+    )
 
-    print("Equalizing train data and labels")  # Maybe this is not needed?
+    train_data, test_data, train_labels, test_labels = train_test_split(
+        expand_dataset.sections, expand_dataset.labels, train_size=.8)
+
+    print("Equalizing test data and labels")
+    # We want testing data to have equal amount of different classes
+    # Otherwise accuracy can be spoiled
     test_data, test_labels = equalized_sections(test_data, test_labels)
 
-    print("%d of training data, %d of testing data" % (len(train_data), len(test_data)))
-    data = {
+    print("%d of expand training data, %d of expand testing data" % (len(train_data), len(test_data)))
+    expand_data = {
         'train_data': train_data,
         'train_labels': train_labels,
         'test_data': test_data,
-        'test_labels': test_labels
-        # 'width': replay.width,
-        # 'height': replay.height,
-        # 'max_production': replay.max_production,
-        # 'kernel_size': replay.kernel_size
+        'test_labels': test_labels,
+        'kernel_size': expand_kernel_size
     }
+
+    # Conquer
+    # conquer_dataset = Dataset(
+    #     sections=np.concatenate(buckets.conquer.sections, axis=0),
+    #     labels=np.concatenate(buckets.conquer.labels, axis=0)
+    # )
+    #
+    # train_data, test_data, train_labels, test_labels = train_test_split(
+    #     conquer_dataset.sections, conquer_dataset.labels, train_size=.8)
+    # print("Equalizing train data and labels")
+    # train_data, train_labels = equalized_sections(train_data, train_labels)
+    # print("Equalizing test data and labels")
+    # test_data, test_labels = equalized_sections(test_data, test_labels)
+    # print("%d of conquer training data, %d of conquer testing data" % (len(train_data), len(test_data)))
+    # conquer_data = {
+    #     'train_data': train_data,
+    #     'train_labels': train_labels,
+    #     'test_data': test_data,
+    #     'test_labels': test_labels,
+    #     'kernel_size': conquer_kernel_size
+    # }
+    conquer_data = None
+
+    data = {
+        'expand_data': expand_data,
+        'conquer_data': conquer_data
+    }
+
+    pickle_path = 'data/data.pickle'
     with open(pickle_path, 'wb') as f:
         print("Saving to %s" % pickle_path)
         pickle.dump(data, f)
@@ -112,6 +163,7 @@ def save_data(replay_paths):
 
 def main():
     replay_paths = [os.path.join(root, file) for root, dirs, files in os.walk("./data") for file in files if file.endswith(".json")]
+    replay_paths = replay_paths[:5]
     save_data(replay_paths)
 
 

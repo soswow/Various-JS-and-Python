@@ -22,41 +22,18 @@ from tensorflow.python.training.ftrl import FtrlOptimizer
 from tensorflow.python.training.gradient_descent import GradientDescentOptimizer
 from tensorflow.python.training.rmsprop import RMSPropOptimizer
 
-from process_replay import kernel_size as image_size
+# from process_replay import kernel_size as image_size
 
 logging.getLogger().setLevel(logging.INFO)
 
-num_labels = 5
-image_width = image_size
-image_height = image_size
+# num_labels = 5
+# image_width = image_size
+# image_height = image_size
 
 
 def convert_to_float32(images):
     images = images.astype(np.float32)
     return np.multiply(images, 1.0 / 255.0)
-
-
-def load_dataset(pickle_file):
-    with open(pickle_file, 'rb') as f:
-        save = pickle.load(f)
-        train_data = save['train_data']
-        train_labels = save['train_labels']
-        test_data = save['test_data']
-        test_labels = save['test_labels']
-
-        # dataset = convert_to_float32(dataset)
-
-        print("Train dataset size: %d" % len(train_data))
-        print("Test dataset size: %d" % len(test_data))
-        # if len(dataset) != len(labels):
-        #     raise Exception("Dataset and labels length should match")
-        del save  # hint to help gc free up memory
-
-        train_dataset = Dataset(data=train_data, target=train_labels)
-        test_dataset = Dataset(data=test_data, target=test_labels)
-
-        return Datasets(train=train_dataset, test=test_dataset, validation=None)
-
 
 #
 # def get_validation_monitor(test_set):
@@ -96,32 +73,32 @@ def maxpool2d(x, k=2):
                           padding='SAME')
 
 
-# Create model
-def conv_net(x, weights, biases, dropout):
-    # Reshape input picture
-    x = tf.reshape(x, shape=[-1, image_width, image_height, 4])
-
-    # Convolution Layer
-    conv1 = conv2d(x, weights['wc1'], biases['bc1'])
-    # Max Pooling (down-sampling)
-    conv1 = maxpool2d(conv1, k=2)
-
-    # Convolution Layer
-    conv2 = conv2d(conv1, weights['wc2'], biases['bc2'])
-    # Max Pooling (down-sampling)
-    conv2 = maxpool2d(conv2, k=2)
-
-    # Fully connected layer
-    # Reshape conv2 output to fit fully connected layer input
-    fc1 = tf.reshape(conv2, [-1, weights['wd1'].get_shape().as_list()[0]])
-    fc1 = tf.add(tf.matmul(fc1, weights['wd1']), biases['bd1'])
-    fc1 = tf.nn.relu(fc1)
-    # Apply Dropout
-    fc1 = tf.nn.dropout(fc1, dropout)
-
-    # Output, class prediction
-    out = tf.add(tf.matmul(fc1, weights['out']), biases['out'])
-    return out
+# # Create model
+# def conv_net(x, weights, biases, dropout):
+#     # Reshape input picture
+#     x = tf.reshape(x, shape=[-1, image_width, image_height, 4])
+#
+#     # Convolution Layer
+#     conv1 = conv2d(x, weights['wc1'], biases['bc1'])
+#     # Max Pooling (down-sampling)
+#     conv1 = maxpool2d(conv1, k=2)
+#
+#     # Convolution Layer
+#     conv2 = conv2d(conv1, weights['wc2'], biases['bc2'])
+#     # Max Pooling (down-sampling)
+#     conv2 = maxpool2d(conv2, k=2)
+#
+#     # Fully connected layer
+#     # Reshape conv2 output to fit fully connected layer input
+#     fc1 = tf.reshape(conv2, [-1, weights['wd1'].get_shape().as_list()[0]])
+#     fc1 = tf.add(tf.matmul(fc1, weights['wd1']), biases['bd1'])
+#     fc1 = tf.nn.relu(fc1)
+#     # Apply Dropout
+#     fc1 = tf.nn.dropout(fc1, dropout)
+#
+#     # Output, class prediction
+#     out = tf.add(tf.matmul(fc1, weights['out']), biases['out'])
+#     return out
 
 
 def get_classifier():
@@ -139,7 +116,7 @@ def get_classifier():
 
 
 def get_conv_model(features, labels, mode, params):
-    parent_scope = "cnn"
+    parent_scope = "cnn"  # TODO Need to have two: one for expand, one for conquer
 
     features = _get_feature_dict(features)
     head = params.get("head")
@@ -242,11 +219,13 @@ def get_conv_classifier():
 
 
 def load_data_from_pickle():
-    filenames = filter(lambda name: name.endswith('.pickle'), os.listdir("./data"))
-    filename = list(filenames)[0]
-    pickle_path = os.path.join('data', filename)
-
-    return load_dataset(pickle_path)
+    # filenames = filter(lambda name: name.endswith('.pickle'), os.listdir("./data"))
+    # filename = list(filenames)[0]
+    # pickle_path = os.path.join('data', filename)
+    pickle_path = "data/data.pickle"
+    with open(pickle_path, 'rb') as f:
+        save = pickle.load(f)
+        return save
 
 
 def main():
@@ -255,34 +234,35 @@ def main():
     if not os.path.exists("saved_model"):
         os.makedirs("saved_model")
 
-    datasets = load_data_from_pickle()
+    data = load_data_from_pickle()
+    expand_data = data['expand_data']
 
     classifier = get_conv_classifier()
     max_score = 0
     while not stop_when_finish:
-        classifier.fit(x=datasets.train.data,
-                       y=datasets.train.target,
+        classifier.fit(x=expand_data['train_data'],
+                       y=expand_data['train_labels'],
                        # batch_size=150,
                        # monitors=[get_validation_monitor(datasets.test)],
                        steps=1000)
 
-        score = classifier.score(x=datasets.test.data,
-                                 y=datasets.test.target)["accuracy"]
+        score = classifier.score(x=expand_data['test_data'],
+                                 y=expand_data['test_labels'])["accuracy"]
         print("Accuracy: {0:f}".format(score))
 
         if score > max_score:
             max_score = score
-        elif max_score > (score + 0.001):
+        elif max_score > (score + 0.1):
             print("ARR going down!!")
-            # stop_when_finish = True
+            stop_when_finish = True
         print('Test Accuracy: {0:f}%'.format(score * 100))
     analise()
 
 
 def analise():
     datasets = load_data_from_pickle()
-    classifier = get_classifier()
-    given_answers = list(classifier.predict(datasets.test.data))
+    classifier = get_conv_classifier()
+    given_answers = list(classifier.predict(datasets.test.data)['classes'])
 
     wrong_answer_buckets = np.zeros(5)
     for i, test_data in enumerate(datasets.test.data):

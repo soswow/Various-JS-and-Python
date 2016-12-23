@@ -7,7 +7,7 @@ import sys
 import hlt
 import random
 from hlt import Move
-from machine_learning import get_classifier
+from machine_learning import get_conv_classifier
 from process_replay import kernel_size
 import numpy as np
 import time
@@ -20,15 +20,17 @@ def convert_to_float32(images):
     images = images.astype(np.float32)
     return np.multiply(images, 1.0 / 255.0)
 
+max_production = None
 
 class Solver:
     def __init__(self, own_id, game_map):
-        self.classifier = get_classifier()
+        self.classifier = get_conv_classifier()
         self.own_id = own_id
         self.game_map = game_map
 
     def convert_square_to_model_format(self, square):
         x, y, owner, strength, production = square
+        production = (production / max_production) * 255
         if owner == self.own_id:
             owner_type = 0
         elif owner == 0:
@@ -51,22 +53,23 @@ class Solver:
             [self.get_section(square) for square in my_squares]
         )
 
-        # start = time.clock()
-        # x = convert_to_float32(sections)
-        predicted_moves = list(self.classifier.predict(sections))
-        for i, move in enumerate(predicted_moves):
-            if random.random() > 0.9:
-                predicted_moves[i] = random.choice((hlt.NORTH, hlt.EAST, hlt.SOUTH, hlt.WEST, hlt.STILL))
+        predicted_moves = list(self.classifier.predict(sections)['classes'])
 
         return [Move(square=square, direction=predicted_moves[i]) for i, square in enumerate(my_squares)]
 
+    def get_max_production(self):
+        return max([square.production for square in self.game_map])
+
 
 def main():
+    global max_production
     own_id, game_map = hlt.get_init()
     hlt.send_init("MyMLBot")
     solver = Solver(own_id, game_map)
     while True:
         game_map.get_frame()
+        if max_production is None:
+            max_production = solver.get_max_production()
         moves = solver.process_frame()
         hlt.send_frame(moves)
 

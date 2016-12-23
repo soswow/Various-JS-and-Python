@@ -1,6 +1,8 @@
 import numpy as np
 import json
 
+from hlt import STILL
+
 
 class Replay:
     def __init__(self, path):
@@ -19,9 +21,6 @@ class Replay:
         self.winner = None
         self.winner_index = None
         self.max_production = 0
-        #final result
-        self.sections = None
-        self.labels = None
 
     def load(self):
         with open(self.path, 'r') as data_file:
@@ -53,7 +52,7 @@ class Replay:
         res = np.zeros((self.height, self.width, 3))
         for y in range(self.height):
             for x in range(self.width):
-                # 0 owner type (0 - my, 100 - map, 200 - enemy)
+                # 0 owner type (0 - my, 127 - map, 255 - enemy)
                 # 1 production
                 # 3 strength
                 site = self.frames[frame_index][y][x]
@@ -78,36 +77,55 @@ class Replay:
         padding = ((0, 0), (ext_size, ext_size), (ext_size, ext_size), (0, 0))
         self.combined_data_padded = np.pad(self.combined_data, padding, 'wrap')
 
+    def find_sections_count_before_first_collision(self):
+        moves_counter = 0
+        for frame_index, frame in enumerate(self.frames[:-1]):
+            for y in range(self.height):
+                for x in range(self.width):
+                    owner_id, strength = frame[y][x]
+                    if owner_id == 0:
+                        continue
+                    moves_counter += 1
+
+                    move = self.moves[frame_index][y][x]
+                    dx, dy = ((0, -1), (1, 0), (0, 1), (-1, 0), (0, 0))[move]
+                    move_to_owner_id = self.frames[frame_index + 1][(y + dy) % self.height][(x + dx) % self.width][0]
+                    if owner_id != move_to_owner_id and move_to_owner_id != 0:
+                        return moves_counter
+
     def get_section(self, frame_index, y, x):
         if self.combined_data_padded is None:
             raise Exception("First call replay.prepare_padded_arrays()")
         return self.combined_data_padded[frame_index][y:y + self.kernel_size, x:x + self.kernel_size]
 
-    def own_locations_generator(self):
+    def locations_generator(self, own=True):
         for frame_index, frame in enumerate(self.combined_data):
             for y in range(self.height):
                 for x in range(self.width):
                     owner_type, production, strength = frame[y][x]
-                    if owner_type == 0:
+                    if own and owner_type == 0:  # If own requested and it is own
+                        yield frame_index, y, x
+                    elif not own and owner_type == 255:  # If not own only requested and it's enemies
                         yield frame_index, y, x
 
-    def own_sections_generator(self):
-        for frame_index, y, x in self.own_locations_generator():
+    def sections_generator(self, own=True):
+        for frame_index, y, x in self.locations_generator(own=own):
             if frame_index < len(self.moves):
                 # We want all moves in the first part of the game and then sparsely
-                if frame_index < 40 or frame_index % 2 == 0:
-                    yield self.get_section(frame_index, y, x)
+                # if frame_index < 40 or frame_index % 2 == 0:
+                yield self.get_section(frame_index, y, x)
 
-    def own_labels_generator(self):
-        for frame_index, y, x in self.own_locations_generator():
+    def labels_generator(self, own=True):
+        for frame_index, y, x in self.locations_generator(own=own):
             if frame_index < len(self.moves):
                 # We want all moves in the first part of the game and then sparsely
-                if frame_index < 40 or frame_index % 2 == 0:
-                    yield self.moves[frame_index][y][x]
+                # if frame_index < 40 or frame_index % 2 == 0:
+                yield self.moves[frame_index][y][x]
 
-    def load_sections_and_labels(self):
-        self.sections = np.array(list(self.own_sections_generator()))
-        self.labels = np.array(list(self.own_labels_generator()))
+    def get_sections_and_labels(self, own=True):
+        sections = np.array(list(self.sections_generator(own)))
+        labels = np.array(list(self.labels_generator(own)))
+        return sections, labels
 
     def __str__(self):
         return "W: %d, H: %d, #Players: %d, #Frames: %d, Winner: %s (%d)\nUsers: %s\nMax Production: %d" % (
