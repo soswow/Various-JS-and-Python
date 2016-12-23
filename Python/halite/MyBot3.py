@@ -115,6 +115,17 @@ def make_move(square):
     if strength == 0:
         return Move(square, STILL)
 
+    not_my_neighbors = [neighbor for neighbor in game_map.neighbors(square, n=7) if not is_enemy(neighbor) and not is_neutral(neighbor)]
+
+    # Go Radially from origin location if enough
+    if len(not_my_neighbors) == 0 and is_mature_to_start_moving_radially_out(strength):
+        return Move(square, direction_from_to_square(game_map, origin_square, square))
+
+    close_range_enemy_neighbors = [neighbor for neighbor in game_map.neighbors(square, n=7) if is_enemy(neighbor)]
+    if len(close_range_enemy_neighbors) > 0 and is_mature_for_close_range_battle(strength):
+        return Move(square, direction_from_to_square(game_map, square, close_range_enemy_neighbors[0]))
+
+
     immediate_enemy_neighbors = [(neighbor, dir) for dir, neighbor in enumerate(game_map.neighbors(square))
                                  if is_enemy(neighbor) and neighbor.production > 0]
     if len(immediate_enemy_neighbors) > 0:
@@ -125,24 +136,18 @@ def make_move(square):
     if len(immediate_neutral_neighbors) > 0:
         return expand_move(square, immediate_neutral_neighbors)
 
-    close_range_enemy_neighbors = [neighbor for neighbor in game_map.neighbors(square, n=5) if is_enemy(neighbor)]
-    if len(close_range_enemy_neighbors) > 0 and is_mature_for_close_range_battle(strength):
-        return Move(square, direction_from_to_square(game_map, square, close_range_enemy_neighbors[0]))
-
-    close_range_neutral_neighbors = [neighbor for neighbor in game_map.neighbors(square, n=5) if is_neutral(neighbor)]
+    close_range_neutral_neighbors = [neighbor for neighbor in game_map.neighbors(square, n=7) if is_neutral(neighbor)]
     if len(close_range_neutral_neighbors) > 0 and is_mature_for_close_range_conquer(strength):
         best_neighbor = choose_best_neutral(close_range_neutral_neighbors, square)
         return Move(square, direction_from_to_square(game_map, square, best_neighbor))
 
-    # Go Radially from origin location if enough
-    if is_mature_to_start_moving_radially_out(strength):
-        return Move(square, direction_from_to_square(game_map, origin_square, square))
+
 
     return Move(square, STILL)
 
 
 my_id, game_map = get_init()
-send_init("Worse bot")
+send_init("Better bot")
 
 origin_square = None
 while True:
