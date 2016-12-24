@@ -26,6 +26,7 @@ from tensorflow.python.training.rmsprop import RMSPropOptimizer
 
 logging.getLogger().setLevel(logging.INFO)
 
+
 # num_labels = 5
 # image_width = image_size
 # image_height = image_size
@@ -34,6 +35,7 @@ logging.getLogger().setLevel(logging.INFO)
 def convert_to_float32(images):
     images = images.astype(np.float32)
     return np.multiply(images, 1.0 / 255.0)
+
 
 #
 # def get_validation_monitor(test_set):
@@ -118,7 +120,7 @@ def get_classifier():
 def get_conv_model(features, labels, mode, params):
     parent_scope = "cnn"  # TODO Need to have two: one for expand, one for conquer
 
-    features = _get_feature_dict(features)
+    # features = _get_feature_dict(features)
     head = params.get("head")
     feature_columns = params.get("feature_columns")
     activation_fn = params.get("activation_fn")
@@ -126,27 +128,46 @@ def get_conv_model(features, labels, mode, params):
     learning_rate = params.get("learning_rate")
     optimizer = params.get("optimizer")
 
-    with variable_scope.variable_scope(
-                    parent_scope + "/input_from_feature_columns",
-            values=features.values()) as scope:
-        net = layers.input_from_feature_columns(
-            columns_to_tensors=features,
-            feature_columns=feature_columns,
-            weight_collections=[parent_scope],
-            scope=scope)
+    # with variable_scope.variable_scope(
+    #                 parent_scope + "/input_from_feature_columns",
+    #         values=features.values()) as scope:
+    #     net = layers.input_from_feature_columns(
+    #         columns_to_tensors=features,
+    #         feature_columns=feature_columns,
+    #         weight_collections=[parent_scope],
+    #         scope=scope)
 
     with variable_scope.variable_scope(
                     parent_scope + "/convlayer_1",
-            values=features.values()) as scope:
-        net = layers.conv2d(net, 64, 3,
+            values=[features]) as scope:
+        net = layers.conv2d(features,
+                            num_outputs=32,
+                            kernel_size=3,
                             variables_collections=[parent_scope],
                             scope=scope)
         net = layers.max_pool2d(net, 2,
-                          stride=1,
-                          padding='SAME',
-                          scope=scope)
+                                stride=1,
+                                padding='SAME')
 
-    tf.reshape(net, [-1, net.get_shape().as_list()[0]])
+    with variable_scope.variable_scope(
+                    parent_scope + "/convlayer_2",
+            values=[features]) as scope:
+        net = layers.conv2d(features,
+                            num_outputs=64,
+                            kernel_size=5,
+                            padding='VALID',
+                            variables_collections=[parent_scope],
+                            scope=scope)
+        # net = layers.max_pool2d(net, 1,
+        #                         stride=1,
+        #                         padding='SAME')
+    #
+    # with variable_scope.variable_scope(
+    #                 parent_scope + "/max_pool_1",
+    #         values=[net]) as scope:
+
+    shape = net.get_shape()
+    net = tf.reshape(net, [-1, shape[3].value], name="reshape_1")
 
     hidden_units = [256, 128]
     for layer_id, num_hidden_units in enumerate(hidden_units):
@@ -238,6 +259,9 @@ def load_data_from_pickle():
     pickle_path = "data/data.pickle"
     with open(pickle_path, 'rb') as f:
         save = pickle.load(f)
+        save['expand_data']['train_data'] = convert_to_float32(save['expand_data']['train_data'])
+        save['expand_data']['test_data'] = convert_to_float32(save['expand_data']['test_data'])
+        # save['expand_data']['train_data'] = convert_to_float32(save['expand_data']['train_data'])
         return save
 
 
@@ -255,9 +279,9 @@ def main():
     while not stop_when_finish:
         classifier.fit(x=expand_data['train_data'],
                        y=expand_data['train_labels'],
-                       batch_size=200,
+                       batch_size=100,
                        # monitors=[get_validation_monitor(datasets.test)],
-                       steps=2000)
+                       steps=1000)
 
         score = classifier.score(x=expand_data['test_data'],
                                  y=expand_data['test_labels'])["accuracy"]
