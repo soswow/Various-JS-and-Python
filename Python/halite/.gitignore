@@ -1,0 +1,6 @@
+*.hlt
+*.log
+*.pyc
+__pycache__/
+data/
+saved_model/

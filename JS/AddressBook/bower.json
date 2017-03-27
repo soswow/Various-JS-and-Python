@@ -9,7 +9,8 @@
     "Backbone.localStorage": "~1.1.6",
     "underscore": "~1.5.1",
     "underscore.string": "~2.3.3",
-    "bootstrap-select": "*"
+    "bootstrap-select": "*",
+    "jasmine-underscore": "*"
   },
   "devDependencies": {}
 }
