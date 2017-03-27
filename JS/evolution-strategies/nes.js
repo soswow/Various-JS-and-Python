@@ -116,18 +116,37 @@ const clearContext = () => {
     context.clearRect(0,0,W,H);
 }
 
-const main = () => {
-    const G1 = makeG(0.3, -0.3, 4);
-    const G2 = makeG(-0.3, 0.3, 2);
-    const G3 = makeG(0.6, 0.6, 2);
-    const G4 = makeG(-0.4, -0.2, 3);
+const randomG = () => {
+    const x = math.random() * 2 - 1;
+    const y = math.random() * 2 - 1;
+    const sigma = math.randomInt(3) + 1;
+    return makeG(x,y,sigma);
+}
 
-    const G = math.subtract(math.subtract(math.add(G1, G2), G3), G4);
+const main = () => {
+    let G = null;
+    for (let i=0; i<3; i++) {
+        if (G === null) { 
+            G = randomG();
+        } else {
+            G = math.add(G, randomG());
+        }
+    }
+    for (let i=0; i<3; i++) {
+        G = math.subtract(G, randomG());
+    }
+    // const G1 = makeG(0.3, -0.3, 4);
+    // const G2 = makeG(-0.3, 0.3, 2);
+    // const G3 = makeG(0.6, 0.6, 2);
+    // const G4 = makeG(-0.4, -0.2, 3);
+
+    // const G = math.subtract(math.subtract(math.add(G1, G2), G3), G4);
     
-    const nn = 22;
+    const nn = 40;
     const alpha = 0.03;
     const sigma = 15;
-    let w = [350, 300]; // 70/100 * 500
+    let w = [math.randomInt(W-sigma*4)+sigma*2, math.randomInt(H-sigma*4)+sigma*2];
+    console.log(w);
 
     const points = [];
     const samplePoints = [];
@@ -138,7 +157,7 @@ const main = () => {
         
         samplePoints.push(wp.toArray());
 
-        let R = wp.toArray().map(([x,y]) => G.get([Math.round(y), Math.round(x)]));
+        let R = wp.toArray().map(([x,y]) => G.get([Math.round(y>0?y:0), Math.round(x>0?x:0)]));
         R = math.subtract(R, math.mean(R));
         R = math.dotDivide(R, math.std(R));
         g = math.multiply([R], noise)
