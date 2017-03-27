@@ -9,14 +9,14 @@ const W = 500;
 const H = 500;
 const canvas = document.getElementById('data');
 canvas.width = W;
-canvas.height = H; 
+canvas.height = H;
 const context = canvas.getContext('2d');
 context.width = W;
 context.height = H;
 
 const canvas2 = document.getElementById('main');
 canvas2.width = W;
-canvas2.height = H; 
+canvas2.height = H;
 const context2 = canvas2.getContext('2d');
 context2.width = W;
 context2.height = H;
@@ -96,11 +96,11 @@ const makeG = (mux, muy, sigma) => {
     return G;
 }
 
-const drawPoints = (points, fillStyle="rgba(0,0,0,120)", size=3) => points.forEach(([x, y]) => {
-   context.beginPath();
-   context.fillStyle = fillStyle;
-   context.arc(x, y, size, 0, 2 * Math.PI, false);
-   context.fill();
+const drawPoints = (points, fillStyle = "rgba(0,0,0,120)", size = 3) => points.forEach(([x, y]) => {
+    context.beginPath();
+    context.fillStyle = fillStyle;
+    context.arc(x, y, size, 0, 2 * Math.PI, false);
+    context.fill();
 });
 
 const drawArrow = (pFrom, pTo) => {
@@ -113,71 +113,77 @@ const drawArrow = (pFrom, pTo) => {
 }
 
 const clearContext = () => {
-    context.clearRect(0,0,W,H);
+    context.clearRect(0, 0, W, H);
 }
 
 const randomG = () => {
     const x = math.random() * 2 - 1;
     const y = math.random() * 2 - 1;
     const sigma = math.randomInt(3) + 1;
-    return makeG(x,y,sigma);
+    return makeG(x, y, sigma);
+}
+
+const clipValue = (val, min, max) => {
+    if (val > max) {
+        return max;
+    } else if (val < min) {
+        return min;
+    } else {
+        return val;
+    }
 }
 
 const main = () => {
     let G = null;
-    for (let i=0; i<3; i++) {
-        if (G === null) { 
+    for (let i = 0; i < 3; i++) {
+        if (G === null) {
             G = randomG();
         } else {
             G = math.add(G, randomG());
         }
     }
-    for (let i=0; i<3; i++) {
+    for (let i = 0; i < 3; i++) {
         G = math.subtract(G, randomG());
     }
-    // const G1 = makeG(0.3, -0.3, 4);
-    // const G2 = makeG(-0.3, 0.3, 2);
-    // const G3 = makeG(0.6, 0.6, 2);
-    // const G4 = makeG(-0.4, -0.2, 3);
 
-    // const G = math.subtract(math.subtract(math.add(G1, G2), G3), G4);
-    
-    const nn = 40;
     const alpha = 0.03;
     const sigma = 15;
-    let w = [math.randomInt(W-sigma*4)+sigma*2, math.randomInt(H-sigma*4)+sigma*2];
+    let w = [math.randomInt(W - sigma * 4) + sigma * 2, math.randomInt(H - sigma * 4) + sigma * 2];
     console.log(w);
 
     const points = [];
     const samplePoints = [];
-
-    math2.range(0, nn).forEach(() => {
+    let minimumFound = false;
+    while (!minimumFound) {
         const noise = math.add(math.multiply(initRandomMatrix(200, 2), 4), -2);
         const wp = math.add(math.dotMultiply(sigma, noise), math.multiply(math.ones(200, 1), [w]));
-        
+
         samplePoints.push(wp.toArray());
 
-        let R = wp.toArray().map(([x,y]) => G.get([Math.round(y>0?y:0), Math.round(x>0?x:0)]));
+        let R = wp.toArray().map(([x, y]) => G.get([Math.round(clipValue(y, 0, H)), Math.round(clipValue(x, 0, W))]));
         R = math.subtract(R, math.mean(R));
         R = math.dotDivide(R, math.std(R));
         g = math.multiply([R], noise)
 
-        const u =math.dotMultiply(g, alpha).toArray()[0];
+        const u = math.dotMultiply(g, alpha).toArray()[0];
         points.push(w);
         w = math.add(w, u);
-    });
+        if (points.length > 5 && math.distance(points[points.length - 1], points[points.length - 6]) < 5) {
+            minimumFound = true;
+        }
+    }
 
     let frameIndex = 0;
     renderMatrix(G);
     const frame = () => {
         clearContext();
         drawPoints(samplePoints[frameIndex]);
-        drawPoints([points[frameIndex]], fillStyle="red", size=3)
-        for (let i=1; i<=frameIndex; i++) {
-            drawArrow(points[i-1], points[i]);
+        drawPoints([points[frameIndex]], fillStyle = "red", size = 3)
+        for (let i = 1; i <= frameIndex; i++) {
+            drawArrow(points[i - 1], points[i]);
         }
         frameIndex += 1;
-        if (frameIndex == nn) {
+        if (frameIndex == points.length) {
             frameIndex = 0;
         }
         setTimeout(frame, 50);
