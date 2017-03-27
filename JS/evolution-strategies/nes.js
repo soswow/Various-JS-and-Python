@@ -73,28 +73,20 @@ const linspace = (start, end, size) => {
     return math2.range(0, size).map((el) => start + el * interval);
 }
 
-const makeG = (mux, muy, sigma) => {
-    const size = W;
-    const linSpace = linspace(-1, 1, size);
 
-    const X = math.multiply(math.ones(size, 1), [linSpace]);
-    const Y = math.multiply(math.reshape(linSpace, [size, 1]), math.ones(1, size))
-
-    const G = math.exp(
+const _linSpace = linspace(-1, 1, W);
+const _X = math.multiply(math.ones(W, 1), [_linSpace]);
+const _Y = math.multiply(math.reshape(_linSpace, [W, 1]), math.ones(1, W))
+const makeG = (mux, muy, sigma) => 
+    math.exp(
         math.dotMultiply(
-            math.dotDivide(
-                math.dotMultiply(
-                    math.add(
-                        math.dotPow(math.subtract(X, mux), 2),
-                        math.dotPow(math.subtract(Y, muy), 2)
-                    ), -1
-                ), 2
+            math.add(
+                math.dotPow(math.subtract(_X, mux), 2),
+                math.dotPow(math.subtract(_Y, muy), 2)
             ),
-            Math.pow(sigma, 2)
+            -1/2 * Math.pow(sigma, 2)
         )
     );
-    return G;
-}
 
 const drawPoints = (points, fillStyle = "rgba(0,0,0,120)", size = 3) => points.forEach(([x, y]) => {
     context.beginPath();
