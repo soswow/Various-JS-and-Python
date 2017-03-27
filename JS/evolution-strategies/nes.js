@@ -160,7 +160,13 @@ const main = () => {
 
         samplePoints.push(wp.toArray());
 
-        let R = wp.toArray().map(([x, y]) => G.get([Math.round(clipValue(y, 0, H)), Math.round(clipValue(x, 0, W))]));
+        let R = wp.toArray().map(([x, y]) =>
+            G.get(
+                [
+                    Math.round(clipValue(y, 0, H - 1)),
+                    Math.round(clipValue(x, 0, W - 1))
+                ])
+        );
         R = math.subtract(R, math.mean(R));
         R = math.dotDivide(R, math.std(R));
         g = math.multiply([R], noise)
