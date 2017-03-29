@@ -52,6 +52,7 @@ const illustratePoints = (points) =>
         context.fill();
     });
 
+
 const renderMatrix = (matrix) => {
     const imageData = context2.createImageData(W, H);
     const totalMax = Math.max(math.max(matrix), Math.abs(math.min(matrix)));
@@ -77,16 +78,24 @@ const linspace = (start, end, size) => {
 const _linSpace = linspace(-1, 1, W);
 const _X = math.multiply(math.ones(W, 1), [_linSpace]);
 const _Y = math.multiply(math.reshape(_linSpace, [W, 1]), math.ones(1, W))
-const makeG = (mux, muy, sigma) => 
-    math.exp(
-        math.dotMultiply(
-            math.add(
-                math.dotPow(math.subtract(_X, mux), 2),
-                math.dotPow(math.subtract(_Y, muy), 2)
-            ),
-            -1/2 * Math.pow(sigma, 2)
-        )
-    );
+var gpu = new GPU();
+
+if (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) {
+    mode = 'gpu';
+} else {
+    mode = 'cpu';
+}
+
+var myFunc = gpu.createKernel(function (A, k, mux, muy) {
+    var m = Math.pow(A[this.thread.x] - mux, 2) + Math.pow(A[this.thread.y] - muy, 2);
+    return Math.exp(m * k);
+}, { mode }).dimensions([W, H]);
+
+const makeG = (mux, muy, sigma) => {
+    const k = -1 / 2 * Math.pow(sigma, 2);
+    const data = myFunc(_linSpace, k, mux, muy);
+    return math.matrix(Array.prototype.map.call(data, (row) => Array.prototype.slice.call(row)));
+}
 
 const drawPoints = (points, fillStyle = "rgba(0,0,0,120)", size = 3) => points.forEach(([x, y]) => {
     context.beginPath();
@@ -190,4 +199,7 @@ const main = () => {
     frame();
 }
 
+// const G = randomG();
+// console.log(G);
+// renderMatrix(G);
 main();
