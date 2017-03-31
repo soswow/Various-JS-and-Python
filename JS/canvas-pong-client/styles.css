@@ -1,7 +1,10 @@
 body, html {
-    /*height: 100%;*/
-    /*width: 100%;*/
+    color: white;
     background: rgb(30,30,30);
+}
+
+.centered{
+    text-align: center;
 }
 
 #main {
