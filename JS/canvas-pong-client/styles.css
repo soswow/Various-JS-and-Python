@@ -1,0 +1,11 @@
+body, html {
+    /*height: 100%;*/
+    /*width: 100%;*/
+    background: rgb(30,30,30);
+}
+
+#main {
+    margin: 0 auto;
+    display: block;
+    position: relative;
+}

@@ -7,6 +7,9 @@ const math2 = math.create({
 
 const W = 500;
 const H = 500;
+const sampleSize = 50;
+const samplesArea = 30;
+const learningRate = 0.1;
 const canvas = document.getElementById('data');
 canvas.width = W;
 canvas.height = H;
@@ -147,17 +150,16 @@ const main = () => {
         G = math.subtract(G, randomG());
     }
 
-    const alpha = 0.03;
-    const sigma = 15;
+    const alpha = learningRate;
+    const sigma = samplesArea;
     let w = [math.randomInt(W - sigma * 4) + sigma * 2, math.randomInt(H - sigma * 4) + sigma * 2];
-    console.log(w);
 
     const points = [];
     const samplePoints = [];
     let minimumFound = false;
     while (!minimumFound) {
-        const noise = math.add(math.multiply(initRandomMatrix(200, 2), 4), -2);
-        const wp = math.add(math.dotMultiply(sigma, noise), math.multiply(math.ones(200, 1), [w]));
+        const noise = math.add(math.multiply(initRandomMatrix(sampleSize, 2), 4), -2);
+        const wp = math.add(math.dotMultiply(sigma, noise), math.multiply(math.ones(sampleSize, 1), [w]));
 
         samplePoints.push(wp.toArray());
 
@@ -175,7 +177,7 @@ const main = () => {
         const u = math.dotMultiply(g, alpha).toArray()[0];
         points.push(w);
         w = math.add(w, u);
-        if (points.length > 5 && math.distance(points[points.length - 1], points[points.length - 6]) < 5) {
+        if (points.length > 5 && math.distance(points[points.length - 1], points[points.length - 6]) < 2) {
             minimumFound = true;
         }
     }
