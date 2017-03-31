@@ -207,6 +207,9 @@ const PLAYER1_ARROWDOWN_KEY_CODE = 83;
 const PLAYER2_ARROWUP_KEY_CODE = 38;
 const PLAYER2_ARROWDOWN_KEY_CODE = 40;
 
+const timeAverage = [0,0,0,0,0,0,0,0,0,0];
+const timeElement = document.getElementById('time');
+
 const redraw = () => {
     if (keysPressed[PLAYER1_ARROWUP_KEY_CODE]) {
         pong.move(PLAYER1, UP);
@@ -221,8 +224,17 @@ const redraw = () => {
         pong.move(PLAYER2, DOWN);
     }
 
+    const start = Date.now();
     pong.tick();
     pong.drawGame(context);
+    const imageData = context.getImageData(0,0,W,H);
+    const time = Date.now() - start;
+
+    timeAverage.push(time);
+    timeAverage.shift();
+    const avgTime = timeAverage.reduce((memo, el) => el + memo, 0) / timeAverage.length;
+    timeElement.innerHTML = avgTime.toFixed(3);
+
     requestAnimationFrame(redraw);
 }
 
