@@ -141,7 +141,7 @@ class PongGame {
         this.ball.x = this.ball.x + Math.cos(this.ball.angle - DEG90) * this.ball.speed;
         this.ball.y = this.ball.y + Math.sin(this.ball.angle - DEG90) * this.ball.speed;
     }
-    
+
     generateDigit(digit, x, y) {
         const t = 10;
         const h = 100;
@@ -272,7 +272,6 @@ class PongGame {
             whiteRects.push(...digitRects);
         });
         
-
         const data = new Int8Array(this.width * this.height);
         
         whiteRects.forEach(([xStart, yStart, width, height]) => {
@@ -294,6 +293,11 @@ class PongGame {
                 imageData.data[i * 4] = 255;
                 imageData.data[i * 4 + 1] = 255;
                 imageData.data[i * 4 + 2] = 255;
+                imageData.data[i * 4 + 3] = 255;
+            }else{
+                imageData.data[i * 4] = 0;
+                imageData.data[i * 4 + 1] = 0;
+                imageData.data[i * 4 + 2] = 0;
                 imageData.data[i * 4 + 3] = 255;
             }
         }
