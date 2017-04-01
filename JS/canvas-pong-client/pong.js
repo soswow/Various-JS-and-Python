@@ -112,12 +112,12 @@ class PongGame {
         }
 
         if (this.ball.x - BALL_SIZE / 2 < PADDLE_DEPTH) {
-            const isPaddleCollision = 
-                this.getPaddleTop(PLAYER1) < this.ball.y && 
+            const isPaddleCollision =
+                this.getPaddleTop(PLAYER1) < this.ball.y &&
                 this.getPaddleBottom(PLAYER1) > this.ball.y;
             this.ball.x = PADDLE_DEPTH + BALL_SIZE / 2;
             if (isPaddleCollision) {
-                const contactPoint =  this.paddles[PLAYER1] - this.ball.y;
+                const contactPoint = this.paddles[PLAYER1] - this.ball.y;
                 this.ball.angle = DEG90 - (contactPoint * 2 / PADDLE_SIZE) * PADDLE_MAX_REFLECT_ANGLE;
             } else {
                 this.score[PLAYER2] += 1;
@@ -125,12 +125,12 @@ class PongGame {
             }
         }
         if (this.ball.x + BALL_SIZE / 2 > this.width - PADDLE_DEPTH) {
-            const isPaddleCollision = 
+            const isPaddleCollision =
                 this.getPaddleTop(PLAYER2) < this.ball.y &&
                 this.getPaddleBottom(PLAYER2) > this.ball.y;
             this.ball.x = this.width - PADDLE_DEPTH - BALL_SIZE / 2;
             if (isPaddleCollision) {
-                const contactPoint =  this.paddles[PLAYER2] - this.ball.y;
+                const contactPoint = this.paddles[PLAYER2] - this.ball.y;
                 this.ball.angle = DEG270 + (contactPoint * 2 / PADDLE_SIZE) * PADDLE_MAX_REFLECT_ANGLE;
             } else {
                 this.score[PLAYER1] += 1;
@@ -139,62 +139,166 @@ class PongGame {
         }
 
         this.ball.x = this.ball.x + Math.cos(this.ball.angle - DEG90) * this.ball.speed;
-        this.ball.y = this.ball.y + Math.sin(this.ball.angle - DEG90) * this.ball.speed;        
+        this.ball.y = this.ball.y + Math.sin(this.ball.angle - DEG90) * this.ball.speed;
     }
+    
+    generateDigit(digit, x, y) {
+        const t = 10;
+        const h = 100;
+        const w = 50;
+        const fullLeft = [x,y,t,h];
+        const fullRight = [x + w-t, y, t, h];
+        const top = [x,y,w,t];
+        const middle = [x,y+h/2-t,w,t];
+        const bottom = [x,y+h-t, w, t];
+        const topHalfRight = [x + w-t, y, t, h/2];
+        const topHalfLeft = [x, y, t, h/2];
+        const bottomHalfLeft = [x,y+h/2-t,t,h/2];
+        const bottomHalfRight = [x+w-t,y+h/2-t,t,h/2];
 
-    drawBall() {
-        const x = this.ball.x - BALL_SIZE / 2;
-        const y = this.ball.y - BALL_SIZE / 2;
-        this.context.beginPath();
-        context.rect(x, y, BALL_SIZE, BALL_SIZE);
-        this.context.fill();
-    }
-
-    drawPaddle(player) {
-        const x = player === PLAYER1 ? 0 : this.width - PADDLE_DEPTH;
-        const y = this.paddles[player] - PADDLE_SIZE / 2;
-        this.context.beginPath();
-        this.context.rect(x, y, PADDLE_DEPTH, PADDLE_SIZE);
-        this.context.fill();
-    }
-
-    drawDevider() {
-        this.context.beginPath();
-        this.context.setLineDash([10, 10]);
-        this.context.lineWidth = PADDLE_DEPTH / 2;
-        this.context.moveTo(this.width / 2, 0);
-        this.context.lineTo(this.width / 2, this.height);
-        this.context.stroke();
-    }
-
-    drawScore(player) {
-        const y = 75;
-        let x = player == PLAYER1 ? 60 : this.width - 60 - 55;
-        if (this.score[player] > 99) {
-            x -= 95;
+        if(digit === 0 || digit === '0') {
+            return [
+                fullLeft,
+                fullRight,
+                top,
+                bottom
+            ];
         }
-        this.context.beginPath();
-        this.context.font = '90px monospace';
-        this.context.fillText(this.score[player], x, y);
+        if(digit === 1 || digit === '1') {
+            return [
+                fullRight
+            ]
+        }
+        if(digit === 2 || digit === '2') {
+            return [
+                top,
+                topHalfRight,
+                middle,
+                bottomHalfLeft,
+                bottom,
+            ]
+        }
+        if(digit === 3 || digit === '3') {
+            return [
+                top,
+                middle,
+                bottom,
+                fullRight
+            ]
+        }
+        if(digit === 4 || digit === '4') {
+            return [
+                topHalfLeft,
+                middle,
+                fullRight
+            ]
+        }
+        if(digit === 5 || digit === '5') {
+            return [
+                top,
+                middle,
+                bottom,
+                topHalfLeft,
+                bottomHalfRight
+            ]
+        }
+        if(digit === 6 || digit === '6') {
+            return [
+                middle,
+                bottom,
+                fullLeft,
+                bottomHalfRight
+            ]
+        }
+        if(digit === 7 || digit === '7') {
+            return [
+                top,
+                fullRight
+            ]
+        }
+        if(digit === 8 || digit === '8') {
+            return [
+                top,
+                middle,
+                bottom,
+                fullRight,
+                fullLeft
+            ]
+        }
+        if(digit === 9 || digit === '9') {
+            return [
+                top,
+                middle,
+                fullRight,
+                topHalfLeft
+            ]
+        }
     }
 
-    clearScreen() {
-        this.context.beginPath();
-        this.context.fillStyle='black';
-        this.context.rect(0, 0, this.width, this.height);
-        this.context.fill();
+
+    generateData() {
+        const whiteRects = [
+            [   // Paddle Player 1
+                0, this.paddles[PLAYER1] - PADDLE_SIZE / 2,
+                PADDLE_DEPTH, PADDLE_SIZE
+            ],
+            [   // Paddle Player 2
+                this.width - PADDLE_DEPTH, this.paddles[PLAYER2] - PADDLE_SIZE / 2,
+                PADDLE_DEPTH, PADDLE_SIZE
+            ],
+            [   // Ball
+                Math.round(this.ball.x - BALL_SIZE / 2), Math.round(this.ball.y - BALL_SIZE / 2),
+                BALL_SIZE, BALL_SIZE
+            ]
+        ];
+        
+        const deviderLength = 10;
+        for(let i=0; i<this.height/(deviderLength*2); i++) {
+            whiteRects.push([
+                Math.round(this.width / 2 - PADDLE_DEPTH / 4), i * deviderLength * 2,
+                Math.round(PADDLE_DEPTH / 2), deviderLength
+            ]);
+        }
+        
+        const digitsPlayer1 = this.score[PLAYER1].toString().split('');
+        digitsPlayer1.reverse();
+        digitsPlayer1.forEach((s, i) => {
+            const digitRects = this.generateDigit(s, this.width / 2 - 30 - 70 * (i+1), 20);
+            whiteRects.push(...digitRects);
+        });
+        const digitsPlayer2 = this.score[PLAYER2].toString().split('');
+        digitsPlayer2.forEach((s, i) => {
+            const digitRects = this.generateDigit(s, this.width / 2 + 50 + 70 * i, 20);
+            whiteRects.push(...digitRects);
+        });
+        
+
+        const data = new Int8Array(this.width * this.height);
+        
+        whiteRects.forEach(([xStart, yStart, width, height]) => {
+            for (let y = yStart; y < yStart + height; y++) {
+                for (let x = xStart; x < xStart + width; x++) {
+                    data[y * this.width + x] = 1;
+                }
+            }
+        });
+        
+        return data;
     }
 
-    drawGame() {
-        this.clearScreen();
-        this.context.fillStyle = 'white';
-        this.context.strokeStyle = 'white';
-        this.drawBall();
-        this.drawPaddle(PLAYER1);
-        this.drawPaddle(PLAYER2);
-        this.drawScore(PLAYER1);
-        this.drawScore(PLAYER2);
-        this.drawDevider();
+    applyData(data) {
+        const imageData = this.context.createImageData(this.width, this.height);
+
+        for(let i=0;i<this.width * this.height;i++) {
+            if (data[i] > 0) {
+                imageData.data[i * 4] = 255;
+                imageData.data[i * 4 + 1] = 255;
+                imageData.data[i * 4 + 2] = 255;
+                imageData.data[i * 4 + 3] = 255;
+            }
+        }
+
+        this.context.putImageData(imageData, 0, 0);
     }
 }
 
@@ -207,7 +311,7 @@ const PLAYER1_ARROWDOWN_KEY_CODE = 83;
 const PLAYER2_ARROWUP_KEY_CODE = 38;
 const PLAYER2_ARROWDOWN_KEY_CODE = 40;
 
-const timeAverage = [0,0,0,0,0,0,0,0,0,0];
+const timeAverage = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 const timeElement = document.getElementById('time');
 
 const redraw = () => {
@@ -226,10 +330,10 @@ const redraw = () => {
 
     const start = Date.now();
     pong.tick();
-    pong.drawGame(context);
-    const imageData = context.getImageData(0,0,W,H);
+    const data = pong.generateData();
     const time = Date.now() - start;
-
+    pong.applyData(data);
+    
     timeAverage.push(time);
     timeAverage.shift();
     const avgTime = timeAverage.reduce((memo, el) => el + memo, 0) / timeAverage.length;
