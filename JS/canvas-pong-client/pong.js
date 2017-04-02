@@ -13,11 +13,13 @@ const makePongGame = function(width, height, context) {
     const PADDLE_SPEED = Math.floor(10/500 * width); // px/tick
     const PADDLE_MAX_REFLECT_ANGLE = degToRad(75);
     const DIGIT_WIDTH = Math.round(50/500 * width);
-    const DIGIT_HEIGHT = Math.round(100/500 * width);
-    const DIGIH_LINE_THICKNESS = Math.round(10/500 * width);
+    const DIGIT_HEIGHT = Math.floor(100/500 * width);
+    const DIGIT_HEIGHT_HALF = Math.floor(100/500 * width / 2);
+    const DIGIT_LINE_THICKNESS = Math.round(10/500 * width);
     const DIGIT_INIT_GAP = Math.round(30/500 * width);
     const DIGIT_CONSEQ_GAP = Math.round(20/500 * width);
     const DIGIT_TOP_PADDING = Math.round(20/500 * width);
+    const DIVIDER_LENGTH = Math.floor(10/500 * height);
     const DEG90 = degToRad(90);
     const DEG180 = degToRad(180);
     const DEG270 = degToRad(270);
@@ -148,18 +150,19 @@ const makePongGame = function(width, height, context) {
         }
 
         generateDigit(digit, x, y) {
-            const t = DIGIH_LINE_THICKNESS;
+            const t = DIGIT_LINE_THICKNESS;
             const h = DIGIT_HEIGHT;
+            const h2 = DIGIT_HEIGHT_HALF;
             const w = DIGIT_WIDTH;
             const fullLeft = [x,y,t,h];
             const fullRight = [x + w-t, y, t, h];
             const top = [x,y,w,t];
-            const middle = [x,y+h/2-t,w,t];
+            const middle = [x,y+h2-t,w,t];
             const bottom = [x,y+h-t, w, t];
-            const topHalfRight = [x + w-t, y, t, h/2];
-            const topHalfLeft = [x, y, t, h/2];
-            const bottomHalfLeft = [x,y+h/2-t,t,h/2];
-            const bottomHalfRight = [x+w-t,y+h/2-t,t,h/2];
+            const topHalfRight = [x + w-t, y, t, h2];
+            const topHalfLeft = [x, y, t, h2];
+            const bottomHalfLeft = [x,y+h2-t,t,h2];
+            const bottomHalfRight = [x+w-t,y+h2-t,t,h2];
 
             if(digit === 0 || digit === '0') {
                 return [
@@ -256,11 +259,10 @@ const makePongGame = function(width, height, context) {
                 ]
             ];
             
-            const deviderLength = 10;
-            for(let i=0; i<this.height/(deviderLength*2); i++) {
+            for(let i=0; i<this.height/(DIVIDER_LENGTH*2); i++) {
                 whiteRects.push([
-                    Math.round(this.width / 2 - PADDLE_DEPTH / 4), i * deviderLength * 2,
-                    Math.round(PADDLE_DEPTH / 2), deviderLength
+                    Math.round(this.width / 2 - PADDLE_DEPTH / 4), i * DIVIDER_LENGTH * 2,
+                    Math.round(PADDLE_DEPTH / 2), DIVIDER_LENGTH
                 ]);
             }
             

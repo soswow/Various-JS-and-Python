@@ -1,9 +1,9 @@
-const W = 210; // Original Atari Size
-const H = 160; //
+const W = 84; // Original Atari Size
+const H = 84; //
 const UP = 'UP';
 const DOWN = 'DOWN';
 
-const magnify = 2;
+const magnify = 3;
 
 const initCanvas = (id, width, height) => {
     const canvas = document.getElementById('main');
