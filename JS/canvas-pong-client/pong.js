@@ -1,10 +1,13 @@
-const W = 500;
-const H = 500;
+const W = 210; // Original Atari Size
+const H = 160; //
+
+const magnify = 2;
 
 const initCanvas = (id, width, height) => {
     const canvas = document.getElementById('main');
     canvas.width = W;
     canvas.height = H;
+    canvas.style.width = `${W * magnify}px`;
     const context = canvas.getContext('2d');
     context.width = W;
     context.height = H;
@@ -18,12 +21,20 @@ const PLAYER1 = 'player1';
 const PLAYER2 = 'player2';
 const UP = 'UP';
 const DOWN = 'DOWN';
-const BALL_SIZE = 15;
-const BALL_SPEED = 4; // px/tick
-const PADDLE_SIZE = 60;
-const PADDLE_DEPTH = 5;
-const PADDLE_SPEED = 10; // px/tick
+const BALL_SIZE = Math.round(15/500 * W);
+const BALL_SIZE_HALF = Math.round(15/500 * H / 2);
+const BALL_SPEED = Math.round(4/500 * W); // px/tick
+const PADDLE_SIZE = Math.round(60/500 * H);
+const PADDLE_SIZE_HALF = Math.round(60/500 * H / 2);
+const PADDLE_DEPTH = Math.round(5/500 * W);
+const PADDLE_SPEED = Math.floor(10/500 * W); // px/tick
 const PADDLE_MAX_REFLECT_ANGLE = degToRad(75);
+const DIGIT_WIDTH = Math.round(50/500 * W);
+const DIGIT_HEIGHT = Math.round(100/500 * W);
+const DIGIH_LINE_THICKNESS = Math.round(10/500 * W);
+const DIGIT_INIT_GAP = Math.round(30/500 * W);
+const DIGIT_CONSEQ_GAP = Math.round(20/500 * W);
+const DIGIT_TOP_PADDING = Math.round(20/500 * W);
 const DEG90 = degToRad(90);
 const DEG180 = degToRad(180);
 const DEG270 = degToRad(270);
@@ -34,29 +45,31 @@ class PongGame {
         this.context = context;
         this.width = width;
         this.height = height;
+        this.heightHalf = Math.round(this.height / 2);
+        this.widthHalf = Math.round(this.width / 2);
         // Y position of a paddle center
         this.paddles = {
-            [PLAYER1]: 0.5 * height,
-            [PLAYER2]: 0.5 * height
+            [PLAYER1]: this.heightHalf,
+            [PLAYER2]: this.heightHalf
         }
         this.score = {
             [PLAYER1]: 0,
             [PLAYER2]: 0
         }
         this.ball = {
-            x: 0.5 * height,
-            y: 0.5 * width,
+            x: this.widthHalf,
+            y: this.heightHalf,
             speed: 0,
             angle: 0  // angle in Radians. Zero is to the right.
         };
     }
 
     isPaddleAtTheTop(player) {
-        return this.paddles[player] <= PADDLE_SIZE / 2
+        return this.paddles[player] <= PADDLE_SIZE_HALF
     }
 
     isPaddleAtTheBottom(player) {
-        return this.paddles[player] >= this.height - PADDLE_SIZE / 2
+        return this.paddles[player] >= this.height - PADDLE_SIZE_HALF
     }
 
     move(player, direction) {
@@ -79,17 +92,17 @@ class PongGame {
     }
 
     getPaddleTop(player) {
-        return this.paddles[player] - PADDLE_SIZE / 2;
+        return this.paddles[player] - PADDLE_SIZE_HALF;
     }
 
     getPaddleBottom(player) {
-        return this.paddles[player] + PADDLE_SIZE / 2;
+        return this.paddles[player] + PADDLE_SIZE_HALF;
     }
 
     resetState() {
         this.ball = {
-            x: 0.5 * this.height,
-            y: 0.5 * this.width,
+            x: this.widthHalf,
+            y: this.heightHalf,
             speed: 0,
             angle: 0
         };
@@ -101,21 +114,22 @@ class PongGame {
     }
 
     tick() {
-        if (this.ball.y - BALL_SIZE / 2 < 0) {
+        if (this.ball.y - BALL_SIZE_HALF < 0) {
             // Reflect From Top
             this.ball.angle = DEG180 - this.ball.angle;
-            this.ball.y = BALL_SIZE / 2;
-        } else if (this.ball.y + BALL_SIZE / 2 > this.height) {
+            this.ball.y = BALL_SIZE_HALF;
+        } else if (this.ball.y + BALL_SIZE_HALF > this.height) {
             // Reflect From Bottom
             this.ball.angle = DEG180 - this.ball.angle;
-            this.ball.y = this.height - BALL_SIZE / 2;
+            this.ball.y = this.height - BALL_SIZE_HALF;
         }
 
-        if (this.ball.x - BALL_SIZE / 2 < PADDLE_DEPTH) {
+        // Behind Left side
+        if (this.ball.x - BALL_SIZE_HALF < PADDLE_DEPTH) {
             const isPaddleCollision =
-                this.getPaddleTop(PLAYER1) < this.ball.y &&
-                this.getPaddleBottom(PLAYER1) > this.ball.y;
-            this.ball.x = PADDLE_DEPTH + BALL_SIZE / 2;
+                this.getPaddleTop(PLAYER1) < (this.ball.y - BALL_SIZE_HALF) &&
+                this.getPaddleBottom(PLAYER1) > (this.ball.y + BALL_SIZE_HALF);
+            this.ball.x = PADDLE_DEPTH + BALL_SIZE_HALF;
             if (isPaddleCollision) {
                 const contactPoint = this.paddles[PLAYER1] - this.ball.y;
                 this.ball.angle = DEG90 - (contactPoint * 2 / PADDLE_SIZE) * PADDLE_MAX_REFLECT_ANGLE;
@@ -124,11 +138,11 @@ class PongGame {
                 return this.resetState();
             }
         }
-        if (this.ball.x + BALL_SIZE / 2 > this.width - PADDLE_DEPTH) {
+        if (this.ball.x + BALL_SIZE_HALF > this.width - PADDLE_DEPTH) {
             const isPaddleCollision =
-                this.getPaddleTop(PLAYER2) < this.ball.y &&
-                this.getPaddleBottom(PLAYER2) > this.ball.y;
-            this.ball.x = this.width - PADDLE_DEPTH - BALL_SIZE / 2;
+                this.getPaddleTop(PLAYER2) < (this.ball.y - BALL_SIZE_HALF) &&
+                this.getPaddleBottom(PLAYER2) > (this.ball.y + BALL_SIZE_HALF);
+            this.ball.x = this.width - PADDLE_DEPTH - BALL_SIZE_HALF;
             if (isPaddleCollision) {
                 const contactPoint = this.paddles[PLAYER2] - this.ball.y;
                 this.ball.angle = DEG270 + (contactPoint * 2 / PADDLE_SIZE) * PADDLE_MAX_REFLECT_ANGLE;
@@ -143,9 +157,9 @@ class PongGame {
     }
 
     generateDigit(digit, x, y) {
-        const t = 10;
-        const h = 100;
-        const w = 50;
+        const t = DIGIH_LINE_THICKNESS;
+        const h = DIGIT_HEIGHT;
+        const w = DIGIT_WIDTH;
         const fullLeft = [x,y,t,h];
         const fullRight = [x + w-t, y, t, h];
         const top = [x,y,w,t];
@@ -235,19 +249,18 @@ class PongGame {
         }
     }
 
-
     generateData() {
         const whiteRects = [
             [   // Paddle Player 1
-                0, this.paddles[PLAYER1] - PADDLE_SIZE / 2,
+                0, this.paddles[PLAYER1] - PADDLE_SIZE_HALF,
                 PADDLE_DEPTH, PADDLE_SIZE
             ],
             [   // Paddle Player 2
-                this.width - PADDLE_DEPTH, this.paddles[PLAYER2] - PADDLE_SIZE / 2,
+                this.width - PADDLE_DEPTH, this.paddles[PLAYER2] - PADDLE_SIZE_HALF,
                 PADDLE_DEPTH, PADDLE_SIZE
             ],
             [   // Ball
-                Math.round(this.ball.x - BALL_SIZE / 2), Math.round(this.ball.y - BALL_SIZE / 2),
+                Math.round(this.ball.x - BALL_SIZE_HALF), Math.round(this.ball.y - BALL_SIZE_HALF),
                 BALL_SIZE, BALL_SIZE
             ]
         ];
@@ -263,12 +276,12 @@ class PongGame {
         const digitsPlayer1 = this.score[PLAYER1].toString().split('');
         digitsPlayer1.reverse();
         digitsPlayer1.forEach((s, i) => {
-            const digitRects = this.generateDigit(s, this.width / 2 - 30 - 70 * (i+1), 20);
+            const digitRects = this.generateDigit(s, this.width / 2 - DIGIT_INIT_GAP - (DIGIT_WIDTH + DIGIT_CONSEQ_GAP) * (i+1), DIGIT_TOP_PADDING);
             whiteRects.push(...digitRects);
         });
         const digitsPlayer2 = this.score[PLAYER2].toString().split('');
         digitsPlayer2.forEach((s, i) => {
-            const digitRects = this.generateDigit(s, this.width / 2 + 50 + 70 * i, 20);
+            const digitRects = this.generateDigit(s, this.width / 2 + DIGIT_WIDTH + (DIGIT_WIDTH + DIGIT_CONSEQ_GAP) * i, DIGIT_TOP_PADDING);
             whiteRects.push(...digitRects);
         });
         
