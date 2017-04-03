@@ -1,0 +1,10 @@
+body, html {
+    color: white;
+    background: rgb(30,30,30);
+}
+
+#main {
+    margin: 0 auto;
+    display: block;
+    position: relative;
+}

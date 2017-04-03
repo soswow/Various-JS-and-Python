@@ -4,6 +4,8 @@ const makePongGame = function(width, height, context) {
 
     const PLAYER1 = 'player1';
     const PLAYER2 = 'player2';
+    const UP = 'UP';
+    const DOWN = 'DOWN';
     const BALL_SIZE = Math.round(15/500 * width);
     const BALL_SIZE_HALF = Math.round(15/500 * height / 2);
     const BALL_SPEED = Math.round(4/500 * width); // px/tick
@@ -63,6 +65,14 @@ const makePongGame = function(width, height, context) {
 
         get PLAYER2() {
             return PLAYER2;
+        }
+
+        get UP() {
+            return UP;
+        }
+
+        get DOWN() {
+            return DOWN;
         }
 
         move(player, direction) {
@@ -278,12 +288,12 @@ const makePongGame = function(width, height, context) {
                 whiteRects.push(...digitRects);
             });
             
-            const data = new Int8Array(this.width * this.height);
+            const data = new Array(this.width * this.height).fill(0);
             
             whiteRects.forEach(([xStart, yStart, width, height]) => {
                 for (let y = yStart; y < yStart + height; y++) {
                     for (let x = xStart; x < xStart + width; x++) {
-                        data[y * this.width + x] = 1;
+                        data[y * this.width + x] = 127;
                     }
                 }
             });
