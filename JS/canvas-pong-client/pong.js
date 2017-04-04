@@ -22,6 +22,7 @@ const makePongGame = function(width, height, context) {
     const DIGIT_CONSEQ_GAP = Math.round(20/500 * width);
     const DIGIT_TOP_PADDING = Math.round(20/500 * width);
     const DIVIDER_LENGTH = Math.floor(10/500 * height);
+    const DEG45 = degToRad(45);
     const DEG90 = degToRad(90);
     const DEG180 = degToRad(180);
     const DEG270 = degToRad(270);
@@ -49,6 +50,7 @@ const makePongGame = function(width, height, context) {
                 speed: 0,
                 angle: 0  // angle in Radians. Zero is to the right.
             };
+            this.episodes = 0;
         }
 
         isPaddleAtTheTop(player) {
@@ -101,22 +103,32 @@ const makePongGame = function(width, height, context) {
         getPaddleBottom(player) {
             return this.paddles[player] + PADDLE_SIZE_HALF;
         }
-
+        onScoreChange(cb) {
+            this.onScoreChangeCb = cb;
+        }
         resetState() {
+            this.onScoreChangeCb && this.onScoreChangeCb(this.score, this.episodes);
             this.ball = {
                 x: this.widthHalf,
                 y: this.heightHalf,
                 speed: 0,
                 angle: 0
             };
+            this.episodes = 0;
         }
 
         startGame() {
-            this.ball.angle = Math.random() * DEG360;
+            const rightDirection = Math.random() > 0.5;
+            if (rightDirection) {
+                this.ball.angle = DEG45 + Math.random() * DEG90;
+            } else {
+                this.ball.angle = DEG180 + DEG45 + Math.random() * DEG90;
+            }
             this.ball.speed = BALL_SPEED;
         }
 
         tick() {
+            this.episodes += 1;
             if (this.ball.y - BALL_SIZE_HALF < 0) {
                 // Reflect From Top
                 this.ball.angle = DEG180 - this.ball.angle;
@@ -288,7 +300,7 @@ const makePongGame = function(width, height, context) {
                 whiteRects.push(...digitRects);
             });
             
-            const data = new Array(this.width * this.height).fill(0);
+            const data = new Int8Array(this.width * this.height).fill(0);
             
             whiteRects.forEach(([xStart, yStart, width, height]) => {
                 for (let y = yStart; y < yStart + height; y++) {
