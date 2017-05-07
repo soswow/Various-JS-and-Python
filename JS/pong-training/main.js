@@ -1,51 +1,50 @@
-var layer_defs = [];
-
-// Input is 84x84x4 (width, height, depth)
-layer_defs.push({ type: 'input', out_sx: 84, out_sy: 84, out_depth: 4 });
-// Conv 16 8x8 kernels, stride 4
-layer_defs.push({ type: 'conv', sx: 8, filters: 16, stride: 4, activation: 'relu' });
-// rectifier nonlinearity
-
-// Conv 32 4x4  kernels, stride 2
-layer_defs.push({ type: 'conv', sx: 4, filters: 32, stride: 2, activation: 'relu' });
-
-// FC with 256 rectifier unit
-layer_defs.push({ type: 'fc', num_neurons: 256, activation: 'relu' });
-
-// FC liners with N number of outputs. for N actions
-layer_defs.push({ type: 'softmax', num_classes: 2 });
-
-// create a net out of it
-var net1 = new convnetjs.Net();
-net1.makeLayers(layer_defs);
-
-var net2 = new convnetjs.Net();
-net2.makeLayers(layer_defs);
-
+const W = 84;
+const H = 84;
+const infoDiv = document.getElementById('info');
+const doViz = document.getElementById('do-viz');
 let screens = [];
+let VIZ_GAME = doViz.checked;
+doViz.addEventListener('change', (e) => {
+    VIZ_GAME = e.currentTarget.checked;
+})
 
-const redraw = () => {
+const x1 = new convnetjs.Vol(84, 84, 4);
+const x2 = new convnetjs.Vol(84, 84, 4);
+const play = () => {
     const screen = pong.generateData();
-    pong.applyData(screen);
+    if (VIZ_GAME) {
+        pong.applyData(screen);
+    }
     if (screens.unshift(screen) > 4) {
         screens.pop();
 
-        const data = [];
-        for (let i = 0; i < 84 * 84; i++) {
-            for (let s = 0; s < 4; s++) {
-                data.push(screens[s][i]);
+        const data1 = new Int8Array(84 * 84 * 4);
+        const data2 = new Int8Array(84 * 84 * 4);
+        for (let y = 0; y < 84; y++) {
+            for (let x = 0; x < 84; x++) {
+                for (let s = 0; s < 4; s++) {
+                    const i1 = y * 84 + x;
+                    const i2 = y * 84 + (83-x);
+                    data1[s * 84 * 84 + i1] = screens[s][i1];
+                    data2[s * 84 * 84 + i1] = screens[s][i2];
+                }
             }
         }
-        var x = new convnetjs.Vol(84, 84, 4);
-        x.w = data;
-        const [upProp1, downProp1] = net1.forward(x).w;
-        const [upProp2, downProp2] = net2.forward(x).w;
+        x1.w = data1;
+        x2.w = data2;
+        const [upProp1, downProp1] = net1.forward(x1).w;
+        const [upProp2, downProp2] = net1.forward(x2).w;
         
         pong.move(pong.PLAYER1, upProp1 > downProp1 ? pong.UP : pong.DOWN);
         pong.move(pong.PLAYER2, upProp2 > downProp2 ? pong.UP : pong.DOWN);
     }
     pong.tick();
-    requestAnimationFrame(redraw);
+    if (VIZ_GAME) {
+        requestAnimationFrame(play);
+    } else {
+        // play();
+        setTimeout(play, 0);
+    }
 }
 
 const magnify = 3;
@@ -61,9 +60,15 @@ const initCanvas = (id, width, height) => {
     return context;
 }
 
-const W = 84;
-const H = 84;
 const context = initCanvas('main', W, H);
 const pong = makePongGame(W, H, context);
+let timeStamp = Date.now();
+pong.onScoreChange((score, episodes) => {
+    if (!VIZ_GAME) {
+        const diff = Date.now() - timeStamp;
+        infoDiv.innerHTML += `${score[pong.PLAYER1]}:${score[pong.PLAYER2]} for ${episodes} ticks in ${diff} ms - ${(diff/episodes).toFixed(3)} ms/tick<br/>`;
+        timeStamp = Date.now();
+    }
+});
 
-redraw();
+play();
