@@ -2,7 +2,7 @@ const fs = require('fs');
 const leftPad = require('left-pad');
 const argv = require('yargs').argv;
 
-const index = argv.index || 10;
+const index = argv.index;
 
 const srcIndexStr = leftPad(index, 4, '0');
 const fileName = `output_${srcIndexStr}.gcode`;
@@ -10,8 +10,8 @@ console.log(`Reading ${fileName}`);
 const content = fs.readFileSync(fileName, 'utf-8');
 const lines = content.split('\n');
 
-const w = 1070; //mm
-const h = 1130; //mm
+const w = 800; //mm
+const h = 850; //mm
 const drawingSpeed = 1000;
 
 const penOut = "S80 (pen up)\n";

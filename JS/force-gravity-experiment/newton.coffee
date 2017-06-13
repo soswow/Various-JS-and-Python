@@ -1,3 +1,4 @@
+info = document.getElementById("info");
 Array::sum or= -> this.reduce  (a,b) -> a+b
 
 Number::roundTo or= (decNum=0) -> 
@@ -24,8 +25,13 @@ class P
   constructor: (@x=0, @y=0) ->
   distance: (toPoint) -> Utils.distance  this, toPoint
   moveByDelta: (dPos, dt) ->
-    @x += dPos.x * dt
-    @y += dPos.y * dt
+    @setX(@x + dPos.x * dt)
+    @setY(@y + dPos.y * dt)
+  setX: (@x=@x) ->
+    @x = 0 if Math.abs(@x) < 0.0000001
+  setY: (@y=@y) ->
+    @y = 0 if Math.abs(@y) < 0.0000001
+  toString: -> "(#{@x}, #{@y})"
 
 point = (x,y) -> new Point(x,y)
 
@@ -39,41 +45,43 @@ class Vector extends P
 
   constructor: (args...) ->
     super(args...)
-    @amount = @getAmount()
-    @angle = @getAngle()
 
   getAngle: -> Utils.getAngle  @x, @y
 
   getAmount: -> Utils.distance  new P(0,0), this
 
-  addAmount: (deltaAmount=0) -> @setAmount  @amount + deltaAmount
+  # addAmount: (deltaAmount=0) -> @setAmount  @amount + deltaAmount
   
-  setAmount: (@amount=@amount) ->
-    @x = Math.cos(@angle) * @amount
-    @y = Math.sin(@angle) * @amount
+  setAmount: (amount) ->
+    if Math.abs(@x) > 0 or Math.abs(@y) > 0
+      angle = @getAngle()
+      # @x = Math.cos(angle) * amount
+      # @y = Math.sin(angle) * amount
+      @setX(Math.cos(angle) * amount)
+      @setY(Math.sin(angle) * amount)
     return this
 
   plus: (otherVector) -> new @constructor(@x + otherVector.x, @y + otherVector.y)
 
   toString: -> 
-    "#{@constructor.name} is #{@amount.roundTo(3)} (#{@constructor.unit}) pointing @ #{Utils.radToDeg(@angle).roundTo(3)} deg."
+    "#{@constructor.name} is #{@getAmount()} (#{@constructor.unit}) pointing @ #{Utils.radToDeg(@getAngle())} deg."
 
   oposite: (amount) ->  
     new Vector(-@x, -@y).setAmount(amount)
 
+  clone: () -> new Vector(@x, @y)
 
-class MotionState extends Vector
-  @unit = "Px/ms"
+
+class Velocity extends Vector
+  @unit = "px/ms"
   
   accelerate: (force, mass, dt) ->
-    value = (accel=force).amount / mass
-    accel.setAmount  value
-    @moveByDelta  accel, dt
-
+    accel = force.clone()
+    accel.setAmount(force.getAmount() / mass)
+    @moveByDelta(accel, dt)
   
 class Force extends Vector
   @unit = "N"
-
 
 class Environment
   constructor: () ->
@@ -91,27 +99,38 @@ class Environment
     #TODO All object should be moved simultaneously
     #Collition detection also should be hangled here
     @objects.map (o) -> o.nextTick  dt
-    
+  
+class Momentum extends Vector
+  @unit = "(kg*px)/ms"
+
+  constructor: (mass, velocity) ->
+    super(velocity.x, velocity.y)
+    @setAmount(mass * velocity.getAmount())
+
 
 class RigObject
-  constructor: (@pos, @mass, @motion) ->
-    @motion or= new MotionState()
+  constructor: (@pos, @mass, @velocity) ->
+    @velocity or= new Velocity()
     @forces = []
 
   netForce: -> 
     applied = Force.sum  @forces
     @forces = [] #clearing the applied forces
-    force = applied.plus  @env.gravity
-    airResist = @motion.oposite  @env.airResist
-    friction = @motion.oposite  @env.friction
+    force = applied.plus @env.gravity
+    airResist = @velocity.oposite @env.airResist
+    friction = @velocity.oposite @env.friction
     netForce = Force.sum [force, airResist, friction]
+    return netForce
     
   nextTick: (dt) -> #assumes forces are filled before.
-    # if @friction > @motion.amount
-    #   @motion.setAmount  0
-    # else  
-    @motion.accelerate  @netForce(), @mass, dt
-    @pos.moveByDelta  @motion, dt
+    if @friction > @velocity.amount
+      @velocity.setAmount 0
+    netForce = @netForce()
+    @velocity.accelerate  netForce, @mass, dt
+    @pos.moveByDelta  @velocity, dt
+    info.innerHTML = @velocity + "<br/>" + netForce + "<br/>" + @getMomentum() + "<br/>" + @pos
+
+  getMomentum: () -> new Momentum(@mass, @velocity)
 
   kick: (up=0, down=0, left=0, right=0) ->
     @forces.push  new Force(0, -up) if up
@@ -125,8 +144,4 @@ exports.Vector = Vector
 exports.Force = Force
 exports.RigObject = RigObject
 exports.Environment = Environment
-
-
-
-
-
+exports.Velocity = Velocity

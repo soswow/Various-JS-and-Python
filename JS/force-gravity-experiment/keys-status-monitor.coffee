@@ -4,13 +4,15 @@ keysStatusMonitor = (keysMap) ->
 
   window.addEventListener  'keydown', (event) ->
     key = keysMap[event.keyCode]
-    unless keysState[key]
-      keysState[key] = true if key
+    if key and not keysState[key]
+      console.log('press down ->', key)
+      keysState[key] = true
     
   window.addEventListener  'keyup', (event) ->
     key = keysMap[event.keyCode]
-    if keysState[key]
-      keysState[key] = false if key  
+    if key and keysState[key]
+      console.log('press up ->', key)
+      keysState[key] = false
 
   return keysState
 

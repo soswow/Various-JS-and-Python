@@ -100,64 +100,6 @@ const numberToWords = (number, special) => {
   }
 };
 
-// let longestWord = "";
-// let longestLen = 0;
-// for(let i=0; i<1000000000; i++){
-//   const word = numberToWords(i);
-//   if(longestLen < word.length){
-//     longestLen = word.length;
-//     longestWord = word;
-//     console.log(i, word, word.length);
-//   }
-// }
-// console.log(longestWord);
-
-// class Node {
-//   constructor(value) {
-//     this.value = value;
-//     this.next = null;
-//   }
-//
-//   valueOf() {
-//     return this.value;
-//   }
-//
-//   toString() {
-//     return `Node{value=${this.value}}`;
-//   }
-// }
-
-// const limit = 10000000;
-//
-// const nodes = [];
-// for (let i=0; i<limit; i++) {
-//   nodes.push(new Node(i));
-// }
-//
-// for (let i=0; i<limit; i++) {
-//   const node = nodes[i];
-//   const words = numberToWords(i);
-//   const len = words.length;
-//   node.next = nodes[len];
-// }
-
-// for (let i=0; i<=10; i++) {
-//   console.log(nodes[i]);
-// }
-// old chain
-// const getChain = (number) => {
-//   let out = "";
-//   let node = nodes[number];
-//   while(true){
-//     out += `${node.value} (${numberToWords(node.value)}) -> `;
-//     if(node.value === 4 || node.value === 3 || node.value === 11){
-//       break;
-//     }
-//     node = node.next
-//   }
-//   return out;
-// }
-
 const getChain = (number, chain) => {
   if (!chain) {
     chain = [];
@@ -172,57 +114,52 @@ const getChain = (number, chain) => {
 }
 
 let i = 0;
-// let maxLen = 0;
-// const uniqueChains = [
-//   [4, 4].join(' -> '),
-//   [3, 3].join(' -> '),
-//   [11, 11].join(' -> '),
-//   [6, 5, 4].join(' -> ')
-// ];
 const uniqueChains = [];
 
-while(true) {
-  // console.log('----------', i, '---------');
-  let chain = getChain(i);
+const printOutChange = (theNumber) => {
+  while(true) {
+    // console.log('----------', i, '---------');
+    let chain = getChain(i);
 
-  if (chain.length == 1) {
-    const str = [chain[0], chain[0]].join(' -> ');
-    uniqueChains.push(str);
-    console.log(str+';');
-    i+=1;
-    continue;
-  }
+    if (chain.length == 1) {
+      const str = [chain[0], chain[0]].join(' -> ');
+      uniqueChains.push(str);
+      console.log(str+';');
+      i+=1;
+      continue;
+    }
 
-  for(let j=0; j<chain.length; j++){
-    for(let k=chain.length; k>j; k--){
-      const str = chain.slice(j, k).join(' -> ');
-      // console.log('str', str);
-      if (uniqueChains.indexOf(str) > -1) {
-        if (j == 1) {
-          j += 1;
+    for(let j=0; j<chain.length; j++){
+      for(let k=chain.length; k>j; k--){
+        const str = chain.slice(j, k).join(' -> ');
+        // console.log('str', str);
+        if (uniqueChains.indexOf(str) > -1) {
+          if (j == 1) {
+            j += 1;
+          }
+          // console.log('parent is in there already', str, chain.slice(0, j));
+          chain = chain.slice(0, j);
+          break;
         }
-        // console.log('parent is in there already', str, chain.slice(0, j));
-        chain = chain.slice(0, j);
-        break;
       }
     }
-  }
 
-  if (chain.length > 1) {
-    const subChain = chain.join(' -> ');
-    if (uniqueChains.indexOf(subChain) === -1) {
-      if(chain[0] < 20){
-        uniqueChains.push(subChain);
-        console.log(subChain+';');
+    if (chain.length > 1) {
+      const subChain = chain.join(' -> ');
+      if (uniqueChains.indexOf(subChain) === -1) {
+        if(chain[0] < theNumber){
+          uniqueChains.push(subChain);
+          console.log(subChain+';');
+        }
       }
     }
-  }
 
-  i += 1;
-  if(i > 100){
-    break;
+    i += 1;
+    if(i > theNumber){
+      break;
+    }
   }
-}
+};
 
 // for(let i=0; i<limit; i++){
 //   const chain = getChain(i);
@@ -232,4 +169,4 @@ while(true) {
 //   }
 // }
 
-// console.log(getChain(144484484));
+printOutChange(144484484);
