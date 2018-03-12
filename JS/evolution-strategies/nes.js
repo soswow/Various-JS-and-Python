@@ -81,18 +81,20 @@ const linspace = (start, end, size) => {
 const _linSpace = linspace(-1, 1, W);
 const _X = math.multiply(math.ones(W, 1), [_linSpace]);
 const _Y = math.multiply(math.reshape(_linSpace, [W, 1]), math.ones(1, W))
-var gpu = new GPU();
+const gpu = new GPU();
 
 if (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) {
     mode = 'gpu';
+    console.log('Using GPU');
 } else {
     mode = 'cpu';
+    console.log('Using CPU');
 }
 
-var myFunc = gpu.createKernel(function (A, k, mux, muy) {
-    var m = Math.pow(A[this.thread.x] - mux, 2) + Math.pow(A[this.thread.y] - muy, 2);
-    return Math.exp(m * k);
-}, { mode }).dimensions([W, H]);
+const myFunc = gpu.createKernel(function (A, k, mux, muy) {
+  const m = Math.pow(A[this.thread.x] - mux, 2) + Math.pow(A[this.thread.y] - muy, 2);
+  return Math.exp(m * k);
+}, { mode }).setOutput([W, H]);
 
 const makeG = (mux, muy, sigma) => {
     const k = -1 / 2 * Math.pow(sigma, 2);
