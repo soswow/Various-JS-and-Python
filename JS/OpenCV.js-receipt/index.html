@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Remap test</title>
+    <script src="opencv.js"></script>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+        .invisible {
+            display: none;
+        }
+    </style>
+    <script src="dat.gui.js"></script>
+</head>
+<body>
+    <div class="invisible">
+        <video id="video" class="hidden">Your browser does not support the video tag.</video>
+        <canvas id="canvasInput" width=320 height=240></canvas>
+    </div>
+    <canvas class="center-block" id="canvasOutput" width=320 height=240></canvas>
+    <div id="guiContainer"></div>
+    <script src="perspective-test.js"></script>
+</body>
+</html>
