@@ -102,7 +102,7 @@ const makeG = (mux, muy, sigma) => {
     return math.matrix(Array.prototype.map.call(data, (row) => Array.prototype.slice.call(row)));
 }
 
-const drawPoints = (points, fillStyle = "rgba(0,0,0,120)", size = 3) => points.forEach(([x, y]) => {
+const drawPoints = (points, fillStyle = "rgba(0,0,0,0.5)", size = 3) => points.forEach(([x, y]) => {
     context.beginPath();
     context.fillStyle = fillStyle;
     context.arc(x, y, size, 0, 2 * Math.PI, false);
@@ -194,7 +194,7 @@ const main = () => {
             drawArrow(points[i - 1], points[i]);
         }
         frameIndex += 1;
-        if (frameIndex == points.length) {
+        if (frameIndex === points.length) {
             frameIndex = 0;
         }
         setTimeout(frame, 50);
