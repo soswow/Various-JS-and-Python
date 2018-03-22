@@ -7,17 +7,8 @@ const context = canvas.getContext('2d');
 context.width = W;
 context.height = H;
 
-const initialLearningRate = 15;
-const settings = {
-  learningRate: initialLearningRate,
-  numberOfSamples: 20,
-  areaImportance: 1,
-  showTruePolygon: true
-};
-
+// --- Module start
 const z = new Ziggurat();
-
-const randomDelta = (size) => z.nextGaussian() * size;
 
 const isPointInsidePolygon = (point, vs) => {
   // ray-casting algorithm based on
@@ -56,6 +47,113 @@ const calcPolygonArea = (polygon) => {
   return Math.abs(total);
 };
 
+const p = (x, y) => ({x, y});
+const randomP = (x, y, amplitude) => ({
+  x: x + z.nextGaussian() * amplitude,
+  y: y + z.nextGaussian() * amplitude
+});
+
+class EsOptimizer {
+  constructor(settings, points) {
+    this.settings = settings;
+    this.points = points;
+  }
+
+  fitRect() {
+    let learningRate = this.settings.learningRate;
+    const learningRateDropRate = 15;
+    const stopLearningRate = 5;
+    const numberOfIterations = learningRateDropRate * (learningRate - stopLearningRate + 2);
+    let candidatePolygon = [
+      p(0, 0), p(this.settings.width, 0),
+      p(this.settings.width, this.settings.height), p(0, this.settings.height)
+    ];
+    let allCandidates = [];
+    return new Promise((resolve) => {
+      for (let i = 0; i < numberOfIterations; i++) {
+        if (i % learningRateDropRate === 0 && learningRate > stopLearningRate) {
+          learningRate -= 1;
+        }
+        candidatePolygon = this.refineCandidatePolygon(candidatePolygon, learningRate);
+        if (this.settings.debug) {
+          allCandidates.push(candidatePolygon);
+        }
+      }
+      if (this.settings.debug) {
+        resolve({main: candidatePolygon, all: allCandidates});
+      } else {
+        resolve(candidatePolygon);
+      }
+    });
+  }
+
+  fitnessFunction(polygon) {
+    const pointsInside = dataPoints.filter((point) => isPointInsidePolygon(point, polygon));
+    const totalSizeSum = pointsInside.reduce( ((sum, point) => point.size + sum), 0);
+    const area = calcPolygonArea(polygon);
+    return totalSizeSum / Math.sqrt(area);
+  }
+
+  refineCandidatePolygon(basePolygon, learningRate) {
+    // Find jittered polygon samples
+    // Apply fitness function for each
+
+    // Find wighted average for each coordinate of each point
+    // n
+    // ∑(rect[i][0].x * fitnessFn(rect[i]))
+    // i=0
+    // -------------------------------------- = newReact[0].x
+    //              n
+    //              ∑(fitnessFn(rect[i]))
+    //              i=0
+    // const learningRate = 10;
+
+    const jitteredPolygons = [];
+    for (let si=0; si<this.settings.numberOfSamples; si++) {
+      const newPolygon = [];
+      for (let pi=0; pi < basePolygon.length; pi++) {
+        newPolygon.push(randomP(basePolygon[pi].x, basePolygon[pi].y, learningRate));
+      }
+      jitteredPolygons.push(newPolygon);
+    }
+
+    let valuedJitteredPolygons = jitteredPolygons.map((polygon) => {
+      return {
+        value: this.fitnessFunction(polygon),
+        polygon
+      };
+    });
+    valuedJitteredPolygons.sort((a, b) => b.value - a.value);
+    valuedJitteredPolygons = valuedJitteredPolygons.slice(0, 5);
+    const totalFitness = valuedJitteredPolygons.reduce(((sum, current) => current.value + sum), 0);
+    // totalFitness / valuedJitteredPolygons.length;
+
+    const resultingPolygon = [];
+    for (let pi=0; pi < basePolygon.length; pi++) {
+      let topPartX = 0;
+      let topPartY = 0;
+      for (let si=0; si < valuedJitteredPolygons.length; si++) {
+        topPartX += valuedJitteredPolygons[si].polygon[pi].x * valuedJitteredPolygons[si].value;
+        topPartY += valuedJitteredPolygons[si].polygon[pi].y * valuedJitteredPolygons[si].value;
+      }
+      resultingPolygon.push(p(topPartX/totalFitness, topPartY/totalFitness, basePolygon.size));
+    }
+    return resultingPolygon;
+  }
+
+}
+
+// --- Module end
+
+const initialLearningRate = 15;
+const settings = {
+  learningRate: initialLearningRate,
+  numberOfSamples: 20,
+  areaImportance: 1,
+  showTruePolygon: true,
+  debugCandidates: true
+};
+
 class Point {
   constructor(x, y, size=2) {
     this.x = x;
@@ -72,7 +170,7 @@ class RandomizedPoint {
   }
 }
 
-const drawPoints = (points, fillStyle = "rgba(0,0,0,0.5)") => points.forEach(({x, y, size}) => {
+const drawPoints = (points, fillStyle = "rgba(0,0,0,0.5)") => points.forEach(({x, y, size=3}) => {
   context.beginPath();
   context.fillStyle = fillStyle;
   context.arc(x, y, size, 0, 2 * Math.PI, false);
@@ -105,14 +203,15 @@ canvas.addEventListener('mousemove', (e) => {
 
 let truePolygon = [];
 let dataPoints = [];
-let condidatePolygon = [];
+let candidatePolygon;
+let allCondidatePolygons;
 
-const generatePolygon = () => [
+const generateSamplePolygon = () => [
   new RandomizedPoint(100, 100, 6, 30), new RandomizedPoint(W-100, 100, 6, 30),
   new RandomizedPoint(W-100, H - 100, 6, 30), new RandomizedPoint(100, H - 100, 6, 30)
 ];
 
-const samplePointInPolygon = (polygon, numberOfPoints=10, randomChance=0.05) => {
+const generateSamplePointsInPolygon = (polygon, numberOfPoints=10, randomChance=0.05) => {
   let i = 0;
   const points = [];
   while (i < numberOfPoints) {
@@ -131,16 +230,6 @@ const samplePointInPolygon = (polygon, numberOfPoints=10, randomChance=0.05) => 
   return points;
 };
 
-for (let i = 0; i < 25; i++) {
-  const point = new Point(W/2 + randomDelta(100), H/2 + randomDelta(100), Math.abs(randomDelta(10)) + 1);
-}
-
-canvas.addEventListener('click', (e) => {
-  const point = new Point(currentPos.x, currentPos.y, Math.abs(randomDelta(10)) + 1);
-  dataPoints.push(point);
-});
-
-let frameCounter = 0;
 const renderFrame = () => {
   clearContext();
   if (settings.showTruePolygon) {
@@ -149,128 +238,17 @@ const renderFrame = () => {
   }
   drawPoints(dataPoints);
 
-  if (isOptimizing) {
-    frameCounter += 1;
-    if (frameCounter % 15 === 0 && settings.learningRate > 5) {
-      settings.learningRate -= 1;
-      gui.__controllers[1].updateDisplay();
-    }
-    condidatePolygon = refineCandidatePolygon(condidatePolygon);
-    if (frameCounter === (initialLearningRate - 5 + 2) * 15) {
-      jitteredPolygons = [];
-      isOptimizing = false;
-    }
-  }
-  jitteredPolygons.forEach((polygon) => drawRect(polygon, "rgba(200,0,0,0.1)"));
 
-  drawPoints(condidatePolygon, "rgba(200,0,0,0.5)");
-  drawRect(condidatePolygon, "rgba(220,0,0,0.7)", 2);
-
-  if (settings.showTruePolygon) {
-    context.beginPath();
-    context.strokeStyle = "rgba(0,220,0,0.7)";
-    context.lineWidth = 1;
-    condidatePolygon.forEach((point, index) => {
-      context.moveTo(point.x, point.y);
-      context.lineTo(truePolygon[index].x, truePolygon[index].y);
-    });
-    context.stroke();
-  }
-
-  const min = totallFitnessResults.reduce(((minValue, a) => a < minValue ? a : minValue), Number.MAX_VALUE);
-  const max = totallFitnessResults.reduce(((maxValue, a) => a > maxValue ? a : maxValue), -Number.MAX_VALUE);
-  context.beginPath();
-  context.strokeStyle = "rgba(0,0,0,0.3)";
-  context.lineWidth = 1;
-  const rightY = (value) => (H * (value-min)) / (max - min);
-  // H : max - min
-  // y : v
-  // y = H * v / (max-min);
-  context.moveTo(0, rightY(totallFitnessResults[0]));
-  for(let i=1; i<totallFitnessResults.length;i++){
-    const y = rightY(totallFitnessResults[i]);
-    context.lineTo(i, y);
-  }
-  context.stroke();
-};
-
-const fitnessFunction = (polygon) => {
-  const pointsInside = dataPoints.filter((point) => isPointInsidePolygon(point, polygon));
-  const totalSizeSum = pointsInside.reduce( ((sum, point) => point.size + sum), 0);
-  const area = calcPolygonArea(polygon);
-  return totalSizeSum / Math.sqrt(area) * settings.areaImportance;
-};
-const distanceBetweenPoints = (p1, p2) => Math.hypot(p2.x-p1.x, p2.y-p1.y);
-
-const cheatingFitnessFunction = (polygon) => {
-  return 1 / polygon.reduce(((sum, point, index) => distanceBetweenPoints(point, truePolygon[index]) + sum), 0);
-};
-
-
-const isValidPolygon = (polygon) => {
-// (n-2) * 180 - sum on angles
-};
-
-let totallFitnessResults = [];
-const pushFitnessResult = (result) => {
-  totallFitnessResults.push(result);
-  if (totallFitnessResults.length > W) {
-    totallFitnessResults.shift();
+  if (allCondidatePolygons && settings.debugCandidates) {
+    allCondidatePolygons.forEach((polygon) => drawRect(polygon, "rgba(200,0,0,0.1)"));
+    drawPoints(candidatePolygon, "rgba(0,0,0,0.5)");
+    drawRect(candidatePolygon, "rgba(0,0,0,0.7)", 2);
+  } else if (candidatePolygon) {
+    drawPoints(candidatePolygon, "rgba(200,0,0,0.5)");
+    drawRect(candidatePolygon, "rgba(220,0,0,0.7)", 2);
   }
 };
 
-// TODO Automatic detection of convergence
-
-let jitteredPolygons = [];
-const refineCandidatePolygon = (basePolygon) => {
-  // Find jittered polygon samples
-  // Apply fitness function for each
-
-  // Find wighted average for each coordinate of each point
-  // n
-  // ∑(rect[i][0].x * fitnessFn(rect[i]))
-  // i=0
-  // -------------------------------------- = newReact[0].x
-  //              n
-  //              ∑(fitnessFn(rect[i]))
-  //              i=0
-  // const learningRate = 10;
-
-  jitteredPolygons = [];
-  for (let si=0; si<settings.numberOfSamples; si++) {
-    const newPolygon = [];
-  for (let pi=0; pi < basePolygon.length; pi++) {
-      newPolygon.push(new RandomizedPoint(basePolygon[pi].x, basePolygon[pi].y, basePolygon[pi].size, settings.learningRate));
-    }
-      jitteredPolygons.push(newPolygon);
-    }
-
-  let valuedJitteredPolygons = jitteredPolygons.map((polygon) => {
-    return {
-      value: fitnessFunction(polygon),
-      polygon
-    };
-  });
-  valuedJitteredPolygons.sort((a, b) => b.value - a.value);
-  valuedJitteredPolygons = valuedJitteredPolygons.slice(0, 5);
-  const totalFitness = valuedJitteredPolygons.reduce(((sum, current) => current.value + sum), 0);
-  const averageFitness = totalFitness / valuedJitteredPolygons.length;
-  pushFitnessResult(averageFitness);
-
-  const resultingPolygon = [];
-  for (let pi=0; pi < basePolygon.length; pi++) {
-    let topPartX = 0;
-    let topPartY = 0;
-    for (let si=0; si<valuedJitteredPolygons.length; si++) {
-      topPartX += valuedJitteredPolygons[si].polygon[pi].x * valuedJitteredPolygons[si].value;
-      topPartY += valuedJitteredPolygons[si].polygon[pi].y * valuedJitteredPolygons[si].value;
-    }
-    resultingPolygon.push(new Point(topPartX/totalFitness, topPartY/totalFitness, basePolygon.size));
-  }
-  return resultingPolygon;
-};
-
-let isOptimizing = false;
 const loop = () => {
   renderFrame();
   requestAnimationFrame(loop);
@@ -278,23 +256,26 @@ const loop = () => {
 loop();
 
 document.getElementById('optimizeButton').addEventListener('click', () => {
-  isOptimizing = !isOptimizing;
-  if (isOptimizing) {
-    frameCounter = 0;
-    settings.learningRate = 15;
-    gui.__controllers[1].updateDisplay();
-  }
+  const optimizer = new EsOptimizer({
+    learningRate: settings.learningRate,
+    numberOfSamples: settings.numberOfSamples,
+    width: W,
+    height: H,
+    debug: settings.debugCandidates
+  }, dataPoints);
+  console.time("fitting rect");
+  optimizer.fitRect().then(({main, all}) => {
+    console.timeEnd("fitting rect");
+    candidatePolygon = main;
+    allCondidatePolygons = all;
+  });
 });
 
 const setupInputData = () => {
-  truePolygon = generatePolygon();
-  dataPoints = samplePointInPolygon(truePolygon, 100);
-  condidatePolygon = [
-    new Point(0, 0, 6), new Point(W, 0, 6),
-    new Point(W, H, 6), new Point(0, H , 6)
-  ];
-  totallFitnessResults = [];
-  jitteredPolygons = [];
+  truePolygon = generateSamplePolygon();
+  dataPoints = generateSamplePointsInPolygon(truePolygon, 100);
+  candidatePolygon = null;
+  allCondidatePolygons = null;
 };
 document.getElementById('regenerateTruePolygon').addEventListener('click', setupInputData);
 setupInputData();
@@ -304,3 +285,4 @@ gui.add(settings, 'numberOfSamples', 2, 40).step(1);
 gui.add(settings, 'learningRate', 1, 50).step(1);
 gui.add(settings, 'areaImportance', 0.1, 3).step(0.1);
 gui.add(settings, 'showTruePolygon');
+gui.add(settings, 'debugCandidates');
