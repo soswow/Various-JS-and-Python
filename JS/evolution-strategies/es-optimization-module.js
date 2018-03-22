@@ -71,11 +71,7 @@ EsOptimizer = (() => {
             allCandidates.push(candidatePolygon);
           }
         }
-        if (this.settings.debug) {
-          resolve({main: candidatePolygon, all: allCandidates});
-        } else {
-          resolve(candidatePolygon);
-        }
+        resolve({main: candidatePolygon, all: allCandidates});
       });
     }
 
