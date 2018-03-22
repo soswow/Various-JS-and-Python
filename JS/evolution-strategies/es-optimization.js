@@ -7,10 +7,12 @@ const context = canvas.getContext('2d');
 context.width = W;
 context.height = H;
 
+const initialLearningRate = 15;
 const settings = {
-  learningRate: 15,
+  learningRate: initialLearningRate,
   numberOfSamples: 20,
-  areaImportance: 0.5
+  areaImportance: 1,
+  showTruePolygon: true
 };
 
 const z = new Ziggurat();
@@ -141,8 +143,10 @@ canvas.addEventListener('click', (e) => {
 let frameCounter = 0;
 const renderFrame = () => {
   clearContext();
-  drawPoints(truePolygon, "rgba(0,0,200,0.5)");
-  drawRect(truePolygon, "rgba(0,0,220,0.5");
+  if (settings.showTruePolygon) {
+    drawPoints(truePolygon, "rgba(0,0,200,0.5)");
+    drawRect(truePolygon, "rgba(0,0,220,0.5");
+  }
   drawPoints(dataPoints);
 
   if (isOptimizing) {
@@ -152,21 +156,26 @@ const renderFrame = () => {
       gui.__controllers[1].updateDisplay();
     }
     condidatePolygon = refineCandidatePolygon(condidatePolygon);
-    // isOptimizing = false;
+    if (frameCounter === (initialLearningRate - 5 + 2) * 15) {
+      jitteredPolygons = [];
+      isOptimizing = false;
+    }
   }
   jitteredPolygons.forEach((polygon) => drawRect(polygon, "rgba(200,0,0,0.1)"));
 
   drawPoints(condidatePolygon, "rgba(200,0,0,0.5)");
   drawRect(condidatePolygon, "rgba(220,0,0,0.7)", 2);
 
-  context.beginPath();
-  context.strokeStyle = "rgba(0,220,0,0.7)";
-  context.lineWidth = 1;
-  condidatePolygon.forEach((point, index) => {
-    context.moveTo(point.x, point.y);
-    context.lineTo(truePolygon[index].x, truePolygon[index].y);
-  });
-  context.stroke();
+  if (settings.showTruePolygon) {
+    context.beginPath();
+    context.strokeStyle = "rgba(0,220,0,0.7)";
+    context.lineWidth = 1;
+    condidatePolygon.forEach((point, index) => {
+      context.moveTo(point.x, point.y);
+      context.lineTo(truePolygon[index].x, truePolygon[index].y);
+    });
+    context.stroke();
+  }
 
   const min = totallFitnessResults.reduce(((minValue, a) => a < minValue ? a : minValue), Number.MAX_VALUE);
   const max = totallFitnessResults.reduce(((maxValue, a) => a > maxValue ? a : maxValue), -Number.MAX_VALUE);
@@ -189,7 +198,7 @@ const fitnessFunction = (polygon) => {
   const pointsInside = dataPoints.filter((point) => isPointInsidePolygon(point, polygon));
   const totalSizeSum = pointsInside.reduce( ((sum, point) => point.size + sum), 0);
   const area = calcPolygonArea(polygon);
-  return totalSizeSum / Math.sqrt(area);
+  return totalSizeSum / Math.sqrt(area) * settings.areaImportance;
 };
 const distanceBetweenPoints = (p1, p2) => Math.hypot(p2.x-p1.x, p2.y-p1.y);
 
@@ -292,5 +301,6 @@ setupInputData();
 
 const gui = new dat.GUI();
 gui.add(settings, 'numberOfSamples', 2, 40).step(1);
-gui.add(settings, 'learningRate', 1, 30).step(1);
+gui.add(settings, 'learningRate', 1, 50).step(1);
 gui.add(settings, 'areaImportance', 0.1, 3).step(0.1);
+gui.add(settings, 'showTruePolygon');
