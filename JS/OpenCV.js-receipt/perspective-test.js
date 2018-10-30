@@ -1,6 +1,14 @@
 const gui = new dat.GUI();
 
-const renderStages = {original: 0, gray: 5, blurred: 10, binary: 15, contours: 20, contentParts: 25};
+const renderStages = {
+  original: 0,
+  gray: 5,
+  blurred: 10,
+  binary: 15,
+  morphology: 17,
+  contours: 20,
+  contentParts: 25
+};
 
 class App {
   constructor(videoElement, outputCanvasElementId, inputCanvasElementId) {
@@ -21,12 +29,13 @@ class App {
     this.dstC4 = null;
     this.planesC3Vector = null;
     this.RGBA_COLORS = [];
+    this.points = [];
 
     this.settings = {
       equalizeHist: false,
-      renderStage: renderStages.contentParts,
+      renderStage: renderStages.morphology,
       binaryStage: 'adaptiveThreshold',
-      thresholdType: cv.THRESH_BINARY,
+      thresholdType: cv.THRESH_BINARY_INV,
       imageSource: 'images/IMG_20180226_212741.jpg',
       blur: 2,
       contourThreshold1: 75,
@@ -38,6 +47,7 @@ class App {
       circlesAlpha: 0.5,
       minAreaIncluded: 10,
       maxAreaIncluded: 300,
+      maxAreaCap: 10,
     };
     this.prevSettings = {};
   }
@@ -220,6 +230,13 @@ class App {
         }
       }
 
+      // if (stage => renderStages.morphology) {
+      //   const M = cv.Mat.ones(7, 7, cv.CV_8U);
+      //   let anchor = new cv.Point(-1, -1);
+      //   cv.dilate(this.dstC1, this.dstC1, M, anchor, 1, cv.BORDER_CONSTANT, cv.morphologyDefaultBorderValue());
+      //   cv.erode(this.dstC1, this.dstC1, M, anchor, 1, cv.BORDER_CONSTANT, cv.morphologyDefaultBorderValue());
+      // }
+
       cv.cvtColor(this.dstC1, this.dstC4, cv.COLOR_GRAY2RGBA);
 
       let contours;
@@ -238,6 +255,7 @@ class App {
         }
       }
 
+      this.points = [];
       if (stage >= renderStages.contentParts) {
         let areas = [];
         for (let i = 0; i < contours.size(); i++) {
@@ -281,6 +299,7 @@ class App {
 
         contours.delete();
         overlay.delete();
+        this.points = areas.map(({x, y, area}) => ({x, y, size: area > this.settings.maxAreaCap ? this.settings.maxAreaCap : area}));
       }
     }
     // cv.warpPerspective(this.src, this.dstC4, this.perspectiveTransMatrix, new cv.Size(this.width, this.height));
@@ -297,6 +316,44 @@ class App {
       }
     }
     requestAnimationFrame(this.bindedProcessFrame);
+  }
+
+  fitRect() {
+    const optimizer = new EsOptimizer({
+      learningRate: 20,
+      numberOfSamples: 20,
+      width: this.width,
+      height: this.height,
+      debug: true,
+      fitnessFunction: (points, polygon) => {
+        const pointsInside = points.filter((point) => isPointInsidePolygon(point, polygon));
+        const totalSizeSum = pointsInside.reduce( ((sum, point) => point.size + sum), 0);
+        const area = calcPolygonArea(polygon);
+        return totalSizeSum / Math.sqrt(area * 2);
+      }
+    }, this.points);
+
+    const canvas = document.getElementById(this.outCanvasElementId);
+    const context = canvas.getContext('2d');
+    const drawRect = (points, strokeStyle='rgba(255, 100, 0, 0.5)', lineWidth=1) => {
+      if (points.length === 0) {
+        return;
+      }
+      context.beginPath();
+      context.strokeStyle = strokeStyle;
+      context.lineWidth = 1;
+      context.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        context.lineTo(points[i].x, points[i].y);
+      }
+      context.lineTo(points[0].x, points[0].y);
+      context.stroke();
+    };
+
+    optimizer.fitRect().then(({main, all}) => {
+      all.forEach(rect => drawRect(rect, "rgba(0,0,0,0.3)", 1))
+      drawRect(main, "rgba(0,0,220,0.7)", 2);
+    });
   }
 }
 
@@ -360,7 +417,6 @@ gui.add(app.settings, 'imageSource', [
   'images/IMG_20180226_213053.jpg',
   'images/IMG_20180226_213114.jpg',
   'images/IMG_20180226_213125.jpg',
-  'images/IMG_20180227_125631.jpg',
   'images/IMG_20180227_125726.jpg',
   'images/IMG_20180301_191122.jpg',
   'images/IMG_20180301_191148.jpg',
@@ -373,3 +429,8 @@ gui.add(app.settings, 'imageSource', [
   'images/health_receipt_target.jpg',
   'images/photo35.jpg'
 ]);
+
+const optimization = gui.addFolder('es-optimization');
+
+optimization.add(app.settings, 'maxAreaCap', 5, 100).step(1);
+optimization.add(app, 'fitRect');

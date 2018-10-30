@@ -19,25 +19,25 @@ const isPointInsidePolygon = (point, vs) => {
   return inside;
 };
 
+const calcPolygonArea = (polygon) => {
+  let total = 0;
+
+  for (let i = 0, l = polygon.length; i < l; i++) {
+    const addX = polygon[i].x;
+    const addY = polygon[i === polygon.length - 1 ? 0 : i + 1].y;
+    const subX = polygon[i === polygon.length - 1 ? 0 : i + 1].x;
+    const subY = polygon[i].y;
+
+    total += (addX * addY * 0.5);
+    total -= (subX * subY * 0.5);
+  }
+
+  return Math.abs(total);
+};
+
 EsOptimizer = (() => {
   // --- Module start
   const z = new Ziggurat();
-
-  const calcPolygonArea = (polygon) => {
-    let total = 0;
-
-    for (let i = 0, l = polygon.length; i < l; i++) {
-      const addX = polygon[i].x;
-      const addY = polygon[i === polygon.length - 1 ? 0 : i + 1].y;
-      const subX = polygon[i === polygon.length - 1 ? 0 : i + 1].x;
-      const subY = polygon[i].y;
-
-      total += (addX * addY * 0.5);
-      total -= (subX * subY * 0.5);
-    }
-
-    return Math.abs(total);
-  };
 
   const p = (x, y) => ({x, y});
   const randomP = (x, y, amplitude) => ({
@@ -75,8 +75,8 @@ EsOptimizer = (() => {
       });
     }
 
-    fitnessFunction(polygon) {
-      const pointsInside = dataPoints.filter((point) => isPointInsidePolygon(point, polygon));
+    defaultFitnessFunction(points, polygon) {
+      const pointsInside = points.filter((point) => isPointInsidePolygon(point, polygon));
       const totalSizeSum = pointsInside.reduce( ((sum, point) => point.size + sum), 0);
       const area = calcPolygonArea(polygon);
       return totalSizeSum / Math.sqrt(area);
@@ -107,14 +107,13 @@ EsOptimizer = (() => {
 
       let valuedJitteredPolygons = jitteredPolygons.map((polygon) => {
         return {
-          value: this.fitnessFunction(polygon),
+          value: (this.settings.fitnessFunction || this.defaultFitnessFunction)(this.points, polygon),
           polygon
         };
       });
       valuedJitteredPolygons.sort((a, b) => b.value - a.value);
       valuedJitteredPolygons = valuedJitteredPolygons.slice(0, 5);
       const totalFitness = valuedJitteredPolygons.reduce(((sum, current) => current.value + sum), 0);
-      // totalFitness / valuedJitteredPolygons.length;
 
       const resultingPolygon = [];
       for (let pi=0; pi < basePolygon.length; pi++) {
