@@ -1,12 +1,6 @@
 import * as React from 'react';
 import { SyntheticEvent } from 'react';
 import './App.css';
-// import { CSSProperties } from 'react';
-
-// const Raphael = require('raphael');
-
-const gradToRads = (grad: number) => (grad * Math.PI) / 180;
-const radsToGrad = (rads: number) => Math.PI * 180 / rads;
 
 const ROWS = 23;
 const COLUMNS = 7;
@@ -14,32 +8,31 @@ const HEXAGON_SIDE = 20;
 const HEXAGON_GAP = 2;
 const hexagonHeight = Math.sqrt(3) * HEXAGON_SIDE;
 
-// const hexagonSideAngle = gradToRads(360 / 6);
-
-export interface Coordinate {
+export interface Coordinates {
   x: number;
   y: number;
 }
 
-export interface Configuration {
-  activeKeys: Array<boolean|undefined>;
-  stipEnumToKeys: number[];
-}
-
 export type Mode = 'selection' | 'define-strip' | 'matrix-rain' | 'random-colors';
-
-export type CellKey = string; //  `yIndex-xIndex` format
 
 type RGB = [number, number, number];
 const BLACK: RGB = [0,0,0];
 const WHITE: RGB = [255,255,255];
 
-type Cells = RGB[];
+type Cells = Array<RGB | undefined>;
+
+export interface Configuration {
+  activeKeys: Array<boolean|undefined>;
+  stipIndexToGrid: number[]; // Mapping between strip index (index of an array) to grid index (value)
+}
 
 export interface State {
   serializedConfiguration: string;
   selectedCells: Array<boolean|undefined>;
-  cells: Cells;
+  grid: Cells; // This is virtual rectangular shaped grid state is
+  // This is states of each LED in a strip. Length should match
+  // This what we iterate over to display
+  strip: Cells;
   configuration: Configuration;
   mode: Mode;
 }
@@ -56,10 +49,11 @@ class App extends React.Component<{}, State> {
     super(props);
     this.state = {
       configuration: {
-        activeKeys: [],
-        stipEnumToKeys: []
+        activeKeys: new Array(ROWS * COLUMNS).fill(true),
+        stipIndexToGrid: new Array(ROWS * COLUMNS).fill(null).map((_, i) => i)
       },
-      cells: [],
+      strip: new Array(ROWS * COLUMNS).fill(null), // Strip states
+      grid: new Array(ROWS * COLUMNS).fill(null)  ,
       selectedCells: [],
       mode: 'selection',
       serializedConfiguration: '',
@@ -86,7 +80,7 @@ class App extends React.Component<{}, State> {
         </div>
         <div>
           <svg height={totalHeight} width={400} xmlns="http://www.w3.org/2000/svg">
-            {this.renderHexagons()}
+            {this.renderStrip()}
           </svg>
         </div>
         <div className='side-panel'>
@@ -131,6 +125,7 @@ class App extends React.Component<{}, State> {
         ...configuration,
         activeKeys: [...this.state.selectedCells]
       },
+      strip: new Array(this.state.selectedCells.length).fill(null),
       selectedCells: []
     });
   };
@@ -140,44 +135,39 @@ class App extends React.Component<{}, State> {
   }
 
   private nextRandomColorsModeTick = () => {
-    const newCells: Cells = [];
-    for (let yc = 0; yc < ROWS; yc++) {
-      for (let xc = 0; xc < COLUMNS; xc++) {
-        newCells.push([this.randomColor, this.randomColor, this.randomColor]);
-      }
-    }
-
-    this.setState({cells: newCells});
+    const newStrip: Cells = this.state.strip.map(() => [this.randomColor, this.randomColor, this.randomColor] as RGB);
+    this.setState({strip: newStrip});
     if (this.state.mode === 'random-colors') {
       setTimeout(this.nextRandomColorsModeTick, 1000/10);
-      // requestAnimationFrame(this.nextRandomColorsModeTick);
     }
   };
 
   private nextMatrixRainModeTick = () => {
-    const { cells } = this.state;
-    const newCells: Cells = [];
+    const { grid } = this.state;
+    const newGrid: Cells = [];
     for (let yc = ROWS-1; yc >= 0; yc--) {
       for (let xc = 0; xc < COLUMNS; xc++) {
-        const key = yc * COLUMNS + xc;
+        const gridKey = yc * COLUMNS + xc;
         if(yc > 0) {
           const prevLineKey = (yc-1) * COLUMNS + xc;
-          newCells[key] = cells[prevLineKey] || {color: BLACK};
+          newGrid[gridKey] = grid[prevLineKey] || BLACK;
         } else {
-          if (Math.random() > 0.9 && (!cells[key] || cells[key] === BLACK || cells[key][1] < 100)) {
-            newCells[key] = WHITE;
-          } else if (!cells[key] || cells[key] === BLACK || cells[key][1] < 10) {
-            newCells[key] = BLACK;
-          } else if (cells[key] === WHITE) {
-            newCells[key] = [0, 240, 0];
+          const gridCell = grid[gridKey];
+          if (Math.random() > 0.9 && (!gridCell || gridCell === BLACK || gridCell[1] < 100)) {
+            newGrid[gridKey] = WHITE;
+          } else if (!gridCell || gridCell === BLACK || gridCell[1] < 10) {
+            newGrid[gridKey] = BLACK;
+          } else if (gridCell === WHITE) {
+            newGrid[gridKey] = [0, 240, 0];
           } else {
-            newCells[key] = [0, cells[key][1] - 20, 0];
+            newGrid[gridKey] = [0, gridCell[1] - 20, 0];
           }
         }
       }
     }
+    const newStrip = this.state.configuration.stipIndexToGrid.map(gridIndex => newGrid[gridIndex]);
 
-    this.setState({cells: newCells});
+    this.setState({grid: newGrid, strip: newStrip});
     if (this.state.mode === 'matrix-rain') {
       setTimeout(this.nextMatrixRainModeTick, 1000/10);
     }
@@ -185,7 +175,11 @@ class App extends React.Component<{}, State> {
 
   private deserializeData = () => {
     this.setState(({ serializedConfiguration }) => {
-      return { configuration: JSON.parse(serializedConfiguration) }
+      const configuration = JSON.parse(serializedConfiguration) as Configuration;
+      return {
+        configuration,
+        strip: new Array(configuration.stipIndexToGrid.length).fill(null)
+      }
     });
   };
 
@@ -193,7 +187,7 @@ class App extends React.Component<{}, State> {
     const { selectedCells, mode, configuration } = this.state;
 
     if(mode === 'define-strip'){
-      configuration.stipEnumToKeys.push(key);
+      configuration.stipIndexToGrid.push(key);
     }
 
     selectedCells[key] = !selectedCells[key];
@@ -201,68 +195,62 @@ class App extends React.Component<{}, State> {
     this.setState({ selectedCells });
   };
 
-
-  private getCellColor(key: number): string {
-    const { selectedCells, cells } = this.state;
-    const isSelected = selectedCells[key];
-    const cellState = cells[key];
-    if (isSelected) {
-      return 'red';
-    } else if (cellState) {
-      return `rgb(${cellState[0]},${cellState[1]},${cellState[2]})`;
-    } else {
-      return 'none';
+  private getCoordinatesByGridIndex(gridIndex: number): Coordinates {
+    const yc = Math.floor(gridIndex / COLUMNS);
+    const xc = gridIndex % COLUMNS;
+    const heightWithGap = hexagonHeight + HEXAGON_GAP * 2;
+    const sideWithGap = heightWithGap / Math.sqrt(3);
+    const base = { x: 60, y: 60 };
+    const coordinates = {
+      x: base.x + xc * (sideWithGap * 1.5),
+      y: base.y + yc * heightWithGap
+    };
+    if (xc % 2 !== 0) {
+      coordinates.y = base.y + yc * heightWithGap + heightWithGap / 2;
     }
+    return coordinates;
   }
 
-  private renderHexagon(key: number, x: number, y: number, side: number) {
-    const { mode, configuration: {stipEnumToKeys} } = this.state;
-    const fill = this.getCellColor(key);
-
+  private renderHexagon(gridIndex: number, color?: RGB) {
+    const { selectedCells, mode, configuration: {stipIndexToGrid} } = this.state;
+    const {x,y} = this.getCoordinatesByGridIndex(gridIndex);
     let stripNumber = null;
-    const index = stipEnumToKeys.indexOf(key);
+    const index = stipIndexToGrid.indexOf(gridIndex);
     if (mode === 'define-strip' && index > -1) {
       stripNumber = <text x={x} y={y} className="small">{index}</text>;
+    }
+    const isSelected = selectedCells[gridIndex];
+    let fill = `none`;
+    if (isSelected) {
+      fill = 'red';
+    } else if (color) {
+      fill = `rgb(${color[0]},${color[1]},${color[2]})`;
     }
 
     return <>
       <path
-        key={key}
+        key={gridIndex}
         fill={fill}
         stroke="#000000"
-        d={this.ngonPath(x, y, 6, side)}
-        onClick={this.onHexagonClick(key)}
+        d={this.ngonPath(x, y, 6, HEXAGON_SIDE)}
+        onClick={this.onHexagonClick(gridIndex)}
       />
       {stripNumber}
     </>;
   }
 
-  private renderHexagons() {
-    const { activeKeys } = this.state.configuration;
-    const base = { x: 60, y: 60 };
-    const hexagons = [];
-    // const gap = 1;
-    // const side = 20;
-    // const height = Math.sqrt(3) * side;
-    const heightWithGap = hexagonHeight + HEXAGON_GAP * 2;
-    const sideWithGap = heightWithGap / Math.sqrt(3);
+  private renderLed(stripIndex: number, stripValue?: RGB) {
+    // At this point on Arduino I can call some API that would change color of indexed led.
+    // Here I need to do some visual render stuff.
+    const {configuration: {stipIndexToGrid}} = this.state;
+    const gridIndex = stipIndexToGrid[stripIndex];
 
-    for (let yc = 0; yc < ROWS; yc++) {
-      for (let xc = 0; xc < COLUMNS; xc++) {
-        const key = yc * COLUMNS + xc;
-        if (activeKeys.length === 0 || activeKeys[key]) {
-          const xy = {
-            x: base.x + xc * (sideWithGap * 1.5),
-            y: base.y + yc * heightWithGap
-          };
-          if (xc % 2 !== 0) {
-            xy.y = base.y + yc * heightWithGap + heightWithGap / 2;
-          }
-          hexagons.push(this.renderHexagon(key, xy.x, xy.y, HEXAGON_SIDE));
-        }
-      }
-    }
-    return hexagons;
+    return this.renderHexagon(gridIndex, stripValue);
+  }
+
+  private renderStrip() {
+    const { strip } = this.state;
+    return strip.map((stripValue, stripIndex) => this.renderLed(stripIndex, stripValue));
   }
 
   private ngonPath(x: number, y: number, N: number, side: number) {
