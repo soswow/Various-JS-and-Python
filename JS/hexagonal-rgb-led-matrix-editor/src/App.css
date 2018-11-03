@@ -1,0 +1,31 @@
+body, html, #root{
+  height: 100%;
+  background-color: lightgrey;
+}
+
+.App {
+  display: grid;
+  height: 100%;
+  grid-template-columns: 1fr 600px 1fr;
+  grid-gap: 15px;
+}
+
+.side-panel{
+  padding: 10px;
+}
+textarea{
+  font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+}
+
+path {
+  pointer-events: all;
+  cursor: pointer;
+}
+path:hover{
+  stroke: rgb(255, 0, 0);
+}
+
+@keyframes App-logo-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
