@@ -13,7 +13,7 @@ export interface Coordinates {
   y: number;
 }
 
-export type Mode = 'selection' | 'define-strip' | 'matrix-rain' | 'random-colors';
+export type Mode = 'selection' | 'define-strip' | 'matrix-rain' | 'random-colors' | 'fire';
 
 type RGB = [number, number, number];
 const BLACK: RGB = [0,0,0];
@@ -76,6 +76,7 @@ class App extends React.Component<{}, State> {
             <option value={'define-strip' as Mode}>Strip enum mode</option>
             <option value={'matrix-rain' as Mode}>Matrix rain mode</option>
             <option value={'random-colors' as Mode}>Random colors mode</option>
+            <option value={'fire' as Mode}>Fire mode</option>
           </select>
         </div>
         <div>
@@ -104,10 +105,16 @@ class App extends React.Component<{}, State> {
   private onModeChange = (e: SyntheticEvent<HTMLSelectElement>) => {
     const newMode = e.currentTarget.value as Mode;
     this.setState({ mode: newMode }, () => {
-      if (newMode === 'random-colors') {
-        this.nextRandomColorsModeTick();
-      } else if (newMode === 'matrix-rain') {
-        this.nextMatrixRainModeTick();
+      switch (newMode) {
+        case 'random-colors':
+          this.nextRandomColorsModeTick();
+          break;
+        case 'matrix-rain':
+          this.nextMatrixRainModeTick();
+          break;
+        case 'fire':
+          this.nextFireModeTick();
+          break;
       }
     });
   };
@@ -170,6 +177,57 @@ class App extends React.Component<{}, State> {
     this.setState({grid: newGrid, strip: newStrip});
     if (this.state.mode === 'matrix-rain') {
       setTimeout(this.nextMatrixRainModeTick, 1000/10);
+    }
+  };
+
+  private nextFireModeTick = () => {
+    const { grid } = this.state;
+    const newGrid: Cells = [];
+
+    for (let xc = 0; xc < COLUMNS; xc++) {
+      const gridKey = (ROWS-1) * COLUMNS + xc;
+      newGrid[gridKey] = [Math.random() * 255, 0, 0];
+    }
+
+    for (let yc = ROWS-2; yc >= 0; yc--) {
+      for (let xc = 0; xc < COLUMNS; xc++) {
+        const gridKey = yc * COLUMNS + xc;
+        let sum = 0;
+        const oneBellowCell = grid[(yc+1) * COLUMNS + xc];
+        sum += oneBellowCell && oneBellowCell[0] || 0;
+        if (xc > 0) {
+          const leftBottomCell = grid[(yc+1) * COLUMNS + (xc-1)];
+          sum += leftBottomCell && leftBottomCell[0] || 0;
+        } else {
+          // When there is now column to the left, we just add bottom one more time
+          sum += oneBellowCell && oneBellowCell[0] || 0;
+        }
+
+        if (xc < COLUMNS-1) {
+          const rightBottomCell = grid[(yc+1) * COLUMNS + (xc+1)];
+          sum += rightBottomCell && rightBottomCell[0] || 0;
+        } else {
+          // When there is now column to the right, we just add bottom one more time
+          sum += oneBellowCell && oneBellowCell[0] || 0;
+        }
+        if(yc < ROWS-2){
+          const twoBellowCell = grid[(yc+2) * COLUMNS + xc];
+          sum += twoBellowCell && twoBellowCell[0] || 0;
+        }else{
+          // When it's just one above last line we add just one bellow
+          sum += oneBellowCell && oneBellowCell[0] || 0;
+        }
+
+        const red = sum / 4.04;
+
+        newGrid[gridKey] = [red, 0, 0];
+      }
+    }
+
+    const newStrip = this.state.configuration.stipIndexToGrid.map(gridIndex => newGrid[gridIndex]);
+    this.setState({grid: newGrid, strip: newStrip});
+    if (this.state.mode === 'fire') {
+      setTimeout(this.nextFireModeTick, 1000/20);
     }
   };
 
