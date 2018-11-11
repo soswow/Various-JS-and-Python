@@ -7,6 +7,9 @@ const COLUMNS = 7;
 const HEXAGON_SIDE = 20;
 const HEXAGON_GAP = 2;
 const hexagonHeight = Math.sqrt(3) * HEXAGON_SIDE;
+const heightWithGap = hexagonHeight + HEXAGON_GAP * 2;
+const widthWithGap = heightWithGap / Math.sqrt(3) * 1.5;
+const base = { x: 60, y: 60 };
 
 export interface Coordinates {
   x: number;
@@ -16,19 +19,22 @@ export interface Coordinates {
 export type Mode = 'selection' | 'define-strip' | 'matrix-rain' | 'random-colors' | 'fire';
 
 type RGB = [number, number, number];
-const BLACK: RGB = [0,0,0];
-const WHITE: RGB = [255,255,255];
+const BLACK: RGB = [0, 0, 0];
+const WHITE: RGB = [255, 255, 255];
 
 type Cells = Array<RGB | undefined>;
 
 export interface Configuration {
-  activeKeys: Array<boolean|undefined>;
+  isVerticalPattern: boolean;
+  activeKeys: Array<boolean | undefined>;
   stipIndexToGrid: number[]; // Mapping between strip index (index of an array) to grid index (value)
+  rows: number;
+  columns: number;
 }
 
 export interface State {
   serializedConfiguration: string;
-  selectedCells: Array<boolean|undefined>;
+  selectedCells: Array<boolean | undefined>;
   grid: Cells; // This is virtual rectangular shaped grid state is
   // This is states of each LED in a strip. Length should match
   // This what we iterate over to display
@@ -49,11 +55,14 @@ class App extends React.Component<{}, State> {
     super(props);
     this.state = {
       configuration: {
-        activeKeys: new Array(ROWS * COLUMNS).fill(true),
+        rows: ROWS,
+        columns: COLUMNS,
+        isVerticalPattern: true,
+        activeKeys: [],
         stipIndexToGrid: new Array(ROWS * COLUMNS).fill(null).map((_, i) => i)
       },
       strip: new Array(ROWS * COLUMNS).fill(null), // Strip states
-      grid: new Array(ROWS * COLUMNS).fill(null)  ,
+      grid: new Array(ROWS * COLUMNS).fill(null),
       selectedCells: [],
       mode: 'selection',
       serializedConfiguration: '',
@@ -61,11 +70,13 @@ class App extends React.Component<{}, State> {
   }
 
   public render() {
-    const totalHeight = ROWS * (hexagonHeight + HEXAGON_GAP) + 200;
     const {
       mode,
-      serializedConfiguration
+      serializedConfiguration,
+      configuration: { isVerticalPattern, rows, columns }
     } = this.state;
+
+    const totalHeight = rows * (isVerticalPattern ? heightWithGap : widthWithGap) + base.y;
     return (
       <div className="App">
         <div className='side-panel'>
@@ -78,6 +89,22 @@ class App extends React.Component<{}, State> {
             <option value={'random-colors' as Mode}>Random colors mode</option>
             <option value={'fire' as Mode}>Fire mode</option>
           </select>
+          <br/>
+          <label htmlFor="isVerticalPattern">
+            Is Vertical Pattern:
+            <input
+              type="checkbox"
+              id="isVerticalPattern"
+              name="isVerticalPattern"
+              checked={isVerticalPattern}
+              onChange={this.onIsVerticalPatternChange}
+            />
+          </label>
+          <br/>
+          Rows: <input type="text" onChange={this.onRowsChange} value={rows}/>
+          <br/>
+          Columns: <input type="text" onChange={this.onColumnsChange} value={columns}/>
+          <br/>
         </div>
         <div>
           <svg height={totalHeight} width={400} xmlns="http://www.w3.org/2000/svg">
@@ -106,6 +133,10 @@ class App extends React.Component<{}, State> {
     const newMode = e.currentTarget.value as Mode;
     this.setState({ mode: newMode }, () => {
       switch (newMode) {
+        case 'define-strip':
+          const configuration = this.state.configuration;
+          this.setState({ configuration: { ...configuration, stipIndexToGrid: [] } });
+          break;
         case 'random-colors':
           this.nextRandomColorsModeTick();
           break;
@@ -117,6 +148,36 @@ class App extends React.Component<{}, State> {
           break;
       }
     });
+  };
+
+  private updateConfiguration = (config: Partial<Configuration>) => {
+    const configuration = this.state.configuration;
+    const rows = config.rows || configuration.rows;
+    const columns = config.columns || configuration.columns;
+    this.setState({
+      configuration: {
+        ...configuration,
+        ...config,
+        stipIndexToGrid: new Array(rows * columns).fill(null).map((_, i) => i)
+      },
+      strip: new Array(rows * columns).fill(null),
+      grid: new Array(rows * columns).fill(null),
+    });
+  };
+
+  private onRowsChange = (e: SyntheticEvent<HTMLInputElement>) => {
+    const rows = parseInt(e.currentTarget.value, 10);
+    this.updateConfiguration({ rows });
+  };
+
+  private onColumnsChange = (e: SyntheticEvent<HTMLInputElement>) => {
+    const columns = parseInt(e.currentTarget.value, 10);
+    this.updateConfiguration({ columns });
+  };
+
+  private onIsVerticalPatternChange = (e: SyntheticEvent<HTMLInputElement>) => {
+    const isVerticalPattern = e.currentTarget.checked;
+    this.updateConfiguration({ isVerticalPattern });
   };
 
   private serializeData = () => {
@@ -143,20 +204,20 @@ class App extends React.Component<{}, State> {
 
   private nextRandomColorsModeTick = () => {
     const newStrip: Cells = this.state.strip.map(() => [this.randomColor, this.randomColor, this.randomColor] as RGB);
-    this.setState({strip: newStrip});
+    this.setState({ strip: newStrip });
     if (this.state.mode === 'random-colors') {
-      setTimeout(this.nextRandomColorsModeTick, 1000/10);
+      setTimeout(this.nextRandomColorsModeTick, 1000 / 10);
     }
   };
 
   private nextMatrixRainModeTick = () => {
-    const { grid } = this.state;
+    const { grid, configuration: { rows, columns } } = this.state;
     const newGrid: Cells = [];
-    for (let yc = ROWS-1; yc >= 0; yc--) {
-      for (let xc = 0; xc < COLUMNS; xc++) {
-        const gridKey = yc * COLUMNS + xc;
-        if(yc > 0) {
-          const prevLineKey = (yc-1) * COLUMNS + xc;
+    for (let yc = rows - 1; yc >= 0; yc--) {
+      for (let xc = 0; xc < columns; xc++) {
+        const gridKey = yc * columns + xc;
+        if (yc > 0) {
+          const prevLineKey = (yc - 1) * columns + xc;
           newGrid[gridKey] = grid[prevLineKey] || BLACK;
         } else {
           const gridCell = grid[gridKey];
@@ -174,46 +235,46 @@ class App extends React.Component<{}, State> {
     }
     const newStrip = this.state.configuration.stipIndexToGrid.map(gridIndex => newGrid[gridIndex]);
 
-    this.setState({grid: newGrid, strip: newStrip});
+    this.setState({ grid: newGrid, strip: newStrip });
     if (this.state.mode === 'matrix-rain') {
-      setTimeout(this.nextMatrixRainModeTick, 1000/10);
+      setTimeout(this.nextMatrixRainModeTick, 1000 / 10);
     }
   };
 
   private nextFireModeTick = () => {
-    const { grid } = this.state;
+    const { grid, configuration: { rows, columns } } = this.state;
     const newGrid: Cells = [];
 
-    for (let xc = 0; xc < COLUMNS; xc++) {
-      const gridKey = (ROWS-1) * COLUMNS + xc;
+    for (let xc = 0; xc < columns; xc++) {
+      const gridKey = (rows - 1) * columns + xc;
       newGrid[gridKey] = [Math.random() * 255, 0, 0];
     }
 
-    for (let yc = ROWS-2; yc >= 0; yc--) {
-      for (let xc = 0; xc < COLUMNS; xc++) {
-        const gridKey = yc * COLUMNS + xc;
+    for (let yc = rows - 2; yc >= 0; yc--) {
+      for (let xc = 0; xc < columns; xc++) {
+        const gridKey = yc * columns + xc;
         let sum = 0;
-        const oneBellowCell = grid[(yc+1) * COLUMNS + xc];
+        const oneBellowCell = grid[(yc + 1) * columns + xc];
         sum += oneBellowCell && oneBellowCell[0] || 0;
         if (xc > 0) {
-          const leftBottomCell = grid[(yc+1) * COLUMNS + (xc-1)];
+          const leftBottomCell = grid[(yc + 1) * columns + (xc - 1)];
           sum += leftBottomCell && leftBottomCell[0] || 0;
         } else {
           // When there is now column to the left, we just add bottom one more time
           sum += oneBellowCell && oneBellowCell[0] || 0;
         }
 
-        if (xc < COLUMNS-1) {
-          const rightBottomCell = grid[(yc+1) * COLUMNS + (xc+1)];
+        if (xc < columns - 1) {
+          const rightBottomCell = grid[(yc + 1) * columns + (xc + 1)];
           sum += rightBottomCell && rightBottomCell[0] || 0;
         } else {
           // When there is now column to the right, we just add bottom one more time
           sum += oneBellowCell && oneBellowCell[0] || 0;
         }
-        if(yc < ROWS-2){
-          const twoBellowCell = grid[(yc+2) * COLUMNS + xc];
+        if (yc < rows - 2) {
+          const twoBellowCell = grid[(yc + 2) * columns + xc];
           sum += twoBellowCell && twoBellowCell[0] || 0;
-        }else{
+        } else {
           // When it's just one above last line we add just one bellow
           sum += oneBellowCell && oneBellowCell[0] || 0;
         }
@@ -225,9 +286,9 @@ class App extends React.Component<{}, State> {
     }
 
     const newStrip = this.state.configuration.stipIndexToGrid.map(gridIndex => newGrid[gridIndex]);
-    this.setState({grid: newGrid, strip: newStrip});
+    this.setState({ grid: newGrid, strip: newStrip });
     if (this.state.mode === 'fire') {
-      setTimeout(this.nextFireModeTick, 1000/20);
+      setTimeout(this.nextFireModeTick, 1000 / 20);
     }
   };
 
@@ -244,7 +305,7 @@ class App extends React.Component<{}, State> {
   private onHexagonClick = (key: number) => () => {
     const { selectedCells, mode, configuration } = this.state;
 
-    if(mode === 'define-strip'){
+    if (mode === 'define-strip') {
       configuration.stipIndexToGrid.push(key);
     }
 
@@ -254,24 +315,34 @@ class App extends React.Component<{}, State> {
   };
 
   private getCoordinatesByGridIndex(gridIndex: number): Coordinates {
-    const yc = Math.floor(gridIndex / COLUMNS);
-    const xc = gridIndex % COLUMNS;
-    const heightWithGap = hexagonHeight + HEXAGON_GAP * 2;
-    const sideWithGap = heightWithGap / Math.sqrt(3);
-    const base = { x: 60, y: 60 };
-    const coordinates = {
-      x: base.x + xc * (sideWithGap * 1.5),
-      y: base.y + yc * heightWithGap
-    };
-    if (xc % 2 !== 0) {
-      coordinates.y = base.y + yc * heightWithGap + heightWithGap / 2;
+    const { configuration: { isVerticalPattern, columns } } = this.state;
+    const yc = Math.floor(gridIndex / columns);
+    const xc = gridIndex % columns;
+
+    if (isVerticalPattern) {
+      const coordinates = {
+        x: base.x + xc * widthWithGap,
+        y: base.y + yc * heightWithGap
+      };
+      if (xc % 2 !== 0) {
+        coordinates.y = base.y + yc * heightWithGap + heightWithGap / 2;
+      }
+      return coordinates;
+    } else {
+      const coordinates = {
+        x: base.x + xc * heightWithGap,
+        y: base.y + yc * widthWithGap
+      };
+      if (yc % 2 !== 0) {
+        coordinates.x = base.x + xc * heightWithGap + heightWithGap / 2;
+      }
+      return coordinates;
     }
-    return coordinates;
   }
 
   private renderHexagon(gridIndex: number, color?: RGB) {
-    const { selectedCells, mode, configuration: {stipIndexToGrid} } = this.state;
-    const {x,y} = this.getCoordinatesByGridIndex(gridIndex);
+    const { selectedCells, mode, configuration: { stipIndexToGrid } } = this.state;
+    const { x, y } = this.getCoordinatesByGridIndex(gridIndex);
     let stripNumber = null;
     const index = stipIndexToGrid.indexOf(gridIndex);
     if (mode === 'define-strip' && index > -1) {
@@ -300,22 +371,28 @@ class App extends React.Component<{}, State> {
   private renderLed(stripIndex: number, stripValue?: RGB) {
     // At this point on Arduino I can call some API that would change color of indexed led.
     // Here I need to do some visual render stuff.
-    const {configuration: {stipIndexToGrid}} = this.state;
+    const { configuration: { stipIndexToGrid } } = this.state;
     const gridIndex = stipIndexToGrid[stripIndex];
 
     return this.renderHexagon(gridIndex, stripValue);
   }
 
   private renderStrip() {
-    const { strip } = this.state;
-    return strip.map((stripValue, stripIndex) => this.renderLed(stripIndex, stripValue));
+    const { grid, strip, configuration: { activeKeys } } = this.state;
+    if (activeKeys.length === 0) {
+      return grid.map((color, i) => this.renderHexagon(i, color));
+    } else {
+      return strip.map((stripValue, stripIndex) => this.renderLed(stripIndex, stripValue));
+    }
   }
 
   private ngonPath(x: number, y: number, N: number, side: number) {
+    const { configuration: { isVerticalPattern } } = this.state;
     let path = '';
 
     for (let c = 0; c <= N; c += 1) {
-      const theta = (c * (360 / N) * Math.PI) / 180;
+      const sideAngle = 360 / N;
+      const theta = ((c + (isVerticalPattern ? 0 : 0.5)) * sideAngle * Math.PI) / 180;
       const tempX = x + Math.cos(theta) * side;
       const tempY = y + Math.sin(theta) * side;
       path += (c === 0 ? "M" : "L") + tempX + "," + tempY;
