@@ -5,11 +5,31 @@ const math2 = math.create({
     matrix: 'Array'
 });
 
-const W = 500;
-const H = 500;
-const sampleSize = 50;
-const samplesArea = 30;
-const learningRate = 0.1;
+const maxSigma = 8;
+const settings = {
+    hillsNum: 3,
+    holesNum: 3,
+    sampleSize: 50,
+    samplesArea: 60,
+    learningRate: 0.1,
+    learningRateDecay: 4,
+    numberOfRuns: 30,
+    animation: false,
+    showOptimumLocation: false,
+    addMorePaths: () => {
+        for (let i = 0; i < 10; i++) {
+            addTrajectory();
+        }
+    },
+    regenerate: () => {
+        main();
+    },
+    recalculate: () => recalculate(),
+
+};
+
+const W = 800;
+const H = 600;
 const canvas = document.getElementById('data');
 canvas.width = W;
 canvas.height = H;
@@ -70,6 +90,15 @@ const renderMatrix = (matrix) => {
         setPixelInImageData(imageData, x, y, r, g, b, Math.abs(el) / totalMax * 255);
     });
     context2.putImageData(imageData, 0, 0);
+
+    if (settings.showOptimumLocation) {
+        _matrixDebugLog.forEach(({ mux, muy, sigma, sign }) => {
+            context2.beginPath();
+            context2.strokeStyle = sign > 0 ? '#00741e' : '#0c0074';
+            context2.arc(W / 2 * mux + W / 2, H / 2 * muy + H / 2, (maxSigma - sigma) * 60, 0, 2 * Math.PI);
+            context2.stroke();
+        });
+    }
 }
 
 const linspace = (start, end, size) => {
@@ -77,27 +106,32 @@ const linspace = (start, end, size) => {
     return math2.range(0, size).map((el) => start + el * interval);
 }
 
-
 const _linSpace = linspace(-1, 1, W);
 const _X = math.multiply(math.ones(W, 1), [_linSpace]);
 const _Y = math.multiply(math.reshape(_linSpace, [W, 1]), math.ones(1, W))
 const gpu = new GPU();
 
-if (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) {
-    mode = 'gpu';
-    console.log('Using GPU');
-} else {
-    mode = 'cpu';
-    console.log('Using CPU');
-}
+console.log({
+    'GPU is in-fact supported': GPU.isGPUSupported,
+    'kernel maps are supported': GPU.isKernelMapSupported,
+    'offscreen canvas is supported': GPU.isOffscreenCanvasSupported,
+    'WebGL v1 is supported': GPU.isWebGLSupported,
+    'WebGL v2 is supported': GPU.isWebGL2Supported,
+    'headlessgl is supported': GPU.isHeadlessGLSupported,
+    'canvas is supported': GPU.isCanvasSupported,
+    'the platform supports HTMLImageArray': GPU.isGPUHTMLImageArraySupported,
+    'the system supports single precision float 32 values': GPU.isSinglePrecisionSupported,
+});
 
 const myFunc = gpu.createKernel(function (A, k, mux, muy) {
-  const m = Math.pow(A[this.thread.x] - mux, 2) + Math.pow(A[this.thread.y] - muy, 2);
-  return Math.exp(m * k);
-}, { mode }).setOutput([W, H]);
+    const m = Math.pow(A[this.thread.x] - mux, 2) + Math.pow(A[this.thread.y] - muy, 2);
+    return Math.exp(m * k);
+}).setOutput([W, H]);
 
+let _matrixDebugLog = [];
 const makeG = (mux, muy, sigma) => {
-    const k = -1 / 2 * Math.pow(sigma, 2);
+    _matrixDebugLog.push({ mux, muy, sigma });
+    const k = -1 / 2 * math.pow(sigma, 2);
     const data = myFunc(_linSpace, k, mux, muy);
     return math.matrix(Array.prototype.map.call(data, (row) => Array.prototype.slice.call(row)));
 }
@@ -111,8 +145,8 @@ const drawPoints = (points, fillStyle = "rgba(0,0,0,0.5)", size = 3) => points.f
 
 const drawArrow = (pFrom, pTo) => {
     context.beginPath();
-    context.strokeStyle = 'rgb(255, 100, 0)';
-    context.lineWidth = 3;
+    context.strokeStyle = 'rgba(255, 100, 0, 0.4)';
+    context.lineWidth = 1;
     context.moveTo(pFrom[0], pFrom[1]);
     context.lineTo(pTo[0], pTo[1]);
     context.stroke();
@@ -123,9 +157,9 @@ const clearContext = () => {
 }
 
 const randomG = () => {
-    const x = math.random() * 2 - 1;
-    const y = math.random() * 2 - 1;
-    const sigma = math.randomInt(3) + 1;
+    const x = math.random(-1, 1);
+    const y = math.random(-1, 1);
+    const sigma = math.random(1, maxSigma);
     return makeG(x, y, sigma);
 }
 
@@ -139,32 +173,48 @@ const clipValue = (val, min, max) => {
     }
 }
 
-const main = () => {
+const constructMultiGaussianDistributionMatrix = ({ addNumber, substractNumber }) => {
     let G = null;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < addNumber; i++) {
         if (G === null) {
             G = randomG();
         } else {
             G = math.add(G, randomG());
         }
+        _matrixDebugLog[_matrixDebugLog.length - 1].sign = 1;
     }
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < substractNumber; i++) {
         G = math.subtract(G, randomG());
+        _matrixDebugLog[_matrixDebugLog.length - 1].sign = -1;
     }
+    return G;
+}
 
-    const alpha = learningRate;
-    const sigma = samplesArea;
-    let w = [math.randomInt(W - sigma * 4) + sigma * 2, math.randomInt(H - sigma * 4) + sigma * 2];
+
+
+let trajectories = [];
+
+const addTrajectory = () => {
+    const sigma = settings.samplesArea;
+
+    let w = [math.randomInt(W), math.randomInt(H)];
+    const originalW = [...w];
 
     const points = [];
     const samplePoints = [];
     let minimumFound = false;
+    let iterations = 0;
     while (!minimumFound) {
-        const noise = math.add(math.multiply(initRandomMatrix(sampleSize, 2), 4), -2);
-        const wp = math.add(math.dotMultiply(sigma, noise), math.multiply(math.ones(sampleSize, 1), [w]));
+        const alpha = settings.learningRateDecay / math2.sqrt(iterations+1) * settings.learningRate;
+        const noise = math.add(math.multiply(initRandomMatrix(settings.sampleSize, 2), 4), -2);
+        const wp = math.add(math.dotMultiply(sigma, noise), math.multiply(math.ones(settings.sampleSize, 1), [w]));
 
         samplePoints.push(wp.toArray());
 
+        if (isNaN(wp._data[0][0])) {
+            console.log(`broke`)
+            break;
+        }
         let R = wp.toArray().map(([x, y]) =>
             G.get(
                 [
@@ -172,38 +222,106 @@ const main = () => {
                     Math.round(clipValue(x, 0, W - 1))
                 ])
         );
-        R = math.subtract(R, math.mean(R));
-        R = math.dotDivide(R, math.std(R));
-        g = math.multiply([R], noise)
-
+        const R2 = math.subtract(R, math.mean(R));
+        const R3 = math.dotDivide(R2, math.std(R2));
+        if (R3[0] === Infinity || R3[0] === -Infinity) {
+            console.log(`broke`)
+            break;
+        }
+        g = math.multiply([R3], noise)
         const u = math.dotMultiply(g, alpha).toArray()[0];
         points.push(w);
         w = math.add(w, u);
-        if (points.length > 5 && math.distance(points[points.length - 1], points[points.length - 6]) < 2) {
-            minimumFound = true;
+        if (points.length > 5){
+            const gap = math.distance(points[points.length - 1], points[points.length - 6]);
+            // console.log(iterations, alpha, gap);
+            if(gap < 2){
+                minimumFound = true;
+            }
+        }
+        iterations += 1;
+    }
+
+    trajectories.push(points);
+}
+
+let G;
+
+const main = () => {
+    trajectories = [];
+    _matrixDebugLog = [];
+    G = constructMultiGaussianDistributionMatrix({
+        addNumber: settings.hillsNum,
+        substractNumber: settings.holesNum,
+    });
+
+    // const samplePointsCollection = [];
+
+    for (let i = 0; i < settings.numberOfRuns; i++) {
+        addTrajectory();
+    }
+}
+
+main();
+
+const recalculate = () => {
+    trajectories = [];
+    for (let i = 0; i < settings.numberOfRuns; i++) {
+        addTrajectory();
+    }
+}
+
+
+let frameIndex = 0;
+const loop = () => {
+    clearContext();
+    renderMatrix(G);
+    if (settings.animation) {
+        // const frame = () => {
+        // const samplePoints = samplePointsCollection[trajectoryIndex];
+        const maxPointsLength = math2.max(...trajectories.map(t => t.length))
+        for (const points of trajectories) {
+            for (let i = 1; i < frameIndex; i++) {
+                if (points.length > i) {
+                    drawArrow(points[i - 1], points[i]);
+                }
+            }
+        }
+        for (const points of trajectories) {
+            if (points.length > frameIndex) {
+                drawPoints([points[frameIndex]], fillStyle = "red", size = 2)
+            }
+        }
+        frameIndex += 1;
+        if (frameIndex >= maxPointsLength) {
+            frameIndex = 0;
+        }
+    } else {
+        for (const trajectory of trajectories) {
+            for (let i = 1; i < trajectory.length; i++) {
+                drawArrow(trajectory[i - 1], trajectory[i]);
+            }
         }
     }
 
-    let frameIndex = 0;
-    renderMatrix(G);
-    const frame = () => {
-        clearContext();
-        drawPoints(samplePoints[frameIndex]);
-        drawPoints([points[frameIndex]], fillStyle = "red", size = 3)
-        for (let i = 1; i <= frameIndex; i++) {
-            drawArrow(points[i - 1], points[i]);
-        }
-        frameIndex += 1;
-        if (frameIndex === points.length) {
-            frameIndex = 0;
-        }
-        setTimeout(frame, 50);
-        // requestAnimationFrame(frame);
-    };
-    frame();
-}
 
-// const G = randomG();
-// console.log(G);
-// renderMatrix(G);
-main();
+    requestAnimationFrame(loop);
+}
+loop();
+
+const gui = new dat.GUI();
+
+gui.add(settings, 'hillsNum', 0, 10).step(1);
+gui.add(settings, 'holesNum', 0, 10).step(1);
+gui.add(settings, 'sampleSize', 10, 100).step(1);
+gui.add(settings, 'samplesArea', 10, 150).step(1);
+gui.add(settings, 'learningRate', 0.01, 0.9);
+gui.add(settings, 'learningRateDecay', 0.2, 10);
+gui.add(settings, 'numberOfRuns', 10, 200).step(1);
+gui.add(settings, 'animation').onChange(() => {
+    frameIndex = 0;
+});
+gui.add(settings, 'showOptimumLocation');
+gui.add(settings, 'addMorePaths');
+gui.add(settings, 'recalculate');
+gui.add(settings, 'regenerate');
