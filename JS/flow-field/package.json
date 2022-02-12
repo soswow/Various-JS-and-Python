@@ -1,0 +1,26 @@
+{
+  "name": "flow-field",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.html",
+  "scripts": {
+    "start": "parcel index.html --open",
+    "build": "parcel build index.html"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/dat.gui": "^0.7.7",
+    "@types/ndarray": "^1.0.11",
+    "@types/p5": "^1.4.0",
+    "dat.gui": "^0.7.7",
+    "ndarray": "^1.0.19",
+    "open-simplex-noise": "^2.5.0",
+    "p5": "^1.4.1"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.5",
+    "sass": "^1.49.7",
+    "typescript": "^4.5.5"
+  }
+}

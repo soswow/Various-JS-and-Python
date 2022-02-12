@@ -1,0 +1,161 @@
+import P5, { Vector, Color } from "p5";
+import "./styles.scss";
+import * as dat from 'dat.gui';
+import { makeNoise3D } from "open-simplex-noise";
+import simplexNoiseFast from './simplexNoiseFast';
+import ndarray from 'ndarray';
+
+// Creating the sketch itself
+const sketch = (p5: P5) => {
+    const gui = new dat.GUI();
+    const settings = {
+        noiseZoom: 0.007,
+        noiseChangeSpeed: 0.007,
+        cellSize: 20,
+        showColors: true,
+        showArrows: true,
+        fullRangeRescale: false,
+        noisyDirectionBias: true,
+        noisyMagnitude: true,
+    };
+    let liveDebugDiv;
+    let t = 0.02;
+    const noise3D = simplexNoiseFast(Date.now()).noise3D;
+    const noise2D = simplexNoiseFast(Date.now()).noise2D;
+
+    const drawArrow = (base: Vector, vec: Vector, myColor: Color, strokeSize: number = 1) => {
+        p5.push();
+        p5.stroke(myColor);
+        p5.strokeWeight(strokeSize);
+        p5.fill(myColor);
+        p5.translate(base.x, base.y);
+        p5.line(0, 0, vec.x, vec.y);
+        p5.rotate(vec.heading());
+        let arrowSize = 3;
+        p5.translate(vec.mag() - arrowSize, 0);
+        p5.triangle(0, arrowSize / 2, 0, -arrowSize / 2, arrowSize, 0);
+        p5.pop();
+    }
+
+    // The sketch setup method 
+    p5.setup = () => {
+        p5.pixelDensity(1);
+        gui.add(settings, 'noiseZoom', 0, 0.07);
+        gui.add(settings, 'noiseChangeSpeed', 0, 0.1);
+        const cellSizeController = gui.add(settings, 'cellSize', 1, 50, 2);
+        cellSizeController.onChange((newValue: number) => {
+            if (p5.width % newValue !== 0) {
+                cellSizeController.setValue(newValue + 1);
+            }
+        });
+        gui.add(settings, 'showColors');
+        gui.add(settings, 'showArrows');
+        gui.add(settings, 'fullRangeRescale');
+        gui.add(settings, 'noisyDirectionBias');
+        gui.add(settings, 'noisyMagnitude');
+
+
+        // Creating and positioning the canvas
+        const canvas = p5.createCanvas(600, 600, p5.P2D);
+        canvas.parent("app");
+
+        // Configuring the canvas
+        p5.background("white");
+
+        liveDebugDiv = p5.createDiv('this is some text');
+        liveDebugDiv.style('font-size', '16px');
+        liveDebugDiv.position(10, 10);
+
+        // p5.noLoop();
+    };
+
+
+
+    // The sketch draw method
+    p5.draw = () => {
+        const noiseMatrixHeight = p5.floor(p5.height / settings.cellSize);
+        const noiseMatrixWidth = p5.floor(p5.width / settings.cellSize);
+        const noiseMatrix = ndarray(new Float32Array(noiseMatrixHeight * noiseMatrixWidth * 2), [noiseMatrixWidth, noiseMatrixHeight, 2]);
+        let maxValue = 0;
+        let minValue = 1;
+        for (let x = 0; x < noiseMatrixWidth; x += 1) {
+            for (let y = 0; y < noiseMatrixHeight; y += 1) {
+                const angleValue = (noise3D(x * settings.cellSize * settings.noiseZoom, y * settings.cellSize * settings.noiseZoom, t) + 1) / 2;
+                const magValue = (noise3D(x * settings.cellSize * settings.noiseZoom, y * settings.cellSize * settings.noiseZoom, t + 42) + 1) / 2;
+
+                if (maxValue < angleValue) {
+                    maxValue = angleValue;
+                }
+                if (minValue > angleValue) {
+                    minValue = angleValue;
+                }
+                noiseMatrix.set(x, y, 0, angleValue);
+                noiseMatrix.set(x, y, 1, magValue);
+            }
+        }
+
+        if (settings.fullRangeRescale) {
+            for (let x = 0; x < noiseMatrixWidth; x += 1) {
+                for (let y = 0; y < noiseMatrixHeight; y += 1) {
+                    const oldValue = noiseMatrix.get(x, y, 0);
+                    const newValue = p5.map(oldValue, minValue, maxValue, 0, 1);
+                    noiseMatrix.set(x, y, 0, newValue);
+                }
+            }
+        }
+
+        if (settings.showColors) {
+            p5.loadPixels();
+            for (let my = 0; my < noiseMatrixHeight; my += 1) {
+                for (let mx = 0; mx < noiseMatrixWidth; mx += 1) {
+                    const value = noiseMatrix.get(mx, my, 0) * 255;
+                    const x = mx * settings.cellSize;
+                    const y = my * settings.cellSize;
+                    for (let jy = y; jy < y + settings.cellSize; jy++) {
+                        for (let jx = x; jx < x + settings.cellSize; jx++) {
+                            const index = (p5.width * jy + jx) * 4;
+                            p5.pixels[index] = value;
+                            p5.pixels[index + 1] = value;
+                            p5.pixels[index + 2] = value;
+                            p5.pixels[index + 3] = 255;
+                        }
+                    }
+                }
+            }
+            p5.updatePixels();
+        } else {
+            p5.background('white');
+        }
+
+        if (settings.showArrows) {
+            for (let mx = 0; mx < noiseMatrixWidth; mx += 1) {
+                for (let my = 0; my < noiseMatrixHeight; my += 1) {
+                    const angleValue = noiseMatrix.get(mx, my, 0) * p5.TWO_PI;
+                    const magValue = settings.noisyMagnitude ? noiseMatrix.get(mx, my, 1) : 0.5;
+                    const arrowLength = magValue * settings.cellSize;
+                    const vector = p5.createVector(0, arrowLength);
+                    if (settings.noisyDirectionBias) {
+                        const directionBias = (noise2D(0, t) + 1) / 2 * p5.TWO_PI;
+                        vector.setHeading(angleValue + directionBias);
+                    } else {
+                        vector.setHeading(angleValue);
+                    }
+
+
+                    const x = mx * settings.cellSize + settings.cellSize / 2;
+                    const y = my * settings.cellSize + settings.cellSize / 2;
+
+                    const arrowThickness = settings.noisyMagnitude ? p5.map(magValue, 0, 1, 0.5, 2.5) : 1;
+                    drawArrow(p5.createVector(x, y), vector, p5.color('black'), arrowThickness);
+                }
+            }
+        }
+
+        liveDebugDiv.html(JSON.stringify({
+            FPS: p5.floor(p5.frameRate()),
+        }, null, 2));
+        t += settings.noiseChangeSpeed;
+    };
+};
+
+new P5(sketch);
