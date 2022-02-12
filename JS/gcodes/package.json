@@ -1,0 +1,15 @@
+{
+  "name": "gcodes",
+  "version": "1.0.0",
+  "description": "",
+  "main": "gcode_from_xy_to_ab.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "left-pad": "^1.3.0",
+    "yargs": "^11.0.0"
+  }
+}

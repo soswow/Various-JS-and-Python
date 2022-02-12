@@ -5,7 +5,7 @@
   "main": "index.html",
   "scripts": {
     "start": "parcel index.html --open",
-    "build": "parcel build index.html"
+    "build": "parcel build index.html --public-url https://soswow.github.io/Various-JS-and-Python/JS/flow-field/dist/"
   },
   "author": "",
   "license": "ISC",

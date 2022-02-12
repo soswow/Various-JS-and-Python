@@ -27,7 +27,7 @@ type Cells = Array<RGB | undefined>;
 export interface Configuration {
   isVerticalPattern: boolean;
   activeKeys: Array<boolean | undefined>;
-  stipIndexToGrid: number[]; // Mapping between strip index (index of an array) to grid index (value)
+  stripIndexToGrid: number[]; // Mapping between strip index (index of an array) to grid index (value)
   rows: number;
   columns: number;
 }
@@ -59,7 +59,7 @@ class App extends React.Component<{}, State> {
         columns: COLUMNS,
         isVerticalPattern: true,
         activeKeys: [],
-        stipIndexToGrid: new Array(ROWS * COLUMNS).fill(null).map((_, i) => i)
+        stripIndexToGrid: new Array(ROWS * COLUMNS).fill(null).map((_, i) => i)
       },
       strip: new Array(ROWS * COLUMNS).fill(null), // Strip states
       grid: new Array(ROWS * COLUMNS).fill(null),
@@ -135,7 +135,7 @@ class App extends React.Component<{}, State> {
       switch (newMode) {
         case 'define-strip':
           const configuration = this.state.configuration;
-          this.setState({ configuration: { ...configuration, stipIndexToGrid: [] } });
+          this.setState({ configuration: { ...configuration, stripIndexToGrid: [] } });
           break;
         case 'random-colors':
           this.nextRandomColorsModeTick();
@@ -158,7 +158,7 @@ class App extends React.Component<{}, State> {
       configuration: {
         ...configuration,
         ...config,
-        stipIndexToGrid: new Array(rows * columns).fill(null).map((_, i) => i)
+        stripIndexToGrid: new Array(rows * columns).fill(null).map((_, i) => i)
       },
       strip: new Array(rows * columns).fill(null),
       grid: new Array(rows * columns).fill(null),
@@ -233,7 +233,7 @@ class App extends React.Component<{}, State> {
         }
       }
     }
-    const newStrip = this.state.configuration.stipIndexToGrid.map(gridIndex => newGrid[gridIndex]);
+    const newStrip = this.state.configuration.stripIndexToGrid.map(gridIndex => newGrid[gridIndex]);
 
     this.setState({ grid: newGrid, strip: newStrip });
     if (this.state.mode === 'matrix-rain') {
@@ -285,7 +285,7 @@ class App extends React.Component<{}, State> {
       }
     }
 
-    const newStrip = this.state.configuration.stipIndexToGrid.map(gridIndex => newGrid[gridIndex]);
+    const newStrip = this.state.configuration.stripIndexToGrid.map(gridIndex => newGrid[gridIndex]);
     this.setState({ grid: newGrid, strip: newStrip });
     if (this.state.mode === 'fire') {
       setTimeout(this.nextFireModeTick, 1000 / 20);
@@ -297,7 +297,7 @@ class App extends React.Component<{}, State> {
       const configuration = JSON.parse(serializedConfiguration) as Configuration;
       return {
         configuration,
-        strip: new Array(configuration.stipIndexToGrid.length).fill(null)
+        strip: new Array(configuration.stripIndexToGrid.length).fill(null)
       }
     });
   };
@@ -306,7 +306,7 @@ class App extends React.Component<{}, State> {
     const { selectedCells, mode, configuration } = this.state;
 
     if (mode === 'define-strip') {
-      configuration.stipIndexToGrid.push(key);
+      configuration.stripIndexToGrid.push(key);
     }
 
     selectedCells[key] = !selectedCells[key];
@@ -341,10 +341,10 @@ class App extends React.Component<{}, State> {
   }
 
   private renderHexagon(gridIndex: number, color?: RGB) {
-    const { selectedCells, mode, configuration: { stipIndexToGrid } } = this.state;
+    const { selectedCells, mode, configuration: { stripIndexToGrid } } = this.state;
     const { x, y } = this.getCoordinatesByGridIndex(gridIndex);
     let stripNumber = null;
-    const index = stipIndexToGrid.indexOf(gridIndex);
+    const index = stripIndexToGrid.indexOf(gridIndex);
     if (mode === 'define-strip' && index > -1) {
       stripNumber = <text x={x} y={y} className="small">{index}</text>;
     }
@@ -371,8 +371,8 @@ class App extends React.Component<{}, State> {
   private renderLed(stripIndex: number, stripValue?: RGB) {
     // At this point on Arduino I can call some API that would change color of indexed led.
     // Here I need to do some visual render stuff.
-    const { configuration: { stipIndexToGrid } } = this.state;
-    const gridIndex = stipIndexToGrid[stripIndex];
+    const { configuration: { stripIndexToGrid } } = this.state;
+    const gridIndex = stripIndexToGrid[stripIndex];
 
     return this.renderHexagon(gridIndex, stripValue);
   }
