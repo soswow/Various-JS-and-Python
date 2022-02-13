@@ -53,7 +53,7 @@ const sketch = (p5: P5) => {
 
     // The sketch setup method 
     p5.setup = () => {
-        // p5.pixelDensity(1);
+        resetPixelDensity();
 
         const vectorFieldFolder = gui.addFolder('Vector field');
         vectorFieldFolder.add(settings, 'noiseZoom', 0, 0.07);
@@ -71,7 +71,7 @@ const sketch = (p5: P5) => {
         vectorFieldFolder.add(settings, 'noisyMagnitude');
 
         const particlesFolder = gui.addFolder('Particles');
-        particlesFolder.add(settings, 'showParticles');
+        particlesFolder.add(settings, 'showParticles').onFinishChange(resetPixelDensity);
         particlesFolder.add(settings, 'windForce', 0.0001, 0.05);
         // const minParticlesCountSetting = particlesFolder.add(settings, 'minNumber', 100, 10000, 1);
         particlesFolder.add(settings, 'minDistance', 2, 40).onFinishChange(resetParticles);
@@ -106,6 +106,14 @@ const sketch = (p5: P5) => {
 
         // p5.noLoop();
     };
+
+    const resetPixelDensity = () => {
+        if(settings.showParticles){
+            p5.pixelDensity(1)
+        }else{
+            p5.pixelDensity();
+        }
+    }
 
     const resetParticles = () => {
         const poissonDistribution = new PoissonDistribution(p5, settings.minDistance);
@@ -167,8 +175,11 @@ const sketch = (p5: P5) => {
             }
             p5.updatePixels();
         } else {
-            // p5.background('white');
-            p5.background(255, 255, 255, 10);
+            if(settings.showParticles){
+                p5.background(255, 255, 255, 10);
+            }else{
+                p5.background('white');
+            }
         }
 
         const vectorFeild = ndarray(new Array<Vector>(noiseMatrixHeight * noiseMatrixWidth), [noiseMatrixWidth, noiseMatrixHeight]);

@@ -33207,7 +33207,7 @@ var sketch = function sketch(p5) {
 
 
   p5.setup = function () {
-    // p5.pixelDensity(1);
+    resetPixelDensity();
     var vectorFieldFolder = gui.addFolder('Vector field');
     vectorFieldFolder.add(settings, 'noiseZoom', 0, 0.07);
     vectorFieldFolder.add(settings, 'noiseChangeSpeed', 0, 0.1);
@@ -33223,7 +33223,7 @@ var sketch = function sketch(p5) {
     vectorFieldFolder.add(settings, 'noisyDirectionBias');
     vectorFieldFolder.add(settings, 'noisyMagnitude');
     var particlesFolder = gui.addFolder('Particles');
-    particlesFolder.add(settings, 'showParticles');
+    particlesFolder.add(settings, 'showParticles').onFinishChange(resetPixelDensity);
     particlesFolder.add(settings, 'windForce', 0.0001, 0.05); // const minParticlesCountSetting = particlesFolder.add(settings, 'minNumber', 100, 10000, 1);
 
     particlesFolder.add(settings, 'minDistance', 2, 40).onFinishChange(resetParticles);
@@ -33249,6 +33249,14 @@ var sketch = function sketch(p5) {
     // minParticlesCountSetting.setValue(poissonParticleSets[0].length/2);
 
     resetParticles(); // p5.noLoop();
+  };
+
+  var resetPixelDensity = function resetPixelDensity() {
+    if (settings.showParticles) {
+      p5.pixelDensity(1);
+    } else {
+      p5.pixelDensity();
+    }
   };
 
   var resetParticles = function resetParticles() {
@@ -33317,8 +33325,11 @@ var sketch = function sketch(p5) {
 
       p5.updatePixels();
     } else {
-      // p5.background('white');
-      p5.background(255, 255, 255, 10);
+      if (settings.showParticles) {
+        p5.background(255, 255, 255, 10);
+      } else {
+        p5.background('white');
+      }
     }
 
     var vectorFeild = (0, ndarray_1.default)(new Array(noiseMatrixHeight * noiseMatrixWidth), [noiseMatrixWidth, noiseMatrixHeight]);
@@ -33424,7 +33435,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49290" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58191" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
