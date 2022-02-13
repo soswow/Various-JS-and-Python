@@ -32853,7 +32853,252 @@ function wrappedNDArrayCtor(data, shape, stride, offset) {
 
 module.exports = wrappedNDArrayCtor
 
-},{"iota-array":"node_modules/iota-array/iota.js","is-buffer":"node_modules/is-buffer/index.js"}],"src/app.ts":[function(require,module,exports) {
+},{"iota-array":"node_modules/iota-array/iota.js","is-buffer":"node_modules/is-buffer/index.js"}],"src/Particle.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var Particle =
+/** @class */
+function () {
+  // isDead: boolean;
+  function Particle(p5, position) {
+    this.p5 = p5;
+
+    if (position) {
+      this.position = position;
+    } else {
+      this.position = p5.createVector(p5.random() * p5.width, p5.random() * p5.height);
+    }
+
+    this.prevPosition = this.position.copy();
+    this.originalPosition = this.position.copy();
+    this.velocity = p5.createVector(0, 0);
+    this.acceleration = p5.createVector(0, 0); // this.isDead = false;
+
+    this.age = 0;
+  }
+
+  Particle.prototype.update = function () {
+    this.velocity.add(this.acceleration);
+    this.prevPosition.set(this.position.x, this.position.y);
+    this.position.add(this.velocity);
+    this.acceleration.mult(0);
+    this.age += 1;
+  };
+
+  Particle.prototype.follow = function (fieldVectors, cellSize) {
+    var x = this.p5.floor(this.position.x / cellSize);
+    var y = this.p5.floor(this.position.y / cellSize);
+    var fieldVector = fieldVectors.get(x, y);
+    this.applyForce(fieldVector);
+  };
+
+  Particle.prototype.applyForce = function (force) {
+    this.acceleration.add(force);
+  };
+
+  Particle.prototype.drawPoint = function () {
+    this.p5.stroke(this.p5.map(this.age, 0, 60, 255, 0, true));
+    this.p5.strokeWeight(2);
+    this.p5.point(this.position.x, this.position.y);
+  };
+
+  Particle.prototype.drawLine = function (valueIncreaseTime, valueDecreseTime, maxValue, maxLineWidth) {
+    if (valueIncreaseTime === void 0) {
+      valueIncreaseTime = 40;
+    }
+
+    if (valueDecreseTime === void 0) {
+      valueDecreseTime = 60;
+    }
+
+    if (maxValue === void 0) {
+      maxValue = 100;
+    }
+
+    if (maxLineWidth === void 0) {
+      maxLineWidth = 5;
+    }
+
+    var colorValue = maxValue;
+    var lineWidth = maxLineWidth;
+
+    if (this.age < valueIncreaseTime) {
+      colorValue = this.p5.map(this.age, 0, valueIncreaseTime, 0, maxValue, true);
+      lineWidth = this.p5.map(this.age, 0, valueIncreaseTime, 0.1, maxLineWidth, true);
+    }
+
+    if (this.age > valueIncreaseTime) {
+      colorValue = this.p5.map(this.age, valueIncreaseTime, valueIncreaseTime + valueDecreseTime, maxValue, 0, true);
+      lineWidth = this.p5.map(this.age, valueIncreaseTime, valueIncreaseTime + valueDecreseTime, maxLineWidth, 0.1, true);
+    }
+
+    this.p5.stroke(0, 0, 0, colorValue);
+    this.p5.strokeCap(this.p5.SQUARE);
+    this.p5.strokeWeight(lineWidth);
+    this.p5.line(this.position.x, this.position.y, this.prevPosition.x, this.prevPosition.y);
+  };
+
+  Particle.prototype.edges = function () {
+    var _a = this.position,
+        x = _a.x,
+        y = _a.y;
+
+    if (x < 0 || y < 0 || x > this.p5.width || y > this.p5.height) {
+      this.position.set(this.originalPosition.x, this.originalPosition.y);
+      this.velocity.set(0, 0);
+      this.acceleration.set(0, 0); // console.log(this.age);
+
+      this.age = 0;
+    }
+  };
+
+  return Particle;
+}();
+
+exports.default = Particle;
+},{}],"src/PoissonDistribution.ts":[function(require,module,exports) {
+"use strict";
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var p5_1 = require("p5");
+
+var Particle_1 = __importDefault(require("./Particle"));
+
+var PoissonDistribution =
+/** @class */
+function () {
+  function PoissonDistribution(p5, minDistance) {
+    if (minDistance === void 0) {
+      minDistance = 10;
+    }
+
+    this.p5 = p5;
+    this.r = minDistance;
+    this.k = 30;
+    this.w = this.r / p5.sqrt(2);
+    this.grid = [];
+    this.active = [];
+    this.cols = this.p5.floor(this.p5.width / this.w);
+    this.rows = this.p5.floor(this.p5.height / this.w);
+  }
+
+  PoissonDistribution.prototype.init = function () {
+    // STEP 0
+    for (var i = 0; i < this.cols * this.rows; i++) {
+      this.grid[i] = null;
+    } // STEP 1
+
+
+    var initPoint = this.p5.createVector(this.p5.random(this.p5.width), this.p5.random(this.p5.height));
+    var initCol = this.p5.floor(initPoint.x / this.w);
+    var initRow = this.p5.floor(initPoint.y / this.w);
+    this.grid[initRow * this.cols + initCol] = initPoint;
+    this.active.push(initPoint);
+  };
+
+  PoissonDistribution.prototype.fill = function () {
+    while (this.active.length > 0) {
+      this.loop();
+    }
+  };
+
+  PoissonDistribution.prototype.points = function () {
+    var _this = this;
+
+    return this.grid.filter(function (vector) {
+      return vector;
+    }).map(function (vector) {
+      return new Particle_1.default(_this.p5, vector.copy());
+    });
+  };
+
+  PoissonDistribution.prototype.loop = function () {
+    if (this.active.length > 0) {
+      var randomActivePointIndex = this.p5.floor(this.p5.random(this.active.length));
+      var activePoint = this.active[randomActivePointIndex];
+      var found = false;
+
+      for (var n = 0; n < this.k; n++) {
+        var sample = p5_1.Vector.random2D();
+        var mag = this.p5.random(this.r, this.r * 2);
+        sample.setMag(mag);
+        sample.add(activePoint);
+        var sampleGridCol = this.p5.floor(sample.x / this.w);
+        var sampleGridRow = this.p5.floor(sample.y / this.w);
+
+        if (!this.grid[sampleGridCol + sampleGridRow * this.cols] // Empty spot
+        && sampleGridCol < this.cols && sampleGridRow < this.rows && sampleGridRow >= 0 && sampleGridCol >= 0) {
+          var ok = true;
+
+          for (var i = -1; i <= 1; i++) {
+            for (var j = -1; j <= 1; j++) {
+              var neighbor = this.grid[sampleGridCol + i + (sampleGridRow + j) * this.cols];
+
+              if (neighbor) {
+                var distance = p5_1.Vector.dist(sample, neighbor);
+
+                if (distance < this.r) {
+                  ok = false;
+                }
+              }
+            }
+          }
+
+          if (ok) {
+            this.grid[sampleGridCol + this.cols * sampleGridRow] = sample;
+            this.active.push(sample);
+            found = true;
+          }
+        }
+      }
+
+      if (!found) {
+        this.active.splice(randomActivePointIndex, 1);
+      }
+
+      return found;
+    }
+
+    return false;
+  };
+
+  PoissonDistribution.prototype.draw = function () {
+    var _this = this;
+
+    this.grid.forEach(function (p) {
+      if (p) {
+        _this.p5.stroke(0);
+
+        _this.p5.strokeWeight(5);
+
+        _this.p5.point(p.x, p.y);
+      }
+    });
+    this.active.forEach(function (p) {
+      _this.p5.stroke(0, 255, 255);
+
+      _this.p5.point(p.x, p.y);
+    });
+  };
+
+  return PoissonDistribution;
+}();
+
+exports.default = PoissonDistribution;
+},{"p5":"node_modules/p5/lib/p5.min.js","./Particle":"src/Particle.ts"}],"src/app.ts":[function(require,module,exports) {
 "use strict";
 
 var __createBinding = this && this.__createBinding || (Object.create ? function (o, m, k, k2) {
@@ -32908,25 +33153,39 @@ var dat = __importStar(require("dat.gui"));
 
 var simplexNoiseFast_1 = __importDefault(require("./simplexNoiseFast"));
 
-var ndarray_1 = __importDefault(require("ndarray")); // Creating the sketch itself
+var ndarray_1 = __importDefault(require("ndarray"));
+
+var PoissonDistribution_1 = __importDefault(require("./PoissonDistribution")); // Creating the sketch itself
 
 
 var sketch = function sketch(p5) {
   var gui = new dat.GUI();
   var settings = {
-    noiseZoom: 0.007,
-    noiseChangeSpeed: 0.007,
-    cellSize: 20,
-    showColors: true,
-    showArrows: true,
+    noiseZoom: 0.0042,
+    noiseChangeSpeed: 0.0025,
+    cellSize: 24,
+    showColors: false,
+    showArrows: false,
     fullRangeRescale: false,
     noisyDirectionBias: true,
-    noisyMagnitude: true
+    noisyMagnitude: true,
+    showParticles: true,
+    windForce: 0.006,
+    minNumber: 2000,
+    minDistance: 6,
+    valueIncreaseTime: 50,
+    valueDecreseTime: 60,
+    maxValue: 50,
+    maxLineWidth: 5
   };
   var liveDebugDiv;
   var t = 0.02;
   var noise3D = (0, simplexNoiseFast_1.default)(Date.now()).noise3D;
   var noise2D = (0, simplexNoiseFast_1.default)(Date.now()).noise2D;
+  var particles = [];
+  var poissonDistributions;
+  var poissonParticleSetIndex = 0;
+  var poissonParticleSets;
 
   var drawArrow = function drawArrow(base, vec, myColor, strokeSize) {
     if (strokeSize === void 0) {
@@ -32948,20 +33207,30 @@ var sketch = function sketch(p5) {
 
 
   p5.setup = function () {
-    p5.pixelDensity(1);
-    gui.add(settings, 'noiseZoom', 0, 0.07);
-    gui.add(settings, 'noiseChangeSpeed', 0, 0.1);
-    var cellSizeController = gui.add(settings, 'cellSize', 1, 50, 2);
+    // p5.pixelDensity(1);
+    var vectorFieldFolder = gui.addFolder('Vector field');
+    vectorFieldFolder.add(settings, 'noiseZoom', 0, 0.07);
+    vectorFieldFolder.add(settings, 'noiseChangeSpeed', 0, 0.1);
+    var cellSizeController = vectorFieldFolder.add(settings, 'cellSize', 1, 50, 2);
     cellSizeController.onChange(function (newValue) {
       if (p5.width % newValue !== 0) {
         cellSizeController.setValue(newValue + 1);
       }
     });
-    gui.add(settings, 'showColors');
-    gui.add(settings, 'showArrows');
-    gui.add(settings, 'fullRangeRescale');
-    gui.add(settings, 'noisyDirectionBias');
-    gui.add(settings, 'noisyMagnitude'); // Creating and positioning the canvas
+    vectorFieldFolder.add(settings, 'showColors');
+    vectorFieldFolder.add(settings, 'showArrows');
+    vectorFieldFolder.add(settings, 'fullRangeRescale');
+    vectorFieldFolder.add(settings, 'noisyDirectionBias');
+    vectorFieldFolder.add(settings, 'noisyMagnitude');
+    var particlesFolder = gui.addFolder('Particles');
+    particlesFolder.add(settings, 'showParticles');
+    particlesFolder.add(settings, 'windForce', 0.0001, 0.05); // const minParticlesCountSetting = particlesFolder.add(settings, 'minNumber', 100, 10000, 1);
+
+    particlesFolder.add(settings, 'minDistance', 2, 40).onFinishChange(resetParticles);
+    particlesFolder.add(settings, 'valueIncreaseTime', 2, 100);
+    particlesFolder.add(settings, 'valueDecreseTime', 2, 100);
+    particlesFolder.add(settings, 'maxValue', 2, 255);
+    particlesFolder.add(settings, 'maxLineWidth', 0.1, 25); // Creating and positioning the canvas
 
     var canvas = p5.createCanvas(600, 600, p5.P2D);
     canvas.parent("app"); // Configuring the canvas
@@ -32969,7 +33238,24 @@ var sketch = function sketch(p5) {
     p5.background("white");
     liveDebugDiv = p5.createDiv('this is some text');
     liveDebugDiv.style('font-size', '16px');
-    liveDebugDiv.position(10, 10); // p5.noLoop();
+    liveDebugDiv.position(10, 10); // poissonDistributions = [];
+    // poissonParticleSets = [];
+    // for (let i = 0; i < 10; i++) {
+    //     poissonDistributions[i] = new PoissonDistribution(p5);
+    //     poissonDistributions[i].init();
+    //     poissonDistributions[i].fill();
+    //     poissonParticleSets[i] = p5.shuffle(poissonDistributions[i].points());
+    // }
+    // minParticlesCountSetting.setValue(poissonParticleSets[0].length/2);
+
+    resetParticles(); // p5.noLoop();
+  };
+
+  var resetParticles = function resetParticles() {
+    var poissonDistribution = new PoissonDistribution_1.default(p5, settings.minDistance);
+    poissonDistribution.init();
+    poissonDistribution.fill();
+    particles = poissonDistribution.points();
   }; // The sketch draw method
 
 
@@ -33031,31 +33317,68 @@ var sketch = function sketch(p5) {
 
       p5.updatePixels();
     } else {
-      p5.background('white');
+      // p5.background('white');
+      p5.background(255, 255, 255, 10);
     }
 
-    if (settings.showArrows) {
-      for (var mx = 0; mx < noiseMatrixWidth; mx += 1) {
-        for (var my = 0; my < noiseMatrixHeight; my += 1) {
-          var angleValue = noiseMatrix.get(mx, my, 0) * p5.TWO_PI;
-          var magValue = settings.noisyMagnitude ? noiseMatrix.get(mx, my, 1) : 0.5;
-          var arrowLength = magValue * settings.cellSize;
-          var vector = p5.createVector(0, arrowLength);
+    var vectorFeild = (0, ndarray_1.default)(new Array(noiseMatrixHeight * noiseMatrixWidth), [noiseMatrixWidth, noiseMatrixHeight]);
 
-          if (settings.noisyDirectionBias) {
-            var directionBias = (noise2D(0, t) + 1) / 2 * p5.TWO_PI;
-            vector.setHeading(angleValue + directionBias);
-          } else {
-            vector.setHeading(angleValue);
-          }
+    for (var mx = 0; mx < noiseMatrixWidth; mx += 1) {
+      for (var my = 0; my < noiseMatrixHeight; my += 1) {
+        var angleValue = noiseMatrix.get(mx, my, 0) * p5.TWO_PI;
+        var magValue = settings.noisyMagnitude ? noiseMatrix.get(mx, my, 1) : 0.5;
+        var arrowLength = magValue * settings.cellSize;
+        var vector = p5.createVector(0, arrowLength);
 
-          var x = mx * settings.cellSize + settings.cellSize / 2;
-          var y = my * settings.cellSize + settings.cellSize / 2;
+        if (settings.noisyDirectionBias) {
+          var directionBias = (noise2D(0, t) + 1) / 2 * p5.TWO_PI;
+          vector.setHeading(angleValue + directionBias);
+        } else {
+          vector.setHeading(angleValue);
+        }
+
+        vectorFeild.set(mx, my, vector.copy().mult(settings.windForce));
+        var x = mx * settings.cellSize + settings.cellSize / 2;
+        var y = my * settings.cellSize + settings.cellSize / 2;
+
+        if (settings.showArrows) {
           var arrowThickness = settings.noisyMagnitude ? p5.map(magValue, 0, 1, 0.5, 2.5) : 1;
           drawArrow(p5.createVector(x, y), vector, p5.color('black'), arrowThickness);
         }
       }
     }
+
+    if (settings.showParticles) {
+      // const minParticlesCount = settings.minNumber;
+      // while (particles.length < minParticlesCount) {
+      //     const moreCount = minParticlesCount - particles.length;
+      //     if (moreCount >= poissonParticleSets[poissonParticleSetIndex].length) {
+      //         particles.push(...poissonParticleSets[poissonParticleSetIndex].splice(0, poissonParticleSets[poissonParticleSetIndex].length));
+      //         poissonParticleSetIndex += 1;
+      //         if (poissonParticleSetIndex === poissonDistributions.length) {
+      //             refill();
+      //             poissonParticleSetIndex = 0;
+      //         }
+      //     } else {
+      //         particles.push(...poissonParticleSets[poissonParticleSetIndex].splice(0, moreCount));
+      //     }
+      // }
+      particles.forEach(function (p) {
+        p.follow(vectorFeild, settings.cellSize);
+        p.update();
+        p.drawLine(settings.valueIncreaseTime, settings.valueDecreseTime, settings.maxValue, settings.maxLineWidth);
+        p.edges();
+      }); // particles = particles.filter(p => !p.isDead);
+    } // if (p5.frameCount % 60 == 0) {
+    //     poissonDistribution = new PoissonDistribution(p5);
+    //     poissonDistribution.init();
+    //     poissonDistribution.fill();
+    //     particles.push(...poissonDistribution.points());
+    // }
+    // for (let i = 0; i < 10; i++) {
+    //     particles.push(new Particle(p5, settings.cellSize));
+    // }
+
 
     liveDebugDiv.html(JSON.stringify({
       FPS: p5.floor(p5.frameRate())
@@ -33065,7 +33388,15 @@ var sketch = function sketch(p5) {
 };
 
 new p5_1.default(sketch);
-},{"p5":"node_modules/p5/lib/p5.min.js","./styles.scss":"src/styles.scss","dat.gui":"node_modules/dat.gui/build/dat.gui.module.js","./simplexNoiseFast":"src/simplexNoiseFast.js","ndarray":"node_modules/ndarray/ndarray.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+var observer = new PerformanceObserver(function (list) {
+  var perfEntries = list.getEntries();
+  console.log('long task');
+}); // register observer for long task notifications
+
+observer.observe({
+  entryTypes: ["longtask"]
+});
+},{"p5":"node_modules/p5/lib/p5.min.js","./styles.scss":"src/styles.scss","dat.gui":"node_modules/dat.gui/build/dat.gui.module.js","./simplexNoiseFast":"src/simplexNoiseFast.js","ndarray":"node_modules/ndarray/ndarray.js","./PoissonDistribution":"src/PoissonDistribution.ts"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -33093,7 +33424,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60489" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49290" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
