@@ -27,6 +27,9 @@ const sketch = (p5: P5) => {
         valueDecreseTime: 60,
         maxValue: 50,
         maxLineWidth: 5,
+        darkMode: true,
+        hue: true,
+        hueBrightness: 150,
     };
     let liveDebugDiv;
     let t = 0.02;
@@ -79,6 +82,9 @@ const sketch = (p5: P5) => {
         particlesFolder.add(settings, 'valueDecreseTime', 2, 100);
         particlesFolder.add(settings, 'maxValue', 2, 255);
         particlesFolder.add(settings, 'maxLineWidth', 0.1, 25);
+        particlesFolder.add(settings, 'darkMode');
+        particlesFolder.add(settings, 'hue');
+        particlesFolder.add(settings, 'hueBrightness', 2, 255, 1);
         
 
         // Creating and positioning the canvas
@@ -176,7 +182,11 @@ const sketch = (p5: P5) => {
             p5.updatePixels();
         } else {
             if(settings.showParticles){
-                p5.background(255, 255, 255, 10);
+                if(settings.darkMode){
+                    p5.background(0, 0, 0, 10);
+                }else{
+                    p5.background(255, 255, 255, 10);
+                }
             }else{
                 p5.background('white');
             }
@@ -229,7 +239,15 @@ const sketch = (p5: P5) => {
             particles.forEach(p => {
                 p.follow(vectorFeild, settings.cellSize);
                 p.update();
-                p.drawLine(settings.valueIncreaseTime, settings.valueDecreseTime, settings.maxValue, settings.maxLineWidth);
+                p.drawLine(
+                    settings.valueIncreaseTime,
+                    settings.valueDecreseTime,
+                    settings.maxValue,
+                    settings.maxLineWidth,
+                    settings.hue,
+                    settings.darkMode,
+                    settings.hueBrightness
+                );
                 p.edges();
             });
             // particles = particles.filter(p => !p.isDead);

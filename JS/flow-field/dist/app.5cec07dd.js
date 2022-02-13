@@ -32876,13 +32876,16 @@ function () {
     this.prevPosition = this.position.copy();
     this.originalPosition = this.position.copy();
     this.velocity = p5.createVector(0, 0);
-    this.acceleration = p5.createVector(0, 0); // this.isDead = false;
+    this.acceleration = p5.createVector(0, 0);
+    this.frictionForce = p5.createVector(0, 0.02); // this.isDead = false;
 
     this.age = 0;
   }
 
   Particle.prototype.update = function () {
     this.velocity.add(this.acceleration);
+    this.frictionForce.setHeading(this.velocity.heading());
+    this.velocity.sub(this.frictionForce);
     this.prevPosition.set(this.position.x, this.position.y);
     this.position.add(this.velocity);
     this.acceleration.mult(0);
@@ -32906,7 +32909,7 @@ function () {
     this.p5.point(this.position.x, this.position.y);
   };
 
-  Particle.prototype.drawLine = function (valueIncreaseTime, valueDecreseTime, maxValue, maxLineWidth) {
+  Particle.prototype.drawLine = function (valueIncreaseTime, valueDecreseTime, maxValue, maxLineWidth, changeHue, darkMode, hueBrightness) {
     if (valueIncreaseTime === void 0) {
       valueIncreaseTime = 40;
     }
@@ -32923,6 +32926,18 @@ function () {
       maxLineWidth = 5;
     }
 
+    if (changeHue === void 0) {
+      changeHue = true;
+    }
+
+    if (darkMode === void 0) {
+      darkMode = true;
+    }
+
+    if (hueBrightness === void 0) {
+      hueBrightness = 150;
+    }
+
     var colorValue = maxValue;
     var lineWidth = maxLineWidth;
 
@@ -32936,10 +32951,24 @@ function () {
       lineWidth = this.p5.map(this.age, valueIncreaseTime, valueIncreaseTime + valueDecreseTime, maxLineWidth, 0.1, true);
     }
 
-    this.p5.stroke(0, 0, 0, colorValue);
+    this.p5.push();
+    var hue = 0;
+
+    if (changeHue) {
+      this.p5.colorMode(this.p5.HSB, 255); // const speed = this.p5.dist(this.prevPosition.x, this.prevPosition.y, this.position.x, this.position.y);
+
+      hue = this.p5.map(this.velocity.mag(), 0, 5, 0, 255);
+      this.p5.stroke(hue, hueBrightness, hueBrightness, colorValue);
+    } else if (darkMode) {
+      this.p5.stroke(255, 255, 255, colorValue);
+    } else {
+      this.p5.stroke(0, 0, 0, colorValue);
+    }
+
     this.p5.strokeCap(this.p5.SQUARE);
     this.p5.strokeWeight(lineWidth);
     this.p5.line(this.position.x, this.position.y, this.prevPosition.x, this.prevPosition.y);
+    this.p5.pop();
   };
 
   Particle.prototype.edges = function () {
@@ -33176,7 +33205,10 @@ var sketch = function sketch(p5) {
     valueIncreaseTime: 50,
     valueDecreseTime: 60,
     maxValue: 50,
-    maxLineWidth: 5
+    maxLineWidth: 5,
+    darkMode: true,
+    hue: true,
+    hueBrightness: 150
   };
   var liveDebugDiv;
   var t = 0.02;
@@ -33230,7 +33262,10 @@ var sketch = function sketch(p5) {
     particlesFolder.add(settings, 'valueIncreaseTime', 2, 100);
     particlesFolder.add(settings, 'valueDecreseTime', 2, 100);
     particlesFolder.add(settings, 'maxValue', 2, 255);
-    particlesFolder.add(settings, 'maxLineWidth', 0.1, 25); // Creating and positioning the canvas
+    particlesFolder.add(settings, 'maxLineWidth', 0.1, 25);
+    particlesFolder.add(settings, 'darkMode');
+    particlesFolder.add(settings, 'hue');
+    particlesFolder.add(settings, 'hueBrightness', 2, 255, 1); // Creating and positioning the canvas
 
     var canvas = p5.createCanvas(600, 600, p5.P2D);
     canvas.parent("app"); // Configuring the canvas
@@ -33326,7 +33361,11 @@ var sketch = function sketch(p5) {
       p5.updatePixels();
     } else {
       if (settings.showParticles) {
-        p5.background(255, 255, 255, 10);
+        if (settings.darkMode) {
+          p5.background(0, 0, 0, 10);
+        } else {
+          p5.background(255, 255, 255, 10);
+        }
       } else {
         p5.background('white');
       }
@@ -33377,7 +33416,7 @@ var sketch = function sketch(p5) {
       particles.forEach(function (p) {
         p.follow(vectorFeild, settings.cellSize);
         p.update();
-        p.drawLine(settings.valueIncreaseTime, settings.valueDecreseTime, settings.maxValue, settings.maxLineWidth);
+        p.drawLine(settings.valueIncreaseTime, settings.valueDecreseTime, settings.maxValue, settings.maxLineWidth, settings.hue, settings.darkMode, settings.hueBrightness);
         p.edges();
       }); // particles = particles.filter(p => !p.isDead);
     } // if (p5.frameCount % 60 == 0) {
@@ -33435,7 +33474,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58191" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60374" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

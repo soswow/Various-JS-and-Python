@@ -7,6 +7,7 @@ export default class Particle {
     private acceleration: Vector;
     private prevPosition: Vector;
     private originalPosition: Vector;
+    private frictionForce: Vector;
     age: number;
     // isDead: boolean;
 
@@ -20,12 +21,15 @@ export default class Particle {
         this.originalPosition = this.position.copy();
         this.velocity = p5.createVector(0, 0);
         this.acceleration = p5.createVector(0, 0);
+        this.frictionForce = p5.createVector(0, 0.02);
         // this.isDead = false;
         this.age = 0;
     }
 
     update(){
         this.velocity.add(this.acceleration);
+        this.frictionForce.setHeading(this.velocity.heading())
+        this.velocity.sub(this.frictionForce);
         this.prevPosition.set(this.position.x, this.position.y);
         this.position.add(this.velocity);
         this.acceleration.mult(0);
@@ -49,9 +53,19 @@ export default class Particle {
         this.p5.point(this.position.x, this.position.y);
     }
 
-    drawLine(valueIncreaseTime=40, valueDecreseTime=60, maxValue=100, maxLineWidth=5) {
+    drawLine(
+        valueIncreaseTime=40,
+        valueDecreseTime=60,
+        maxValue=100,
+        maxLineWidth=5,
+        changeHue=true,
+        darkMode=true,
+        hueBrightness=150
+    ) {
+        
         let colorValue = maxValue;
         let lineWidth = maxLineWidth;
+
         if(this.age < valueIncreaseTime){
             colorValue = this.p5.map(this.age, 0, valueIncreaseTime, 0, maxValue, true);
             lineWidth = this.p5.map(this.age, 0, valueIncreaseTime, 0.1, maxLineWidth, true);
@@ -61,10 +75,23 @@ export default class Particle {
             lineWidth = this.p5.map(this.age, valueIncreaseTime, valueIncreaseTime + valueDecreseTime, maxLineWidth, 0.1, true);
         }
         
-        this.p5.stroke(0,0,0,colorValue);
+        this.p5.push();
+        let hue = 0;
+        if(changeHue){
+            this.p5.colorMode(this.p5.HSB, 255);
+            // const speed = this.p5.dist(this.prevPosition.x, this.prevPosition.y, this.position.x, this.position.y);
+            hue = this.p5.map(this.velocity.mag(), 0, 5, 0, 255);
+            this.p5.stroke(hue, hueBrightness, hueBrightness, colorValue);
+        }else if(darkMode){
+            this.p5.stroke(255, 255, 255, colorValue);
+        }else{
+            this.p5.stroke(0, 0, 0, colorValue);
+        }
+        
         this.p5.strokeCap(this.p5.SQUARE)
         this.p5.strokeWeight(lineWidth);
         this.p5.line(this.position.x, this.position.y, this.prevPosition.x, this.prevPosition.y);
+        this.p5.pop();
         
     }
 
