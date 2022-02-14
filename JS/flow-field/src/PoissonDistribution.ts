@@ -41,8 +41,8 @@ export default class PoissonDistribution {
         }
     }
 
-    points() {
-        return this.grid.filter(vector => vector).map(vector => new Particle(this.p5, vector.copy()));
+    points(valueIncreaseTime = 40, valueDecreseTime = 60,) {
+        return this.grid.filter(vector => vector).map(vector => new Particle(this.p5, valueIncreaseTime, valueDecreseTime, vector.copy()));
     }
 
     loop() {

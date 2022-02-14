@@ -6,12 +6,20 @@ import simplexNoiseFast from './simplexNoiseFast';
 import ndarray from 'ndarray';
 import Particle from "./Particle";
 import PoissonDistribution from "./PoissonDistribution";
+import p5 from "p5";
+import * as CanvasCapture from 'canvas-capture';
+
+let params = new URLSearchParams(location.search);
+const isSuperHD = params.has('superHD');
+
+const WIDTH = isSuperHD ? 1920 : 600;
+const HEIGHT = isSuperHD ? 1080 : 600;
 
 // Creating the sketch itself
 const sketch = (p5: P5) => {
     const gui = new dat.GUI();
     const settings = {
-        noiseZoom: 0.0042,
+        noiseZoom: isSuperHD ? 0.002 : 0.0042,
         noiseChangeSpeed: 0.0025,
         cellSize: 24,
         showColors: false,
@@ -21,24 +29,25 @@ const sketch = (p5: P5) => {
         noisyMagnitude: true,
         showParticles: true,
         windForce: 0.006,
-        minNumber: 2000,
         minDistance: 6,
-        valueIncreaseTime: 50,
-        valueDecreseTime: 60,
-        maxValue: 50,
+        valueIncreaseTime: isSuperHD ? 100 : 50,
+        valueDecreseTime: isSuperHD ? 100 : 60,
+        maxValue: 70,
         maxLineWidth: 5,
         darkMode: true,
         hue: true,
-        hueBrightness: 150,
+        hueBrightness: 180,
     };
     let liveDebugDiv;
     let t = 0.02;
     const noise3D = simplexNoiseFast(Date.now()).noise3D;
     const noise2D = simplexNoiseFast(Date.now()).noise2D;
     let particles: Particle[] = [];
-    let poissonDistributions: PoissonDistribution[];
-    let poissonParticleSetIndex = 0;
-    let poissonParticleSets: Particle[][];
+    // var capturer = new CCapture( { 
+    //     format: 'webm',
+    //     timeLimit: 5,
+    // } );
+    let canvas: p5.Renderer;
 
     const drawArrow = (base: Vector, vec: Vector, myColor: Color, strokeSize: number = 1) => {
         p5.push();
@@ -76,37 +85,40 @@ const sketch = (p5: P5) => {
         const particlesFolder = gui.addFolder('Particles');
         particlesFolder.add(settings, 'showParticles').onFinishChange(resetPixelDensity);
         particlesFolder.add(settings, 'windForce', 0.0001, 0.05);
-        // const minParticlesCountSetting = particlesFolder.add(settings, 'minNumber', 100, 10000, 1);
         particlesFolder.add(settings, 'minDistance', 2, 40).onFinishChange(resetParticles);
-        particlesFolder.add(settings, 'valueIncreaseTime', 2, 100);
-        particlesFolder.add(settings, 'valueDecreseTime', 2, 100);
+        particlesFolder.add(settings, 'valueIncreaseTime', 2, 300).onFinishChange(resetParticles);;
+        particlesFolder.add(settings, 'valueDecreseTime', 2, 300).onFinishChange(resetParticles);;
         particlesFolder.add(settings, 'maxValue', 2, 255);
         particlesFolder.add(settings, 'maxLineWidth', 0.1, 25);
         particlesFolder.add(settings, 'darkMode');
         particlesFolder.add(settings, 'hue');
         particlesFolder.add(settings, 'hueBrightness', 2, 255, 1);
-        
+
 
         // Creating and positioning the canvas
-        const canvas = p5.createCanvas(600, 600, p5.P2D);
+        canvas = p5.createCanvas(WIDTH, HEIGHT, p5.P2D);
         canvas.parent("app");
 
+        CanvasCapture.init(canvas.elt, {
+            showRecDot: true,
+        });
+        CanvasCapture.bindKeyToVideoRecord('v', {
+            format: 'webm', // Options are optional, more info below.
+            name: 'myVideo',
+            quality: 0.9,
+        });
+
         // Configuring the canvas
-        p5.background("white");
+        if(settings.darkMode){
+            p5.background("black");
+        }else{
+            p5.background("white");
+        }
+        
 
         liveDebugDiv = p5.createDiv('this is some text');
         liveDebugDiv.style('font-size', '16px');
         liveDebugDiv.position(10, 10);
-
-        // poissonDistributions = [];
-        // poissonParticleSets = [];
-        // for (let i = 0; i < 10; i++) {
-        //     poissonDistributions[i] = new PoissonDistribution(p5);
-        //     poissonDistributions[i].init();
-        //     poissonDistributions[i].fill();
-        //     poissonParticleSets[i] = p5.shuffle(poissonDistributions[i].points());
-        // }
-        // minParticlesCountSetting.setValue(poissonParticleSets[0].length/2);
 
         resetParticles();
 
@@ -114,9 +126,9 @@ const sketch = (p5: P5) => {
     };
 
     const resetPixelDensity = () => {
-        if(settings.showParticles){
+        if (settings.showParticles) {
             p5.pixelDensity(1)
-        }else{
+        } else {
             p5.pixelDensity();
         }
     }
@@ -125,7 +137,7 @@ const sketch = (p5: P5) => {
         const poissonDistribution = new PoissonDistribution(p5, settings.minDistance);
         poissonDistribution.init();
         poissonDistribution.fill();
-        particles = poissonDistribution.points();
+        particles = poissonDistribution.points(settings.valueIncreaseTime, settings.valueDecreseTime);
     }
 
     // The sketch draw method
@@ -181,13 +193,13 @@ const sketch = (p5: P5) => {
             }
             p5.updatePixels();
         } else {
-            if(settings.showParticles){
-                if(settings.darkMode){
+            if (settings.showParticles) {
+                if (settings.darkMode) {
                     p5.background(0, 0, 0, 10);
-                }else{
+                } else {
                     p5.background(255, 255, 255, 10);
                 }
-            }else{
+            } else {
                 p5.background('white');
             }
         }
@@ -221,27 +233,10 @@ const sketch = (p5: P5) => {
 
 
         if (settings.showParticles) {
-            // const minParticlesCount = settings.minNumber;
-            // while (particles.length < minParticlesCount) {
-            //     const moreCount = minParticlesCount - particles.length;
-            //     if (moreCount >= poissonParticleSets[poissonParticleSetIndex].length) {
-            //         particles.push(...poissonParticleSets[poissonParticleSetIndex].splice(0, poissonParticleSets[poissonParticleSetIndex].length));
-            //         poissonParticleSetIndex += 1;
-            //         if (poissonParticleSetIndex === poissonDistributions.length) {
-            //             refill();
-            //             poissonParticleSetIndex = 0;
-            //         }
-            //     } else {
-            //         particles.push(...poissonParticleSets[poissonParticleSetIndex].splice(0, moreCount));
-            //     }
-            // }
-
             particles.forEach(p => {
                 p.follow(vectorFeild, settings.cellSize);
                 p.update();
                 p.drawLine(
-                    settings.valueIncreaseTime,
-                    settings.valueDecreseTime,
                     settings.maxValue,
                     settings.maxLineWidth,
                     settings.hue,
@@ -250,32 +245,24 @@ const sketch = (p5: P5) => {
                 );
                 p.edges();
             });
-            // particles = particles.filter(p => !p.isDead);
         }
-
-        // if (p5.frameCount % 60 == 0) {
-        //     poissonDistribution = new PoissonDistribution(p5);
-        //     poissonDistribution.init();
-        //     poissonDistribution.fill();
-        //     particles.push(...poissonDistribution.points());
-        // }
-
-        // for (let i = 0; i < 10; i++) {
-        //     particles.push(new Particle(p5, settings.cellSize));
-        // }
 
         liveDebugDiv.html(JSON.stringify({
             FPS: p5.floor(p5.frameRate()),
         }, null, 2));
         t += settings.noiseChangeSpeed;
+
+        if (CanvasCapture.isRecording()) {
+            CanvasCapture.recordFrame();
+        }
     };
 };
 
 new P5(sketch);
 
-var observer = new PerformanceObserver(function(list) {
+var observer = new PerformanceObserver(function (list) {
     var perfEntries = list.getEntries();
     console.log('long task');
 });
 // register observer for long task notifications
-observer.observe({entryTypes: ["longtask"]});
+observer.observe({ entryTypes: ["longtask"] });
