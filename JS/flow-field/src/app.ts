@@ -3,11 +3,13 @@ import "./styles.scss";
 import * as dat from 'dat.gui';
 import { makeNoise3D } from "open-simplex-noise";
 import simplexNoiseFast from './simplexNoiseFast';
-import ndarray from 'ndarray';
+import ndarray, { NdArray } from 'ndarray';
 import Particle from "./Particle";
 import PoissonDistribution from "./PoissonDistribution";
 import p5 from "p5";
 import * as CanvasCapture from 'canvas-capture';
+import fitCurve from 'fit-curve';
+import { getVectorValue } from "./utils";
 
 let params = new URLSearchParams(location.search);
 const isSuperHD = params.has('superHD');
@@ -21,15 +23,15 @@ const sketch = (p5: P5) => {
     const settings = {
         noiseZoom: isSuperHD ? 0.002 : 0.0042,
         noiseChangeSpeed: 0.0025,
-        cellSize: 24,
+        cellSize: 30,
         showColors: false,
         showArrows: false,
         fullRangeRescale: false,
         noisyDirectionBias: true,
         noisyMagnitude: true,
-        showParticles: true,
+        showParticles: false,
         windForce: 0.006,
-        minDistance: 6,
+        minDistance: 30,
         valueIncreaseTime: isSuperHD ? 100 : 50,
         valueDecreseTime: isSuperHD ? 100 : 60,
         maxValue: 70,
@@ -37,6 +39,9 @@ const sketch = (p5: P5) => {
         darkMode: true,
         hue: true,
         hueBrightness: 180,
+        // Flow lines
+        showFlowLines: true,
+        segmentLength: 8,
     };
     let liveDebugDiv;
     let t = 0.02;
@@ -76,16 +81,19 @@ const sketch = (p5: P5) => {
                 cellSizeController.setValue(newValue + 1);
             }
         });
-        vectorFieldFolder.add(settings, 'showColors');
-        vectorFieldFolder.add(settings, 'showArrows');
+        vectorFieldFolder.add(settings, 'showColors').onFinishChange(resetPixelDensity);
+        vectorFieldFolder.add(settings, 'showArrows').onFinishChange(resetPixelDensity);
         vectorFieldFolder.add(settings, 'fullRangeRescale');
         vectorFieldFolder.add(settings, 'noisyDirectionBias');
         vectorFieldFolder.add(settings, 'noisyMagnitude');
 
         const particlesFolder = gui.addFolder('Particles');
-        particlesFolder.add(settings, 'showParticles').onFinishChange(resetPixelDensity);
+        const showParticlesControl = particlesFolder.add(settings, 'showParticles').onFinishChange((value) => {
+            resetPixelDensity();
+            showFlowLinesControl.setValue(!value);
+        });
         particlesFolder.add(settings, 'windForce', 0.0001, 0.05);
-        particlesFolder.add(settings, 'minDistance', 2, 40).onFinishChange(resetParticles);
+        particlesFolder.add(settings, 'minDistance', 2, 100).onFinishChange(resetParticles);
         particlesFolder.add(settings, 'valueIncreaseTime', 2, 300).onFinishChange(resetParticles);;
         particlesFolder.add(settings, 'valueDecreseTime', 2, 300).onFinishChange(resetParticles);;
         particlesFolder.add(settings, 'maxValue', 2, 255);
@@ -93,6 +101,12 @@ const sketch = (p5: P5) => {
         particlesFolder.add(settings, 'darkMode');
         particlesFolder.add(settings, 'hue');
         particlesFolder.add(settings, 'hueBrightness', 2, 255, 1);
+
+        const flowLines = gui.addFolder('Flow lines');
+        const showFlowLinesControl = flowLines.add(settings, 'showFlowLines').onFinishChange(value => {
+            showParticlesControl.setValue(!value);
+        });
+        flowLines.add(settings, 'segmentLength', 1, 50);
 
 
         // Creating and positioning the canvas
@@ -109,15 +123,12 @@ const sketch = (p5: P5) => {
         });
 
         // Configuring the canvas
-        if(settings.darkMode){
-            p5.background("black");
-        }else{
-            p5.background("white");
-        }
-        
+
+
 
         liveDebugDiv = p5.createDiv('this is some text');
         liveDebugDiv.style('font-size', '16px');
+        liveDebugDiv.style('white-space', 'pre-wrap');
         liveDebugDiv.position(10, 10);
 
         resetParticles();
@@ -125,11 +136,25 @@ const sketch = (p5: P5) => {
         // p5.noLoop();
     };
 
+    const resetBackground = () => {
+        if (settings.showParticles) {
+            if (settings.darkMode) {
+                p5.background(0, 0, 0, 10);
+            } else {
+                p5.background(255, 255, 255, 10);
+            }
+        } else if (settings.darkMode) {
+            p5.background("black");
+        } else {
+            p5.background("white");
+        }
+    }
+
     const resetPixelDensity = () => {
         if (settings.showParticles) {
-            p5.pixelDensity(1)
-        } else {
             p5.pixelDensity();
+        } else {
+            p5.pixelDensity(1)
         }
     }
 
@@ -139,6 +164,12 @@ const sketch = (p5: P5) => {
         poissonDistribution.fill();
         particles = poissonDistribution.points(settings.valueIncreaseTime, settings.valueDecreseTime);
     }
+
+    const timers = {
+        flowLines: 0,
+        findPoints: 0,
+        fitCurve: 0,
+    };
 
     // The sketch draw method
     p5.draw = () => {
@@ -193,18 +224,10 @@ const sketch = (p5: P5) => {
             }
             p5.updatePixels();
         } else {
-            if (settings.showParticles) {
-                if (settings.darkMode) {
-                    p5.background(0, 0, 0, 10);
-                } else {
-                    p5.background(255, 255, 255, 10);
-                }
-            } else {
-                p5.background('white');
-            }
+            resetBackground();
         }
 
-        const vectorFeild = ndarray(new Array<Vector>(noiseMatrixHeight * noiseMatrixWidth), [noiseMatrixWidth, noiseMatrixHeight]);
+        const vectorField = ndarray(new Array<Vector>(noiseMatrixHeight * noiseMatrixWidth), [noiseMatrixWidth, noiseMatrixHeight]);
 
         for (let mx = 0; mx < noiseMatrixWidth; mx += 1) {
             for (let my = 0; my < noiseMatrixHeight; my += 1) {
@@ -218,7 +241,7 @@ const sketch = (p5: P5) => {
                 } else {
                     vector.setHeading(angleValue);
                 }
-                vectorFeild.set(mx, my, vector.copy().mult(settings.windForce) as any);
+                vectorField.set(mx, my, vector.copy().mult(settings.windForce) as any);
 
 
                 const x = mx * settings.cellSize + settings.cellSize / 2;
@@ -234,7 +257,7 @@ const sketch = (p5: P5) => {
 
         if (settings.showParticles) {
             particles.forEach(p => {
-                p.follow(vectorFeild, settings.cellSize);
+                p.follow(vectorField, settings.cellSize);
                 p.update();
                 p.drawLine(
                     settings.maxValue,
@@ -247,11 +270,107 @@ const sketch = (p5: P5) => {
             });
         }
 
-        liveDebugDiv.html(JSON.stringify({
-            FPS: p5.floor(p5.frameRate()),
-        }, null, 2));
+        // Drawing arraw at a mouse cursor
+        // if(p5.mouseX > 0 && p5.mouseY > 0 && p5.mouseX <= WIDTH && p5.mouseY <= WIDTH){
+        //     const p = p5.createVector(p5.mouseX, p5.mouseY);
+        //     const cellVector = getVectorValue(p5, p, vectorField, settings.cellSize);
+        //     drawArrow(p, cellVector.setMag(20), p5.color('red'), 3);
+        // }
+
+        if (settings.showFlowLines) {
+            const flowLinesTimerStart = performance.now();
+            p5.push()
+            p5.noFill();
+            p5.stroke(255, 50, 50, 50);
+            p5.strokeWeight(3);
+            p5.strokeCap(p5.SQUARE);
+            particles.forEach(p => {
+                const seedPoint = p.position;
+                // const x = seedPoint.x * settings.cellSize + settings.cellSize / 2;
+                // const y = seedPoint.y * settings.cellSize + settings.cellSize / 2;
+
+                // if(cellVector){
+                // cellVector.div(settings.windForce);                
+                const points: Vector[] = [seedPoint];
+                
+                p5.beginShape();
+                // p5.curveVertex(seedPoint.x, seedPoint.y);
+
+                const findPointsTimerStart = performance.now();
+                let keepGoing = true;
+                while (keepGoing) {
+                    const lastPoint = points[points.length - 1];
+                    const cellVector = getVectorValue(p5, lastPoint, vectorField, settings.cellSize);
+                    if (cellVector) {
+                        const newPoint = lastPoint.copy().add(cellVector.copy().setMag(settings.segmentLength));
+                        points.push(newPoint);
+                        if (newPoint.x < 0 || newPoint.x > WIDTH || newPoint.y < 0 || newPoint.y > HEIGHT) {
+                            keepGoing = false;
+                        }
+                    } else {
+                        keepGoing = false;
+                    }
+                    if (points.length > 300) {
+                        keepGoing = false;
+                    }
+                }
+                
+                keepGoing = true;
+                while (keepGoing) {
+                    const firstPoint = points[0];
+                    const cellVector = getVectorValue(p5, firstPoint, vectorField, settings.cellSize);
+                    if (cellVector) {
+                        const newPoint = firstPoint.copy().add(cellVector.copy().rotate(p5.PI).setMag(settings.segmentLength));
+                        points.unshift(newPoint);
+                        if (newPoint.x < 0 || newPoint.x > WIDTH || newPoint.y < 0 || newPoint.y > HEIGHT) {
+                            keepGoing = false;
+                        }
+                    } else {
+                        keepGoing = false;
+                    }
+                    if (points.length > 300) {
+                        keepGoing = false;
+                    }
+                }
+                timers.findPoints += performance.now() - findPointsTimerStart;
+                
+                if (points.length > 3) {
+                    // const fitCurveTimerStart = performance.now();
+                    // const bezierCurves = fitCurve(points.map(p => ([p.x, p.y])), 1);
+                    // timers.fitCurve += performance.now() - fitCurveTimerStart;
+
+                    // bezierCurves.forEach(curve => {
+                    //     const [[sx, sy], [c1x, c1y], [c2x, c2y], [fx, fy]] = curve;
+                    //     // p5.push();
+                    //     // p5.stroke('white');
+                    //     // p5.strokeWeight(5);
+                    //     // p5.point(sx, sy);
+                    //     // p5.point(fx, fy);
+                    //     // p5.pop();
+                    //     p5.bezier(sx, sy, c1x, c1y, c2x, c2y, fx, fy);
+                    // });
+
+                    for(let i=1;i<points.length;i++){
+                        p5.line(points[i-1].x,points[i-1].y, points[i].x,points[i].y)
+                    }
+                }
+                
+                // p5.curveVertex(points[points.length-1].x, points[points.length-1].y);
+                p5.endShape();
+            })
+            p5.pop();
+            timers.flowLines += performance.now() - flowLinesTimerStart;
+        }
+
         t += settings.noiseChangeSpeed;
 
+        liveDebugDiv.html(JSON.stringify({
+            FPS: p5.floor(p5.frameRate()),
+            flowLines: (timers.flowLines / p5.frameCount).toFixed(1),
+            findPoints: (timers.findPoints / p5.frameCount).toFixed(1),
+            fitCurve: (timers.fitCurve /  p5.frameCount).toFixed(1),
+        }, null, 2));
+        
         if (CanvasCapture.isRecording()) {
             CanvasCapture.recordFrame();
         }

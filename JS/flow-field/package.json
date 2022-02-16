@@ -15,6 +15,7 @@
     "@types/p5": "^1.4.0",
     "canvas-capture": "^1.1.9",
     "dat.gui": "^0.7.7",
+    "fit-curve": "^0.2.0",
     "ndarray": "^1.0.19",
     "open-simplex-noise": "^2.5.0",
     "p5": "^1.4.1"

@@ -32853,12 +32853,65 @@ function wrappedNDArrayCtor(data, shape, stride, offset) {
 
 module.exports = wrappedNDArrayCtor
 
-},{"iota-array":"node_modules/iota-array/iota.js","is-buffer":"node_modules/is-buffer/index.js"}],"src/Particle.ts":[function(require,module,exports) {
+},{"iota-array":"node_modules/iota-array/iota.js","is-buffer":"node_modules/is-buffer/index.js"}],"src/utils.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.getVectorValue = void 0;
+
+var bilinearInterpolation = function bilinearInterpolation(p5, Q11, Q21, Q12, Q22, xportion, yportion) {
+  // https://en.wikipedia.org/wiki/Bilinear_interpolation
+  var xy1 = p5.lerp(Q11, Q21, xportion);
+  var xy2 = p5.lerp(Q12, Q22, xportion);
+  return p5.lerp(xy1, xy2, yportion);
+};
+
+var getVectorValue = function getVectorValue(p5, point, vectorField, cellSize) {
+  // Simple way
+  // const vx = Math.floor(point.x / settings.cellSize);
+  // const vy = Math.floor(point.y / settings.cellSize);
+  // const cellVector = vectorField.get(vx, vy);
+  var _a = vectorField.shape,
+      width = _a[0],
+      height = _a[1];
+  var vx = point.x / cellSize;
+  var vy = point.y / cellSize;
+  var vxlow = Math.floor(vx);
+  var vylow = Math.floor(vy);
+  var vxhigh = Math.ceil(vx);
+  var vyhigh = Math.ceil(vy);
+
+  if (vxhigh >= width) {
+    vxhigh = vxlow;
+  }
+
+  if (vyhigh >= height) {
+    vyhigh = vylow;
+  }
+
+  var vxperc = vx - vxlow;
+  var vyperc = vy - vylow;
+  var topleft = vectorField.get(vxlow, vylow);
+  var topright = vectorField.get(vxhigh, vylow) || topleft;
+  var bottomleft = vectorField.get(vxlow, vyhigh) || topleft;
+  var bottomright = vectorField.get(vxhigh, vyhigh) || topright;
+  var xValue = bilinearInterpolation(p5, topleft.x, topright.x, bottomleft.x, bottomright.x, vxperc, vyperc);
+  var yValue = bilinearInterpolation(p5, topleft.y, topright.y, bottomleft.y, bottomright.y, vxperc, vyperc);
+  return p5.createVector(xValue, yValue);
+};
+
+exports.getVectorValue = getVectorValue;
+},{}],"src/Particle.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var utils_1 = require("./utils");
+
 var params = new URLSearchParams(location.search);
 var isSuperHD = params.has('superHD');
 
@@ -32906,9 +32959,7 @@ function () {
   };
 
   Particle.prototype.follow = function (fieldVectors, cellSize) {
-    var x = this.p5.floor(this.position.x / cellSize);
-    var y = this.p5.floor(this.position.y / cellSize);
-    var fieldVector = fieldVectors.get(x, y);
+    var fieldVector = (0, utils_1.getVectorValue)(this.p5, this.position, fieldVectors, cellSize);
     this.applyForce(fieldVector);
   };
 
@@ -33001,7 +33052,7 @@ function () {
 }();
 
 exports.default = Particle;
-},{}],"src/PoissonDistribution.ts":[function(require,module,exports) {
+},{"./utils":"src/utils.ts"}],"src/PoissonDistribution.ts":[function(require,module,exports) {
 "use strict";
 
 var __importDefault = this && this.__importDefault || function (mod) {
@@ -40930,6 +40981,8 @@ var PoissonDistribution_1 = __importDefault(require("./PoissonDistribution"));
 
 var CanvasCapture = __importStar(require("canvas-capture"));
 
+var utils_1 = require("./utils");
+
 var params = new URLSearchParams(location.search);
 var isSuperHD = params.has('superHD');
 var WIDTH = isSuperHD ? 1920 : 600;
@@ -40940,22 +40993,25 @@ var sketch = function sketch(p5) {
   var settings = {
     noiseZoom: isSuperHD ? 0.002 : 0.0042,
     noiseChangeSpeed: 0.0025,
-    cellSize: 24,
+    cellSize: 30,
     showColors: false,
     showArrows: false,
     fullRangeRescale: false,
     noisyDirectionBias: true,
     noisyMagnitude: true,
-    showParticles: true,
+    showParticles: false,
     windForce: 0.006,
-    minDistance: 6,
+    minDistance: 30,
     valueIncreaseTime: isSuperHD ? 100 : 50,
     valueDecreseTime: isSuperHD ? 100 : 60,
     maxValue: 70,
     maxLineWidth: 5,
     darkMode: true,
     hue: true,
-    hueBrightness: 180
+    hueBrightness: 180,
+    // Flow lines
+    showFlowLines: true,
+    segmentLength: 8
   };
   var liveDebugDiv;
   var t = 0.02;
@@ -40998,15 +41054,18 @@ var sketch = function sketch(p5) {
         cellSizeController.setValue(newValue + 1);
       }
     });
-    vectorFieldFolder.add(settings, 'showColors');
-    vectorFieldFolder.add(settings, 'showArrows');
+    vectorFieldFolder.add(settings, 'showColors').onFinishChange(resetPixelDensity);
+    vectorFieldFolder.add(settings, 'showArrows').onFinishChange(resetPixelDensity);
     vectorFieldFolder.add(settings, 'fullRangeRescale');
     vectorFieldFolder.add(settings, 'noisyDirectionBias');
     vectorFieldFolder.add(settings, 'noisyMagnitude');
     var particlesFolder = gui.addFolder('Particles');
-    particlesFolder.add(settings, 'showParticles').onFinishChange(resetPixelDensity);
+    var showParticlesControl = particlesFolder.add(settings, 'showParticles').onFinishChange(function (value) {
+      resetPixelDensity();
+      showFlowLinesControl.setValue(!value);
+    });
     particlesFolder.add(settings, 'windForce', 0.0001, 0.05);
-    particlesFolder.add(settings, 'minDistance', 2, 40).onFinishChange(resetParticles);
+    particlesFolder.add(settings, 'minDistance', 2, 100).onFinishChange(resetParticles);
     particlesFolder.add(settings, 'valueIncreaseTime', 2, 300).onFinishChange(resetParticles);
     ;
     particlesFolder.add(settings, 'valueDecreseTime', 2, 300).onFinishChange(resetParticles);
@@ -41015,7 +41074,12 @@ var sketch = function sketch(p5) {
     particlesFolder.add(settings, 'maxLineWidth', 0.1, 25);
     particlesFolder.add(settings, 'darkMode');
     particlesFolder.add(settings, 'hue');
-    particlesFolder.add(settings, 'hueBrightness', 2, 255, 1); // Creating and positioning the canvas
+    particlesFolder.add(settings, 'hueBrightness', 2, 255, 1);
+    var flowLines = gui.addFolder('Flow lines');
+    var showFlowLinesControl = flowLines.add(settings, 'showFlowLines').onFinishChange(function (value) {
+      showParticlesControl.setValue(!value);
+    });
+    flowLines.add(settings, 'segmentLength', 1, 50); // Creating and positioning the canvas
 
     canvas = p5.createCanvas(WIDTH, HEIGHT, p5.P2D);
     canvas.parent("app");
@@ -41028,23 +41092,32 @@ var sketch = function sketch(p5) {
       quality: 0.9
     }); // Configuring the canvas
 
-    if (settings.darkMode) {
-      p5.background("black");
-    } else {
-      p5.background("white");
-    }
-
     liveDebugDiv = p5.createDiv('this is some text');
     liveDebugDiv.style('font-size', '16px');
+    liveDebugDiv.style('white-space', 'pre-wrap');
     liveDebugDiv.position(10, 10);
     resetParticles(); // p5.noLoop();
   };
 
+  var resetBackground = function resetBackground() {
+    if (settings.showParticles) {
+      if (settings.darkMode) {
+        p5.background(0, 0, 0, 10);
+      } else {
+        p5.background(255, 255, 255, 10);
+      }
+    } else if (settings.darkMode) {
+      p5.background("black");
+    } else {
+      p5.background("white");
+    }
+  };
+
   var resetPixelDensity = function resetPixelDensity() {
     if (settings.showParticles) {
-      p5.pixelDensity(1);
-    } else {
       p5.pixelDensity();
+    } else {
+      p5.pixelDensity(1);
     }
   };
 
@@ -41053,8 +41126,13 @@ var sketch = function sketch(p5) {
     poissonDistribution.init();
     poissonDistribution.fill();
     particles = poissonDistribution.points(settings.valueIncreaseTime, settings.valueDecreseTime);
-  }; // The sketch draw method
+  };
 
+  var timers = {
+    flowLines: 0,
+    findPoints: 0,
+    fitCurve: 0
+  }; // The sketch draw method
 
   p5.draw = function () {
     var noiseMatrixHeight = p5.floor(p5.height / settings.cellSize);
@@ -41114,18 +41192,10 @@ var sketch = function sketch(p5) {
 
       p5.updatePixels();
     } else {
-      if (settings.showParticles) {
-        if (settings.darkMode) {
-          p5.background(0, 0, 0, 10);
-        } else {
-          p5.background(255, 255, 255, 10);
-        }
-      } else {
-        p5.background('white');
-      }
+      resetBackground();
     }
 
-    var vectorFeild = (0, ndarray_1.default)(new Array(noiseMatrixHeight * noiseMatrixWidth), [noiseMatrixWidth, noiseMatrixHeight]);
+    var vectorField = (0, ndarray_1.default)(new Array(noiseMatrixHeight * noiseMatrixWidth), [noiseMatrixWidth, noiseMatrixHeight]);
 
     for (var mx = 0; mx < noiseMatrixWidth; mx += 1) {
       for (var my = 0; my < noiseMatrixHeight; my += 1) {
@@ -41141,7 +41211,7 @@ var sketch = function sketch(p5) {
           vector.setHeading(angleValue);
         }
 
-        vectorFeild.set(mx, my, vector.copy().mult(settings.windForce));
+        vectorField.set(mx, my, vector.copy().mult(settings.windForce));
         var x = mx * settings.cellSize + settings.cellSize / 2;
         var y = my * settings.cellSize + settings.cellSize / 2;
 
@@ -41154,17 +41224,115 @@ var sketch = function sketch(p5) {
 
     if (settings.showParticles) {
       particles.forEach(function (p) {
-        p.follow(vectorFeild, settings.cellSize);
+        p.follow(vectorField, settings.cellSize);
         p.update();
         p.drawLine(settings.maxValue, settings.maxLineWidth, settings.hue, settings.darkMode, settings.hueBrightness);
         p.edges();
       });
+    } // Drawing arraw at a mouse cursor
+    // if(p5.mouseX > 0 && p5.mouseY > 0 && p5.mouseX <= WIDTH && p5.mouseY <= WIDTH){
+    //     const p = p5.createVector(p5.mouseX, p5.mouseY);
+    //     const cellVector = getVectorValue(p5, p, vectorField, settings.cellSize);
+    //     drawArrow(p, cellVector.setMag(20), p5.color('red'), 3);
+    // }
+
+
+    if (settings.showFlowLines) {
+      var flowLinesTimerStart = performance.now();
+      p5.push();
+      p5.noFill();
+      p5.stroke(255, 50, 50, 50);
+      p5.strokeWeight(3);
+      p5.strokeCap(p5.SQUARE);
+      particles.forEach(function (p) {
+        var seedPoint = p.position; // const x = seedPoint.x * settings.cellSize + settings.cellSize / 2;
+        // const y = seedPoint.y * settings.cellSize + settings.cellSize / 2;
+        // if(cellVector){
+        // cellVector.div(settings.windForce);                
+
+        var points = [seedPoint];
+        p5.beginShape(); // p5.curveVertex(seedPoint.x, seedPoint.y);
+
+        var findPointsTimerStart = performance.now();
+        var keepGoing = true;
+
+        while (keepGoing) {
+          var lastPoint = points[points.length - 1];
+          var cellVector = (0, utils_1.getVectorValue)(p5, lastPoint, vectorField, settings.cellSize);
+
+          if (cellVector) {
+            var newPoint = lastPoint.copy().add(cellVector.copy().setMag(settings.segmentLength));
+            points.push(newPoint);
+
+            if (newPoint.x < 0 || newPoint.x > WIDTH || newPoint.y < 0 || newPoint.y > HEIGHT) {
+              keepGoing = false;
+            }
+          } else {
+            keepGoing = false;
+          }
+
+          if (points.length > 300) {
+            keepGoing = false;
+          }
+        }
+
+        keepGoing = true;
+
+        while (keepGoing) {
+          var firstPoint = points[0];
+          var cellVector = (0, utils_1.getVectorValue)(p5, firstPoint, vectorField, settings.cellSize);
+
+          if (cellVector) {
+            var newPoint = firstPoint.copy().add(cellVector.copy().rotate(p5.PI).setMag(settings.segmentLength));
+            points.unshift(newPoint);
+
+            if (newPoint.x < 0 || newPoint.x > WIDTH || newPoint.y < 0 || newPoint.y > HEIGHT) {
+              keepGoing = false;
+            }
+          } else {
+            keepGoing = false;
+          }
+
+          if (points.length > 300) {
+            keepGoing = false;
+          }
+        }
+
+        timers.findPoints += performance.now() - findPointsTimerStart;
+
+        if (points.length > 3) {
+          // const fitCurveTimerStart = performance.now();
+          // const bezierCurves = fitCurve(points.map(p => ([p.x, p.y])), 1);
+          // timers.fitCurve += performance.now() - fitCurveTimerStart;
+          // bezierCurves.forEach(curve => {
+          //     const [[sx, sy], [c1x, c1y], [c2x, c2y], [fx, fy]] = curve;
+          //     // p5.push();
+          //     // p5.stroke('white');
+          //     // p5.strokeWeight(5);
+          //     // p5.point(sx, sy);
+          //     // p5.point(fx, fy);
+          //     // p5.pop();
+          //     p5.bezier(sx, sy, c1x, c1y, c2x, c2y, fx, fy);
+          // });
+          for (var i = 1; i < points.length; i++) {
+            p5.line(points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
+          }
+        } // p5.curveVertex(points[points.length-1].x, points[points.length-1].y);
+
+
+        p5.endShape();
+      });
+      p5.pop();
+      timers.flowLines += performance.now() - flowLinesTimerStart;
     }
 
-    liveDebugDiv.html(JSON.stringify({
-      FPS: p5.floor(p5.frameRate())
-    }, null, 2));
     t += settings.noiseChangeSpeed;
+    liveDebugDiv.html(JSON.stringify({
+      FPS: p5.floor(p5.frameRate()),
+      flowLines: (timers.flowLines / p5.frameCount).toFixed(1),
+      findPoints: (timers.findPoints / p5.frameCount).toFixed(1),
+      fitCurve: (timers.fitCurve / p5.frameCount).toFixed(1)
+    }, null, 2));
 
     if (CanvasCapture.isRecording()) {
       CanvasCapture.recordFrame();
@@ -41181,7 +41349,7 @@ var observer = new PerformanceObserver(function (list) {
 observer.observe({
   entryTypes: ["longtask"]
 });
-},{"p5":"node_modules/p5/lib/p5.min.js","./styles.scss":"src/styles.scss","dat.gui":"node_modules/dat.gui/build/dat.gui.module.js","./simplexNoiseFast":"src/simplexNoiseFast.js","ndarray":"node_modules/ndarray/ndarray.js","./PoissonDistribution":"src/PoissonDistribution.ts","canvas-capture":"node_modules/canvas-capture/dist/canvas-capture.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"p5":"node_modules/p5/lib/p5.min.js","./styles.scss":"src/styles.scss","dat.gui":"node_modules/dat.gui/build/dat.gui.module.js","./simplexNoiseFast":"src/simplexNoiseFast.js","ndarray":"node_modules/ndarray/ndarray.js","./PoissonDistribution":"src/PoissonDistribution.ts","canvas-capture":"node_modules/canvas-capture/dist/canvas-capture.js","./utils":"src/utils.ts"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -41209,7 +41377,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52647" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59005" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

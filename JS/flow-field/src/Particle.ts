@@ -1,5 +1,6 @@
 import ndarray from "ndarray";
 import P5, { Vector, Color } from "p5";
+import { getVectorValue } from "./utils";
 
 let params = new URLSearchParams(location.search);
 const isSuperHD = params.has('superHD');
@@ -47,10 +48,9 @@ export default class Particle {
         this.age += 1;
     }
 
-    follow(fieldVectors: ndarray.NdArray<ndarray.Data<Vector>>, cellSize: number) {
-        const x = this.p5.floor(this.position.x / cellSize);
-        const y = this.p5.floor(this.position.y / cellSize);
-        const fieldVector = fieldVectors.get(x, y);
+    follow(fieldVectors: ndarray.NdArray<Vector[]>, cellSize: number) {
+        const fieldVector = getVectorValue(this.p5, this.position, fieldVectors, cellSize);
+        
         this.applyForce(fieldVector);
     }
 
