@@ -2,8 +2,11 @@ import P5, {
     Vector, Color,
 } from "p5";
 import * as dat from 'dat.gui';
+import initSVG from 'p5.js-svg'
 import "./styles.scss";
 
+
+initSVG(P5)
 const WIDTH = 1200;
 const HEIGHT = 800;
 // const HEIGHT = WIDTH / (9/16);
@@ -25,11 +28,16 @@ interface Settings {
     centralGridSize: number;
     type: '5 point' | '3 point',
     presets: Record<string, Function>;
+    export: Function,
 }
 
 const sketch = (p5: P5) => {
+    // initSVG(p5);
+    // console.log(p5);
+
     let canvas: P5.Renderer;
     const gui = new dat.GUI();
+    let isExporting: boolean = false;
 
     const settings: Settings = {
         verticalOffset: 0,
@@ -82,6 +90,14 @@ const sketch = (p5: P5) => {
 
                 settings.type = '5 point';
             }
+        },
+        export: () => {
+            isExporting = true;
+            p5.noLoop();
+            p5.draw()
+            p5.save();
+            isExporting = false;
+            p5.loop();
         }
     };
 
@@ -174,7 +190,7 @@ const sketch = (p5: P5) => {
     }
 
     p5.setup = () => {
-        canvas = p5.createCanvas(WIDTH, HEIGHT, p5.P2D);
+        canvas = p5.createCanvas(WIDTH, HEIGHT, p5.SVG);
         canvas.parent("app");
         p5.loop();
         const vertical = gui.addFolder('Vertical VPs');
@@ -192,10 +208,11 @@ const sketch = (p5: P5) => {
         horizontal.add(settings, 'horizontalRightLeftShift', -WIDTH * 2, WIDTH * 2, 5);
         central.add(settings, 'centralGridSize', 5, 52, 4);
         Object.keys(settings.presets).forEach(key => presets.add(settings.presets, key).onFinishChange(() => gui.updateDisplay()))
+        gui.add(settings, 'export');
     }
 
     p5.draw = () => {
-        p5.background(127, 127, 127);
+        p5.background(127, isExporting ? 0 : 255);
         p5.noFill();
 
         states = [
@@ -230,11 +247,13 @@ const sketch = (p5: P5) => {
                 p5.stroke(color);
 
 
-                const side = sideFromTheLine(state.p1, state.p2, mouseVec);
-                const { center, radius, angleStart, angleStop } = circleWithThreePoints(state.p1.copy(), state.p2.copy(), mouseVec.copy());
+                if (!isExporting) {
+                    const side = sideFromTheLine(state.p1, state.p2, mouseVec);
+                    const { center, radius, angleStart, angleStop } = circleWithThreePoints(state.p1.copy(), state.p2.copy(), mouseVec.copy());
 
-                p5.strokeWeight(2);
-                p5.arc(center.x, center.y, radius * 2, radius * 2, side > 0 ? angleStart : angleStop, side > 0 ? angleStop : angleStart);
+                    p5.strokeWeight(2);
+                    p5.arc(center.x, center.y, radius * 2, radius * 2, side > 0 ? angleStart : angleStop, side > 0 ? angleStop : angleStart);
+                }
 
                 p5.strokeWeight(1);
                 color = p5.color(`hsl(${((i * 360) / 4) + 10}, 100%, 50%)`);
@@ -271,10 +290,13 @@ const sketch = (p5: P5) => {
             color.setAlpha(255);
             p5.stroke(color);
 
-            const mouseAngle = p5.createVector(10000, 0).angleBetween(mouseVec.copy().sub(middle))
-            const mouseVector = p5.createVector(10000, 0).setHeading(mouseAngle).add(middle);
-            p5.line(middle.x, middle.y, mouseVector.x, mouseVector.y);
+            if (!isExporting) {
+                const mouseAngle = p5.createVector(10000, 0).angleBetween(mouseVec.copy().sub(middle))
+                const mouseVector = p5.createVector(10000, 0).setHeading(mouseAngle).add(middle);
+                p5.line(middle.x, middle.y, mouseVector.x, mouseVector.y);
+            }
         }
+
         p5.strokeWeight(1);
         p5.stroke(0);
         p5.line(middle.x, 0, middle.x, HEIGHT);
