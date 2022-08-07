@@ -9,6 +9,7 @@ import {
  } from "./geometry-utils";
 import { RawLine, Settings, VanishingPointPair } from "./types";
 import { Segment } from "./segment";
+import { Draggable } from "./draggable";
 
 let params = new URLSearchParams(location.search);
 const isSVG = params.has('SVG');
@@ -26,6 +27,8 @@ const sketch = (p5: P5) => {
     let vanishingPointPairs: VanishingPointPair[];
     let rawLine: RawLine;
     let segments: Segment[];
+
+    const draggableTest = new Draggable(p5, 20, p5.createVector(200, 200));
 
     const settings: Settings = {
         verticalOffset: 0,
@@ -104,17 +107,21 @@ const sketch = (p5: P5) => {
     }
 
     p5.mouseDragged = () => {
-        rawLine.push(p5.createVector(p5.mouseX, p5.mouseY));
+        if(!Draggable.isAnyDragging){
+            rawLine.push(p5.createVector(p5.mouseX, p5.mouseY));
+        }
     }
 
     p5.mouseReleased = () => {
         if (rawLine.length > 5) {
             const spaceCenter = findSpaceCenter();
-            segments.push(Segment.findSegment(rawLine, vanishingPointPairs, spaceCenter));
+            segments.push(Segment.findSegment(p5, rawLine, vanishingPointPairs, spaceCenter));
             
             rawLine = [];
         }
     }
+
+    draggableTest.init();
 
     p5.setup = () => {
         canvas = p5.createCanvas(WIDTH, HEIGHT, (p5 as any).SVG);
@@ -237,10 +244,12 @@ const sketch = (p5: P5) => {
         const allSegments = [...segments];
 
         if (rawLine.length > 5) {
-            allSegments.push(Segment.findSegment(rawLine, vanishingPointPairs, spaceCenter));
+            allSegments.push(Segment.findSegment(p5, rawLine, vanishingPointPairs, spaceCenter));
         }
 
-        allSegments.forEach(segment => segment.draw(p5));
+        allSegments.forEach(segment => segment.draw());
+
+        draggableTest.draw();
     }
 }
 new P5(sketch);
