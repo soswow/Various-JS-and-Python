@@ -10,6 +10,7 @@ import p5 from "p5";
 import * as CanvasCapture from 'canvas-capture';
 import fitCurve from 'fit-curve';
 import { getVectorValue } from "./utils";
+import streamlines from '@anvaka/streamlines';
 
 let params = new URLSearchParams(location.search);
 const isSuperHD = params.has('superHD');
@@ -17,31 +18,140 @@ const isSuperHD = params.has('superHD');
 const WIDTH = isSuperHD ? 1920 : 600;
 const HEIGHT = isSuperHD ? 1080 : 600;
 
+type Settings = {
+    preset: keyof typeof presets;
+    fadeAwayRate: number;
+    noiseZoom: number;
+    noiseChangeSpeed: number;
+    cellSize: number;
+    showColors: boolean;
+    showArrows: boolean;
+    fullRangeRescale: boolean;
+    noisyDirectionBias: boolean;
+    noisyMagnitude: boolean;
+    gradientBased: boolean;
+    gradientType: 'slope' | 'curl' | 'curl+slope';
+    gradient_and_normal: boolean;
+    CSN_k: number;
+    showParticles: boolean;
+    windForce: number;
+    minDistance: number;
+    valueIncreaseTime: number;
+    valueDecreseTime: number;
+    maxValue: number;
+    maxLineWidth: number;
+    darkMode: boolean;
+    hue: boolean;
+    hueBrightness: number;
+    showFlowLines: boolean;
+    niceFlowLines: boolean;
+    segmentLength: number;
+    dSep: number;
+    dTest: number;
+    timeStep: number;
+    stepsPerIteration: number;
+    maxTimePerIteration: number;
+
+};
+
+// Preset configurations
+const presets: Record<string, any> = {
+    'Default': {},
+    'Particle Trails': {
+        showParticles: true,
+        showArrows: false,
+        showColors: false,
+        showFlowLines: false,
+        fadeAwayRate: 5,
+        windForce: 0.006,
+        darkMode: true,
+        hue: true,
+    },
+    'Short trails': {
+        showParticles: true,
+        showArrows: false,
+        showColors: false,
+        showFlowLines: false,
+        noiseZoom: 0.0051,
+        noiseChangeSpeed: 0.015,
+        cellSize: 12,
+        gradientType: 'curl+slope',
+        windForce: 0.0041,
+        minDistance: 6,
+        valueIncreaseTime: 49,
+        valueDecreseTime: 29,
+        maxValue: 196,
+        maxLineWidth: 1.7,
+        darkMode: true,
+        hue: true,
+    },
+    'Vector Field Visualization': {
+        showParticles: false,
+        showArrows: true,
+        showColors: true,
+        showFlowLines: false,
+        cellSize: 30,
+        noiseZoom: isSuperHD ? 0.002 : 0.0042,
+    },
+    'Nice Flow Lines': {
+        showParticles: false,
+        showArrows: false,
+        showColors: false,
+        showFlowLines: true,
+        niceFlowLines: true,
+        noiseZoom: 0.002,
+        noiseChangeSpeed: 0.021,
+        gradientType: 'curl+slope',
+        segmentLength: 6.6,
+        dSep: 8,
+        dTest: 0.8,
+        timeStep: 4.7,
+        stepsPerIteration: 19,
+        maxTimePerIteration: 160,
+    },
+};
+
 // Creating the sketch itself
 const sketch = (p5: P5) => {
     const gui = new dat.GUI();
-    const settings = {
+    const settings: Settings = {
+        preset: 'Default' as keyof typeof presets,
+        //Animation
+        fadeAwayRate: 5,
+        //Particles
         noiseZoom: isSuperHD ? 0.002 : 0.0042,
         noiseChangeSpeed: 0.0025,
         cellSize: 30,
-        showColors: false,
-        showArrows: false,
+        showColors: true,
+        showArrows: true,
         fullRangeRescale: false,
         noisyDirectionBias: true,
-        noisyMagnitude: true,
+        noisyMagnitude: false,
+        gradientBased: true,
+        ...({gradientType: 'curl+slope'} as {gradientType: 'slope' | 'curl' | 'curl+slope'}),
+        gradient_and_normal: true,
+        CSN_k: 1,
+        //
         showParticles: false,
         windForce: 0.006,
-        minDistance: 30,
-        valueIncreaseTime: isSuperHD ? 100 : 50,
-        valueDecreseTime: isSuperHD ? 100 : 60,
-        maxValue: 70,
+        minDistance: isSuperHD ? 30 : 10,
+        valueIncreaseTime: isSuperHD ? 200 : 150,
+        valueDecreseTime: isSuperHD ? 200 : 150,
+        maxValue: 170,
         maxLineWidth: 5,
         darkMode: true,
         hue: true,
         hueBrightness: 180,
         // Flow lines
-        showFlowLines: true,
+        showFlowLines: false,
+        niceFlowLines: false,
         segmentLength: 8,
+
+        dSep: 12,
+        dTest: 0.1, // Distance between streamlines when integration should stop.
+        timeStep: 1.7, // Integration time step (passed to RK4 method.)
+        stepsPerIteration: 30,
+        maxTimePerIteration: 500,
     };
     let liveDebugDiv;
     let t = 0.02;
@@ -72,6 +182,15 @@ const sketch = (p5: P5) => {
     p5.setup = () => {
         resetPixelDensity();
 
+        // Add preset dropdown control
+        const presetNames = Object.keys(presets) as Array<keyof typeof presets>;
+        gui.add(settings, 'preset', presetNames).onChange((value: keyof typeof presets) => {
+            applyPreset(value);
+        });
+
+        const animationFolder = gui.addFolder('Animation');
+        animationFolder.add(settings, 'fadeAwayRate', 0, 255);
+
         const vectorFieldFolder = gui.addFolder('Vector field');
         vectorFieldFolder.add(settings, 'noiseZoom', 0, 0.07);
         vectorFieldFolder.add(settings, 'noiseChangeSpeed', 0, 0.1);
@@ -86,11 +205,18 @@ const sketch = (p5: P5) => {
         vectorFieldFolder.add(settings, 'fullRangeRescale');
         vectorFieldFolder.add(settings, 'noisyDirectionBias');
         vectorFieldFolder.add(settings, 'noisyMagnitude');
+        vectorFieldFolder.add(settings, 'gradientBased');
+        vectorFieldFolder.add(settings, 'gradientType', ['slope', 'curl', 'curl+slope']);
+        vectorFieldFolder.add(settings, 'gradient_and_normal');
+        vectorFieldFolder.add(settings, 'CSN_k', 0, 3);
+        // new OptionController(object, 'stringProperty', ['a', 'b', 'c']);
 
         const particlesFolder = gui.addFolder('Particles');
         const showParticlesControl = particlesFolder.add(settings, 'showParticles').onFinishChange((value) => {
             resetPixelDensity();
-            showFlowLinesControl.setValue(!value);
+            if(value && showFlowLinesControl.getValue()){
+                showFlowLinesControl.setValue(false);
+            }
         });
         particlesFolder.add(settings, 'windForce', 0.0001, 0.05);
         particlesFolder.add(settings, 'minDistance', 2, 100).onFinishChange(resetParticles);
@@ -104,10 +230,20 @@ const sketch = (p5: P5) => {
 
         const flowLines = gui.addFolder('Flow lines');
         const showFlowLinesControl = flowLines.add(settings, 'showFlowLines').onFinishChange(value => {
-            showParticlesControl.setValue(!value);
+            if(value && showParticlesControl.getValue()){
+                showParticlesControl.setValue(false);
+            }
+            resetLooping();
         });
         flowLines.add(settings, 'segmentLength', 1, 50);
-
+        flowLines.add(settings, 'niceFlowLines').onFinishChange(value => {
+            resetLooping();
+        });
+        flowLines.add(settings, 'dSep', 0, 30);
+        flowLines.add(settings, 'dTest', 0, 30);
+        flowLines.add(settings, 'timeStep', 0, 10);
+        flowLines.add(settings, 'stepsPerIteration', 0, 100, 1);
+        flowLines.add(settings, 'maxTimePerIteration', 0, 1000, 1);
 
         // Creating and positioning the canvas
         canvas = p5.createCanvas(WIDTH, HEIGHT, p5.P2D);
@@ -123,26 +259,32 @@ const sketch = (p5: P5) => {
         });
 
         // Configuring the canvas
-
-
-
         liveDebugDiv = p5.createDiv('this is some text');
         liveDebugDiv.style('font-size', '16px');
         liveDebugDiv.style('white-space', 'pre-wrap');
         liveDebugDiv.position(10, 10);
 
         resetParticles();
-
-        // p5.noLoop();
+        resetLooping();
     };
+
+    const resetLooping = () => {
+        if(settings.showFlowLines && settings.niceFlowLines){
+            p5.noLoop();
+        }else{
+            p5.loop();
+        }
+    }
 
     const resetBackground = () => {
         if (settings.showParticles) {
             if (settings.darkMode) {
-                p5.background(0, 0, 0, 10);
+                p5.background(0, 0, 0, settings.fadeAwayRate);
             } else {
-                p5.background(255, 255, 255, 10);
+                p5.background(255, 255, 255, settings.fadeAwayRate);
             }
+        } else if (settings.showFlowLines && settings.niceFlowLines){
+            return ;
         } else if (settings.darkMode) {
             p5.background("black");
         } else {
@@ -165,6 +307,29 @@ const sketch = (p5: P5) => {
         particles = poissonDistribution.points(settings.valueIncreaseTime, settings.valueDecreseTime);
     }
 
+    const applyPreset = (presetName: keyof typeof presets) => {
+        const preset = presets[presetName];
+        if (!preset) return;
+
+        // Apply all preset values to settings
+        Object.assign(settings, preset);
+
+        // Ensure mutual exclusivity between showParticles and showFlowLines
+        if (settings.showParticles && settings.showFlowLines) {
+            settings.showFlowLines = false;
+        }
+
+        // Update GUI controllers to reflect new values
+        gui.updateDisplay();
+
+        // Trigger necessary resets
+        resetPixelDensity();
+        resetLooping();
+        if (settings.showParticles) {
+            resetParticles();
+        }
+    }
+
     const timers = {
         flowLines: 0,
         findPoints: 0,
@@ -175,13 +340,32 @@ const sketch = (p5: P5) => {
     p5.draw = () => {
         const noiseMatrixHeight = p5.floor(p5.height / settings.cellSize);
         const noiseMatrixWidth = p5.floor(p5.width / settings.cellSize);
-        const noiseMatrix = ndarray(new Float32Array(noiseMatrixHeight * noiseMatrixWidth * 2), [noiseMatrixWidth, noiseMatrixHeight, 2]);
+        const noiseMatrix = ndarray(new Float32Array(noiseMatrixHeight * noiseMatrixWidth * 4), [noiseMatrixWidth, noiseMatrixHeight, 4]);
         let maxValue = 0;
         let minValue = 1;
         for (let x = 0; x < noiseMatrixWidth; x += 1) {
             for (let y = 0; y < noiseMatrixHeight; y += 1) {
-                const angleValue = (noise3D(x * settings.cellSize * settings.noiseZoom, y * settings.cellSize * settings.noiseZoom, t) + 1) / 2;
+                const angleValue = (noise3D(x * settings.cellSize * settings.noiseZoom, y * settings.cellSize * settings.noiseZoom, t) + 1) / 2; 
                 const magValue = (noise3D(x * settings.cellSize * settings.noiseZoom, y * settings.cellSize * settings.noiseZoom, t + 42) + 1) / 2;
+
+                const delta = 0.001;
+
+                const x1 = (noise3D(
+                    x * settings.cellSize * settings.noiseZoom + delta, 
+                    y * settings.cellSize * settings.noiseZoom, t) + 1) / 2;
+                const x2 = (noise3D(
+                    x * settings.cellSize * settings.noiseZoom - delta, 
+                    y * settings.cellSize * settings.noiseZoom, t) + 1) / 2;
+                const slopeX = (x2 - x1) / (delta * 2);
+
+                const y1 = (noise3D(
+                    x * settings.cellSize * settings.noiseZoom, 
+                    y * settings.cellSize * settings.noiseZoom + delta, t) + 1) / 2;
+                const y2 = (noise3D(
+                    x * settings.cellSize * settings.noiseZoom, 
+                    y * settings.cellSize * settings.noiseZoom - delta, t) + 1) / 2;
+                const slopeY = (y2 - y1) / (delta * 2);
+
 
                 if (maxValue < angleValue) {
                     maxValue = angleValue;
@@ -191,6 +375,8 @@ const sketch = (p5: P5) => {
                 }
                 noiseMatrix.set(x, y, 0, angleValue);
                 noiseMatrix.set(x, y, 1, magValue);
+                noiseMatrix.set(x, y, 2, slopeX);
+                noiseMatrix.set(x, y, 3, slopeY);
             }
         }
 
@@ -231,18 +417,39 @@ const sketch = (p5: P5) => {
 
         for (let mx = 0; mx < noiseMatrixWidth; mx += 1) {
             for (let my = 0; my < noiseMatrixHeight; my += 1) {
-                const angleValue = noiseMatrix.get(mx, my, 0) * p5.TWO_PI;
+
                 const magValue = settings.noisyMagnitude ? noiseMatrix.get(mx, my, 1) : 0.5;
                 const arrowLength = magValue * settings.cellSize;
-                const vector = p5.createVector(0, arrowLength);
-                if (settings.noisyDirectionBias) {
-                    const directionBias = (noise2D(0, t) + 1) / 2 * p5.TWO_PI;
-                    vector.setHeading(angleValue + directionBias);
-                } else {
-                    vector.setHeading(angleValue);
-                }
-                vectorField.set(mx, my, vector.copy().mult(settings.windForce) as any);
+                let vector: Vector;
 
+                if(settings.gradientBased){
+                    const slopeX = noiseMatrix.get(mx, my, 2);
+                    const slopeY = noiseMatrix.get(mx, my, 3);
+                    vector = p5.createVector(slopeX * 20, slopeY * 20);
+                    if(settings.gradientType === 'slope'){
+                        //
+                    }else if(settings.gradientType === 'curl'){
+                        vector.rotate(p5.HALF_PI);
+                    }else if(settings.gradientType.indexOf('curl+slope') > -1){
+                        vector.rotate(p5.map(noiseMatrix.get(mx, my, 0), 0, 0.8, p5.HALF_PI, 0, true));   
+                    }
+
+                    if(settings.gradient_and_normal) {
+                        const angleValue = noiseMatrix.get(mx, my, 0) * p5.TWO_PI;
+                        vector.add(p5.createVector(0, arrowLength * settings.CSN_k).setHeading(angleValue).mult(noiseMatrix.get(mx, my, 1)));
+                    }
+                }else{
+                    const angleValue = noiseMatrix.get(mx, my, 0) * p5.TWO_PI;
+                    vector = p5.createVector(0, arrowLength);
+                    if (settings.noisyDirectionBias) {
+                        const directionBias = (noise2D(0, t) + 1) / 2 * p5.TWO_PI;
+                        vector.setHeading(angleValue + directionBias);
+                    } else {
+                        vector.setHeading(angleValue);
+                    }
+                }
+
+                vectorField.set(mx, my, vector.copy().mult(settings.windForce) as any);
 
                 const x = mx * settings.cellSize + settings.cellSize / 2;
                 const y = my * settings.cellSize + settings.cellSize / 2;
@@ -277,7 +484,7 @@ const sketch = (p5: P5) => {
         //     drawArrow(p, cellVector.setMag(20), p5.color('red'), 3);
         // }
 
-        if (settings.showFlowLines) {
+        if (settings.showFlowLines && !settings.niceFlowLines) {
             const flowLinesTimerStart = performance.now();
             p5.push()
             p5.noFill();
@@ -362,16 +569,69 @@ const sketch = (p5: P5) => {
             timers.flowLines += performance.now() - flowLinesTimerStart;
         }
 
+        if(settings.showFlowLines && settings.niceFlowLines){
+            p5.strokeCap(p5.SQUARE);
+            
+            const vectorFieldFunc = p => getVectorValue(p5, p, vectorField, settings.cellSize);
+
+            const pointsSets = [];
+            const promise: Promise<void> = streamlines({
+                vectorField: vectorFieldFunc,
+                boundingBox: {left: 0, top: 0, width: WIDTH, height: HEIGHT},
+                seed: {x: WIDTH/2, y: HEIGHT/2},
+                // Separation distance between new streamlines.
+                dSep: settings.dSep,
+                // Distance between streamlines when integration should stop.
+                dTest: settings.dTest,
+                // Integration time step (passed to RK4 method.)
+                timeStep: settings.timeStep,
+                stepsPerIteration: settings.stepsPerIteration,
+                maxTimePerIteration: settings.maxTimePerIteration,
+
+                onStreamlineAdded: (points) => {
+                    pointsSets.push(points);
+                },
+                // onPointAdded(from, to) {
+                //     // called when new point is added to a line
+                //     console.log("point created", from, to);
+                // },
+                // onStreamlineAdded(points) {
+                //     // Points is just a sequence of points with `x, y` coordinates through which
+                //     // the streamline goes.
+                //     console.log("stream line created. Number of points: ", points.length);
+                // }
+            }).run();
+
+            promise.then(() => {
+                p5.background("black");
+                p5.push()
+                p5.noFill();
+                p5.stroke(255, 50, 50, 255);
+                p5.strokeWeight(1);
+                pointsSets.forEach(points => {
+                    for(let i=1;i<points.length;i++){
+                        p5.line(points[i-1].x,points[i-1].y, points[i].x,points[i].y)
+                    }
+                });
+                p5.pop();
+                if(CanvasCapture.isRecording()) {
+                    CanvasCapture.recordFrame();
+                }
+                requestAnimationFrame(() => p5.redraw());
+            });
+        }
+
         t += settings.noiseChangeSpeed;
 
         liveDebugDiv.html(JSON.stringify({
             FPS: p5.floor(p5.frameRate()),
+            
             flowLines: (timers.flowLines / p5.frameCount).toFixed(1),
             findPoints: (timers.findPoints / p5.frameCount).toFixed(1),
             fitCurve: (timers.fitCurve /  p5.frameCount).toFixed(1),
         }, null, 2));
         
-        if (CanvasCapture.isRecording()) {
+        if ((p5.isLooping() as any) && CanvasCapture.isRecording()) {
             CanvasCapture.recordFrame();
         }
     };

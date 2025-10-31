@@ -16,23 +16,44 @@ export const getVectorValue = (p5: P5, point: Vector, vectorField: NdArray<Vecto
     const [width, height] = vectorField.shape;
     const vx = point.x / cellSize;
     const vy = point.y / cellSize;
-    const vxlow = Math.floor(vx);
-    const vylow = Math.floor(vy);
+    let vxlow = Math.floor(vx);
+    let vylow = Math.floor(vy);
+    if(vxlow < 0){
+        vxlow = 0;
+    }
+    if(vxlow >= width){
+        vxlow = width-1;
+    }
+    if(vylow >= height){
+        vylow = height-1;
+    }
+    if(vylow < 0){
+        vylow = 0;
+    }
+
     let vxhigh = Math.ceil(vx);
     let vyhigh = Math.ceil(vy);
     if(vxhigh >= width){
         vxhigh = vxlow;
     }
+    if(vxhigh < 0){
+        vxhigh = 0;
+    }
     if(vyhigh >= height){
         vyhigh = vylow;
     }
+    if(vyhigh < 0){
+        vyhigh = 0;
+    }
+    
+    
     const vxperc = vx - vxlow;
     const vyperc = vy - vylow;
     const topleft = vectorField.get(vxlow, vylow);
     const topright = vectorField.get(vxhigh, vylow) || topleft;
     const bottomleft = vectorField.get(vxlow, vyhigh) || topleft;
     const bottomright = vectorField.get(vxhigh, vyhigh) || topright;
-    
+
     const xValue = bilinearInterpolation(p5, topleft.x, topright.x, bottomleft.x, bottomright.x, vxperc, vyperc);
     const yValue = bilinearInterpolation(p5, topleft.y, topright.y, bottomleft.y, bottomright.y, vxperc, vyperc);
     return p5.createVector(xValue, yValue);

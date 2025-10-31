@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@anvaka/streamlines": "^1.5.0",
     "@types/dat.gui": "^0.7.7",
     "@types/ndarray": "^1.0.11",
     "@types/p5": "^1.4.0",
