@@ -1,4 +1,5 @@
 if (window.require) {
+    console.log('using require');
     const math = require('mathjs');
 }
 const math2 = math.create({
@@ -109,19 +110,22 @@ const linspace = (start, end, size) => {
 const _linSpace = linspace(-1, 1, W);
 const _X = math.multiply(math.ones(W, 1), [_linSpace]);
 const _Y = math.multiply(math.reshape(_linSpace, [W, 1]), math.ones(1, W))
-const gpu = new GPU();
+
+const GPUClass = GPU.GPU;
 
 console.log({
-    'GPU is in-fact supported': GPU.isGPUSupported,
-    'kernel maps are supported': GPU.isKernelMapSupported,
-    'offscreen canvas is supported': GPU.isOffscreenCanvasSupported,
-    'WebGL v1 is supported': GPU.isWebGLSupported,
-    'WebGL v2 is supported': GPU.isWebGL2Supported,
-    'headlessgl is supported': GPU.isHeadlessGLSupported,
-    'canvas is supported': GPU.isCanvasSupported,
-    'the platform supports HTMLImageArray': GPU.isGPUHTMLImageArraySupported,
-    'the system supports single precision float 32 values': GPU.isSinglePrecisionSupported,
+    'GPU is in-fact supported': GPUClass.isGPUSupported,
+    'kernel maps are supported': GPUClass.isKernelMapSupported,
+    'offscreen canvas is supported': GPUClass.isOffscreenCanvasSupported,
+    'WebGL v1 is supported': GPUClass.isWebGLSupported,
+    'WebGL v2 is supported': GPUClass.isWebGL2Supported,
+    'headlessgl is supported': GPUClass.isHeadlessGLSupported,
+    'canvas is supported': GPUClass.isCanvasSupported,
+    'the platform supports HTMLImageArray': GPUClass.isGPUHTMLImageArraySupported,
+    'the system supports single precision float 32 values': GPUClass.isSinglePrecisionSupported,
 });
+
+const gpu = new GPUClass();
 
 const myFunc = gpu.createKernel(function (A, k, mux, muy) {
     const m = Math.pow(A[this.thread.x] - mux, 2) + Math.pow(A[this.thread.y] - muy, 2);
